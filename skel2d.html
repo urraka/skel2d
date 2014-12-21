@@ -79,10 +79,12 @@ function create_skeleton()
 	arm_l.length = 100;
 	arm_r.length = 100;
 
+	torso.initial_state.sx =  2;
 	torso.initial_state.rot =  Pi / 2 + (Pi / 8) * 0;
 	arm_l.initial_state.rot =  Pi / 2;
 	// arm_r.initial_state.rot = -Pi / 2;
 	arm_r.inherit_rotation = false;
+	arm_l.inherit_scale = false;
 
 	arm_l.initial_state.x = 100;
 	arm_r.initial_state.x = 100;

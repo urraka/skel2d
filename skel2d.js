@@ -254,23 +254,23 @@ Bone.prototype.update_transform = function()
 		}
 	}
 
-	// world_transform = parent_transform * translate * inv_parent_rot * inv_parent_scale *
+	// world_transform = parent_transform * translate * inv_parent_scale * inv_parent_rot *
 	//                   flip_scale * world_rot * world_scale
 	//
 	// This stuff can be used in Maxima:
 	// parent_transform: matrix([a,c,e],[b,d,f],[0,0,1]);
 	// translate:        matrix([1,0,x],[0,1,y],[0,0,1]);
-	// inv_parent_rot:   matrix([ic,-is,0],[is,ic,0],[0,0,1]);
 	// inv_parent_scale: matrix([isx,0,0],[0,isy,0],[0,0,1]);
+	// inv_parent_rot:   matrix([ic,-is,0],[is,ic,0],[0,0,1]);
 	// flip:             matrix([fx,0,0],[0,fy,0],[0,0,1]);
 	// rotate:           matrix([wc,-ws,0],[ws,wc,0],[0,0,1]);
 	// scale:            matrix([sx,0,0],[0,sy,0],[0,0,1]);
-	// result: parent_transform . translate . inv_parent_rot . inv_parent_scale . flip . rotate . scale;
+	// result: parent_transform . translate . inv_parent_scale . inv_parent_rot . flip . rotate . scale;
 	//
-	// result.a = a (fx isx sx  ic wc - fy isy sx  is ws) + c (fy isy sx  ic ws + fx isx sx  is wc)
-	// result.b = b (fx isx sx  ic wc - fy isy sx  is ws) + d (fy isy sx  ic ws + fx isx sx  is wc)
-	// result.c = c (fy isy sy  ic wc - fx isx sy  is ws) - a (fx isx sy  ic ws + fy isy sy  is wc)
-	// result.d = d (fy isy sy  ic wc - fx isx sy  is ws) - b (fx isx sy  ic ws + fy isy sy  is wc)
+	// result.a = a isx (fx sx ic wc - fy sx is ws) + c isy (fy sx ic ws + fx sx is wc)
+	// result.b = b isx (fx sx ic wc - fy sx is ws) + d isy (fy sx ic ws + fx sx is wc)
+	// result.c = c isy (fy sy ic wc - fx sy is ws) - a isx (fx sy ic ws + fy sy is wc)
+	// result.d = d isy (fy sy ic wc - fx sy is ws) - b isx (fx sy ic ws + fy sy is wc)
 	// result.e = c y + a x + e
 	// result.f = d y + b x + f
 
@@ -286,13 +286,15 @@ Bone.prototype.update_transform = function()
 
 	// factors from the result to avoid repeating multiplications
 
-	var fsx = fx * isx;
-	var fsy = fy * isy;
+	var ax = a * isx;
+	var bx = b * isx;
+	var cy = c * isy;
+	var dy = d * isy;
 
-	var fxx = fsx * sx;
-	var fxy = fsx * sy;
-	var fyx = fsy * sx;
-	var fyy = fsy * sy;
+	var fxx = fx * sx;
+	var fxy = fx * sy;
+	var fyx = fy * sx;
+	var fyy = fy * sy;
 
 	var cc = ic * wc;
 	var ss = is * ws;
@@ -302,10 +304,10 @@ Bone.prototype.update_transform = function()
 	var fxxcc = fxx * cc; var fyxss = fyx * ss; var fyxcs = fyx * cs; var fxxsc = fxx * sc;
 	var fyycc = fyy * cc; var fxyss = fxy * ss; var fxycs = fxy * cs; var fyysc = fyy * sc;
 
-	world_transform[0] = a * (fxxcc - fyxss) + c * (fyxcs + fxxsc);
-	world_transform[1] = b * (fxxcc - fyxss) + d * (fyxcs + fxxsc);
-	world_transform[2] = c * (fyycc - fxyss) - a * (fxycs + fyysc);
-	world_transform[3] = d * (fyycc - fxyss) - b * (fxycs + fyysc);
+	world_transform[0] = ax * (fxxcc - fyxss) + cy * (fyxcs + fxxsc);
+	world_transform[1] = bx * (fxxcc - fyxss) + dy * (fyxcs + fxxsc);
+	world_transform[2] = cy * (fyycc - fxyss) - ax * (fxycs + fyysc);
+	world_transform[3] = dy * (fyycc - fxyss) - bx * (fxycs + fyysc);
 	world_transform[4] = c * state.y + a * state.x + e;
 	world_transform[5] = d * state.y + b * state.x + f;
 }
