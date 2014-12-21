@@ -89,6 +89,9 @@ function create_skeleton()
 	arm_l.initial_state.y = 100;
 	arm_r.initial_state.y = -100;
 
+	arm_l.initial_state.sx = 1.5;
+	arm_r.initial_state.sx = 1.5;
+
 	skeleton.bones.push(torso);
 	skeleton.bones.push(arm_l);
 	skeleton.bones.push(arm_r);

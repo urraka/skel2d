@@ -254,10 +254,8 @@ Bone.prototype.update_transform = function()
 		}
 	}
 
-	// TODO: scale probably needs to be applied after rotation (needs some testing)
-
 	// world_transform = parent_transform * translate * inv_parent_rot * inv_parent_scale *
-	//                   flip_scale * world_scale * world_rot
+	//                   flip_scale * world_rot * world_scale
 	//
 	// This stuff can be used in Maxima:
 	// parent_transform: matrix([a,c,e],[b,d,f],[0,0,1]);
@@ -265,14 +263,14 @@ Bone.prototype.update_transform = function()
 	// inv_parent_rot:   matrix([ic,-is,0],[is,ic,0],[0,0,1]);
 	// inv_parent_scale: matrix([isx,0,0],[0,isy,0],[0,0,1]);
 	// flip:             matrix([fx,0,0],[0,fy,0],[0,0,1]);
-	// scale:            matrix([sx,0,0],[0,sy,0],[0,0,1]);
 	// rotate:           matrix([wc,-ws,0],[ws,wc,0],[0,0,1]);
-	// result: parent_transform . translate . inv_parent_rot . inv_parent_scale . flip . scale . rotate;
+	// scale:            matrix([sx,0,0],[0,sy,0],[0,0,1]);
+	// result: parent_transform . translate . inv_parent_rot . inv_parent_scale . flip . rotate . scale;
 	//
-	// result.a = a (fx isx sx  ic wc - fy isy sy  is ws) + c ( fy isy sy  ic ws + fx isx sx  is wc)
-	// result.b = b (fx isx sx  ic wc - fy isy sy  is ws) + d ( fy isy sy  ic ws + fx isx sx  is wc)
-	// result.c = c (fy isy sy  ic wc - fx isx sx  is ws) + a (-fx isx sx  ic ws - fy isy sy  is wc)
-	// result.d = d (fy isy sy  ic wc - fx isx sx  is ws) + b (-fx isx sx  ic ws - fy isy sy  is wc)
+	// result.a = a (fx isx sx  ic wc - fy isy sx  is ws) + c (fy isy sx  ic ws + fx isx sx  is wc)
+	// result.b = b (fx isx sx  ic wc - fy isy sx  is ws) + d (fy isy sx  ic ws + fx isx sx  is wc)
+	// result.c = c (fy isy sy  ic wc - fx isx sy  is ws) - a (fx isx sy  ic ws + fy isy sy  is wc)
+	// result.d = d (fy isy sy  ic wc - fx isx sy  is ws) - b (fx isx sy  ic ws + fy isy sy  is wc)
 	// result.e = c y + a x + e
 	// result.f = d y + b x + f
 
@@ -288,21 +286,26 @@ Bone.prototype.update_transform = function()
 
 	// factors from the result to avoid repeating multiplications
 
-	var fsx = fx * isx * sx;
-	var fsy = fy * isy * sy;
+	var fsx = fx * isx;
+	var fsy = fy * isy;
+
+	var fxx = fsx * sx;
+	var fxy = fsx * sy;
+	var fyx = fsy * sx;
+	var fyy = fsy * sy;
 
 	var cc = ic * wc;
 	var ss = is * ws;
 	var cs = ic * ws;
 	var sc = is * wc;
 
-	var fsxcc = fsx * cc,  fsxss = fsx * ss,  fsxcs = fsx * cs,  fsxsc = fsx * sc;
-	var fsycc = fsy * cc,  fsyss = fsy * ss,  fsycs = fsy * cs,  fsysc = fsy * sc;
+	var fxxcc = fxx * cc; var fyxss = fyx * ss; var fyxcs = fyx * cs; var fxxsc = fxx * sc;
+	var fyycc = fyy * cc; var fxyss = fxy * ss; var fxycs = fxy * cs; var fyysc = fyy * sc;
 
-	world_transform[0] = a * (fsxcc - fsyss) + c * (fsycs + fsxsc);
-	world_transform[1] = b * (fsxcc - fsyss) + d * (fsycs + fsxsc);
-	world_transform[2] = c * (fsycc - fsxss) - a * (fsxcs + fsysc);
-	world_transform[3] = d * (fsycc - fsxss) - b * (fsxcs + fsysc);
+	world_transform[0] = a * (fxxcc - fyxss) + c * (fyxcs + fxxsc);
+	world_transform[1] = b * (fxxcc - fyxss) + d * (fyxcs + fxxsc);
+	world_transform[2] = c * (fyycc - fxyss) - a * (fxycs + fyysc);
+	world_transform[3] = d * (fyycc - fxyss) - b * (fxycs + fyysc);
 	world_transform[4] = c * state.y + a * state.x + e;
 	world_transform[5] = d * state.y + b * state.x + f;
 }
