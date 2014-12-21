@@ -254,6 +254,8 @@ Bone.prototype.update_transform = function()
 		}
 	}
 
+	// TODO: scale probably needs to be applied after rotation (needs some testing)
+
 	// world_transform = parent_transform * translate * inv_parent_rot * inv_parent_scale *
 	//                   flip_scale * world_scale * world_rot
 	//
