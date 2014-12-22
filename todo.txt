@@ -1,0 +1,40 @@
+- load skeleton and animations from data object
+- test flipping, it's probably fucked up too
+- timeline val_flip
+
+sample data for creating skeleton:
+
+{
+	"bones": [
+		{
+			"name": "torso", // required
+			"length": 0,
+			"x": 0,
+			"y": 0,
+			"rot": 0, // degrees
+			"sx": 1,
+			"sy": 1,
+			"flipx": false,
+			"flipy": false,
+			"inhrot": true,
+			"inhscale": false
+		},
+		{
+			"name": "torso.arm_left", // parent will be torso
+		}
+	]
+}
+
+sample data for creating animation:
+
+{
+	"bones": {
+		"torso": {
+			"x": [
+				{"time": 0, "value": 0, "easing": "sin_in"},
+				{"time": 0.5, "value": 100, "easing": "sin_out"},
+				{"time": 1, "value": 0}
+			]
+		}
+	}
+}

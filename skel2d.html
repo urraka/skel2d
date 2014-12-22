@@ -12,10 +12,39 @@
 <canvas></canvas>
 <script type="text/javascript">
 
+var skeleton_data = {
+	"bones": [
+		{"name": "torso", "length": 100, "rot": 90},
+		{"name": "torso.arm_l", "length": 100, "x": 100, "y": 100, "rot": 90, "inhscale": false},
+		{"name": "torso.arm_r", "length": 100, "x": 100, "y": -100, "inhrot": false}
+	]
+};
+
+var animation_data = {
+	"bones": {
+		"torso": {
+			"x": [
+				{"time": 0.0, "value": 0, "easing": "sin_in"},
+				{"time": 0.5, "value": -50, "easing": "sin_out"},
+				{"time": 1.0, "value": 0, "easing": "sin_in"},
+				{"time": 1.5, "value": 50, "easing": "sin_out"},
+				{"time": 2.0, "value": 0}
+			],
+			"rot": [
+				{"time": 0.0, "value": 0, "easing": "sin_in"},
+				{"time": 0.5, "value": -45, "easing": "sin_out"},
+				{"time": 1.0, "value": 0, "easing": "sin_in"},
+				{"time": 1.5, "value": 45, "easing": "sin_out"},
+				{"time": 2.0, "value": 0}
+			]
+		}
+	}
+};
+
 var canvas = document.querySelector("canvas");
 var context = canvas.getContext("2d");
-var skeleton = create_skeleton();
-var animation = create_animation();
+var skeleton = new sk2.Skeleton(skeleton_data);
+var animation = new sk2.Animation(skeleton, animation_data);
 
 var S = 10;
 
@@ -61,122 +90,6 @@ function draw()
 	context.restore();
 }
 
-function create_skeleton()
-{
-	var skeleton = new Skeleton();
-	var torso = new Bone();
-	var arm_l = new Bone();
-	var arm_r = new Bone();
-
-	torso.skeleton = skeleton;
-	arm_l.skeleton = skeleton;
-	arm_r.skeleton = skeleton;
-
-	arm_l.parent = torso;
-	arm_r.parent = torso;
-
-	torso.length = 100;
-	arm_l.length = 100;
-	arm_r.length = 100;
-
-	torso.initial_state.sx =  2;
-	torso.initial_state.rot =  Pi / 2 + (Pi / 8) * 0;
-	arm_l.initial_state.rot =  Pi / 2;
-	// arm_r.initial_state.rot = -Pi / 2;
-	arm_r.inherit_rotation = false;
-	arm_l.inherit_scale = false;
-
-	arm_l.initial_state.x = 100;
-	arm_r.initial_state.x = 100;
-	arm_l.initial_state.y = 100;
-	arm_r.initial_state.y = -100;
-
-	arm_l.initial_state.sx = 1.5;
-	arm_r.initial_state.sx = 1.5;
-
-	skeleton.bones.push(torso);
-	skeleton.bones.push(arm_l);
-	skeleton.bones.push(arm_r);
-
-	skeleton.reset();
-	skeleton.update_transform();
-
-	return skeleton;
-}
-
-function create_animation()
-{
-	var animation = new Animation();
-
-	// torso position.x timeline
-
-	var timeline = new Timeline();
-
-	animation.timelines.push(timeline);
-
-	timeline.index = 0;
-	timeline.property = PropBoneX;
-	timeline.keyframes.push(new Keyframe());
-	timeline.keyframes.push(new Keyframe());
-	timeline.keyframes.push(new Keyframe());
-	timeline.keyframes.push(new Keyframe());
-	timeline.keyframes.push(new Keyframe());
-
-	timeline.keyframes[0].time = 0;
-	timeline.keyframes[0].value = 0;
-	timeline.keyframes[0].interpolator = function(x) { return Math.sin(x * Pi/2); };
-
-	timeline.keyframes[1].time = 0.5;
-	timeline.keyframes[1].value = -50;
-	timeline.keyframes[1].interpolator = function(x) { return 1 - Math.sin(Pi/2 + x * Pi/2); };
-
-	timeline.keyframes[2].time = 1.0;
-	timeline.keyframes[2].value = 0;
-	timeline.keyframes[2].interpolator = function(x) { return Math.sin(x * Pi/2); };
-
-	timeline.keyframes[3].time = 1.5;
-	timeline.keyframes[3].value = 50;
-	timeline.keyframes[3].interpolator = function(x) { return 1 - Math.sin(Pi/2 + x * Pi/2); };
-
-	timeline.keyframes[4].time = 2.0;
-	timeline.keyframes[4].value = 0;
-
-	// torso rotation timeline
-
-	timeline = new Timeline();
-
-	animation.timelines.push(timeline);
-
-	timeline.index = 0;
-	timeline.property = PropBoneRot;
-	timeline.keyframes.push(new Keyframe());
-	timeline.keyframes.push(new Keyframe());
-	timeline.keyframes.push(new Keyframe());
-	timeline.keyframes.push(new Keyframe());
-	timeline.keyframes.push(new Keyframe());
-
-	timeline.keyframes[0].time = 0;
-	timeline.keyframes[0].value = 0;
-	timeline.keyframes[0].interpolator = function(x) { return Math.sin(x * Pi/2); };
-
-	timeline.keyframes[1].time = 0.5;
-	timeline.keyframes[1].value = -Pi/4;
-	timeline.keyframes[1].interpolator = function(x) { return 1 - Math.sin(Pi/2 + x * Pi/2); };
-
-	timeline.keyframes[2].time = 1.0;
-	timeline.keyframes[2].value = 0;
-	timeline.keyframes[2].interpolator = function(x) { return Math.sin(x * Pi/2); };
-
-	timeline.keyframes[3].time = 1.5;
-	timeline.keyframes[3].value = Pi/4;
-	timeline.keyframes[3].interpolator = function(x) { return 1 - Math.sin(Pi/2 + x * Pi/2); };
-
-	timeline.keyframes[4].time = 2.0;
-	timeline.keyframes[4].value = 0;
-
-	return animation;
-}
-
 function draw_skeleton(skeleton)
 {
 	context.lineWidth = 2;
@@ -185,19 +98,19 @@ function draw_skeleton(skeleton)
 
 	for (var i = 0, n = skeleton.bones.length; i < n; i++)
 	{
-		var transform = skeleton.bones[i].world_transform;
+		var bone = skeleton.bones[i];
 
-		var x0 = mat2d_mulx(transform, bone_points[0].x, bone_points[0].y);
-		var y0 = mat2d_muly(transform, bone_points[0].x, bone_points[0].y);
+		var x0 = bone.to_worldx(bone_points[0].x, bone_points[0].y);
+		var y0 = bone.to_worldy(bone_points[0].x, bone_points[0].y);
 
-		var x1 = mat2d_mulx(transform, skeleton.bones[i].length, bone_points[1].y);
-		var y1 = mat2d_muly(transform, skeleton.bones[i].length, bone_points[1].y);
+		var x1 = bone.to_worldx(skeleton.bones[i].length, bone_points[1].y);
+		var y1 = bone.to_worldy(skeleton.bones[i].length, bone_points[1].y);
 
-		var x2 = mat2d_mulx(transform, bone_points[2].x, bone_points[2].y);
-		var y2 = mat2d_muly(transform, bone_points[2].x, bone_points[2].y);
+		var x2 = bone.to_worldx(bone_points[2].x, bone_points[2].y);
+		var y2 = bone.to_worldy(bone_points[2].x, bone_points[2].y);
 
-		var x3 = mat2d_mulx(transform, bone_points[3].x, bone_points[3].y);
-		var y3 = mat2d_muly(transform, bone_points[3].x, bone_points[3].y);
+		var x3 = bone.to_worldx(bone_points[3].x, bone_points[3].y);
+		var y3 = bone.to_worldy(bone_points[3].x, bone_points[3].y);
 
 		context.beginPath();
 		context.moveTo(x0, y0);

@@ -1,3 +1,5 @@
+(function() {
+
 // --- enums/constants ---
 
 var Pi = Math.PI;
@@ -24,12 +26,100 @@ var PropSlotAttachment = 4;
 
 // --- Skeleton ---
 
-function Skeleton()
+function Skeleton(data)
 {
 	this.bones = [];
 	this.slots = [];
 	this.order = [];
 	this.transform = mat2d();
+
+	if (data)
+	{
+		var bones = data.bones;
+		var n = bones.length;
+
+		for (var i = 0; i < n; i++)
+		{
+			var bone = new Bone();
+			var bone_data = bones[i];
+
+			bone.name = bone_data.name.toString();
+			bone.skeleton = this;
+			bone.length = ("length" in bone_data ? Number(bone_data.length) : 0);
+			bone.inherit_rotation = ("inhrot" in bone_data ? !!bone_data.inhrot : true);
+			bone.inherit_scale = ("inhscale" in bone_data ? !!bone_data.inhscale : true);
+			bone.initial_state.x = ("x" in bone_data ? Number(bone_data.x) : 0);
+			bone.initial_state.y = ("y" in bone_data ? Number(bone_data.y) : 0);
+			bone.initial_state.sx = ("sx" in bone_data ? Number(bone_data.sx) : 1);
+			bone.initial_state.sy = ("sy" in bone_data ? Number(bone_data.sy) : 1);
+			bone.initial_state.rot = ("rot" in bone_data ? Number(bone_data.rot) : 0);
+			bone.initial_state.flipx = ("flipx" in bone_data ? !!bone_data.flipx : false);
+			bone.initial_state.flipy = ("flipy" in bone_data ? !!bone_data.flipy : false);
+
+			if (isNaN(bone.length)) bone.length = 0;
+			if (isNaN(bone.initial_state.x)) bone.initial_state.x = 0;
+			if (isNaN(bone.initial_state.y)) bone.initial_state.y = 0;
+			if (isNaN(bone.initial_state.sx)) bone.initial_state.sx = 1;
+			if (isNaN(bone.initial_state.sy)) bone.initial_state.sy = 1;
+			if (isNaN(bone.initial_state.rot)) bone.initial_state.rot = 0;
+
+			bone.initial_state.rot = normalize_angle(to_radians(bone.initial_state.rot));
+
+			this.bones.push(bone);
+		}
+
+		for (var i = 0; i < n; i++)
+		{
+			var parent_name = this.bones[i].name.split(".");
+
+			parent_name.pop();
+			parent_name = parent_name.join(".");
+
+			if (parent_name.length > 0)
+			{
+				var index = this.find_bone(parent_name);
+
+				if (index >= 0)
+					this.bones[i].parent = this.bones[index];
+			}
+		}
+
+		this.bones.sort(function(a, b)
+		{
+			var a_depth = 0;
+			var b_depth = 0;
+
+			while (a.parent !== null)
+			{
+				a = a.parent;
+				a_depth++;
+			}
+
+			while (b.parent !== null)
+			{
+				b = b.parent;
+				b_depth++;
+			}
+
+			return a_depth - b_depth;
+		});
+
+		this.reset();
+		this.update_transform();
+	}
+}
+
+Skeleton.prototype.find_bone = function(name)
+{
+	var bones = this.bones;
+
+	for (var i = 0, n = bones.length; i < n; i++)
+	{
+		if (bones[i].name === name)
+			return i;
+	}
+
+	return -1;
 }
 
 Skeleton.prototype.update_transform = function()
@@ -48,11 +138,70 @@ Skeleton.prototype.reset = function()
 		bones[i].reset();
 }
 
+// --- Easing ---
+
+function Easing() {}
+
+Easing.linear = function(x) { return x };
+Easing.sin_in = function(x) { return Math.sin(x * Pi/2); };
+Easing.sin_out = function(x) { return 1 - Math.sin(Pi/2 + x * Pi/2); };
+
 // --- Animation ---
 
-function Animation()
+function Animation(skeleton, data)
 {
 	this.timelines = [];
+
+	if (data)
+	{
+		for (var bone_name in data.bones)
+		{
+			var bone_index = skeleton.find_bone(bone_name);
+
+			if (bone_index >= 0)
+			{
+				var timelines = data.bones[bone_name];
+
+				for (var prop in timelines)
+				{
+					var timeline = new Timeline();
+					var keyframes = timelines[prop];
+
+					timeline.type = TimelineBone;
+					timeline.index = bone_index;
+
+					switch (prop)
+					{
+						case "x":     timeline.property = PropBoneX;      break;
+						case "y":     timeline.property = PropBoneY;      break;
+						case "rot":   timeline.property = PropBoneRot;    break;
+						case "sx":    timeline.property = PropBoneScaleX; break;
+						case "sy":    timeline.property = PropBoneScaleY; break;
+						case "flipx": timeline.property = PropBoneFlipX;  break;
+						case "flipy": timeline.property = PropBoneFlipY;  break;
+					}
+
+					for (var i = 0, n = keyframes.length; i < n; i++)
+					{
+						var keyframe = new Keyframe();
+
+						keyframe.time = keyframes[i].time;
+						keyframe.value = keyframes[i].value;
+
+						if ("easing" in keyframes[i] && keyframes[i].easing in Easing)
+							keyframe.easing = Easing[keyframes[i].easing];
+
+						if (timeline.property === PropBoneRot)
+							keyframe.value = normalize_angle(to_radians(keyframe.value));
+
+						timeline.keyframes.push(keyframe);
+					}
+
+					this.timelines.push(timeline);
+				}
+			}
+		}
+	}
 }
 
 Animation.prototype.apply = function(skeleton, t0, t1, percent)
@@ -134,7 +283,7 @@ Timeline.prototype.val_lerp = function(t, lerp_func)
 	var i = this.find(t);
 	var a = keyframes[i];
 	var b = keyframes[i + 1];
-	var percent = a.interpolator((t - a.time) / (b.time - a.time));
+	var percent = a.easing((t - a.time) / (b.time - a.time));
 
 	return lerp_func(a.value, b.value, percent);
 }
@@ -159,7 +308,7 @@ function Keyframe()
 {
 	this.time = 0;
 	this.value = 0;
-	this.interpolator = interpolator_linear;
+	this.easing = Easing.linear;
 }
 
 // --- BoneState ---
@@ -200,16 +349,26 @@ function Bone()
 	this.current_state = new BoneState();
 
 	this.world_transform = mat2d();
-	this.world_rot = 0;
-	this.world_sx = 0;
-	this.world_sy = 0;
-	this.world_flipx = 0;
-	this.world_flipy = 0;
+	this.accum_rot = 0;
+	this.accum_sx = 0;
+	this.accum_sy = 0;
+	this.accum_flipx = 0;
+	this.accum_flipy = 0;
 }
 
 Bone.prototype.reset = function()
 {
 	this.current_state.set(this.initial_state);
+}
+
+Bone.prototype.to_worldx = function(x, y)
+{
+	return mat2d_mulx(this.world_transform, x, y);
+}
+
+Bone.prototype.to_worldy = function(x, y)
+{
+	return mat2d_muly(this.world_transform, x, y);
 }
 
 Bone.prototype.update_transform = function()
@@ -218,11 +377,11 @@ Bone.prototype.update_transform = function()
 	var parent = this.parent;
 	var parent_transform = parent !== null ? parent.world_transform : this.skeleton.transform;
 
-	this.world_rot = state.rot;
-	this.world_sx = state.sx;
-	this.world_sy = state.sy;
-	this.world_flipx = state.flipx;
-	this.world_flipy = state.flipy;
+	this.accum_rot = state.rot;
+	this.accum_sx = state.sx;
+	this.accum_sy = state.sy;
+	this.accum_flipx = state.flipx;
+	this.accum_flipy = state.flipy;
 
 	var irot = 0; // inverse parent rotation
 	var isx = 1;  // inverse parent scale x
@@ -230,32 +389,32 @@ Bone.prototype.update_transform = function()
 
 	if (parent !== null)
 	{
-		irot = -parent.world_rot;
-		isx = 1 / parent.world_sx;
-		isy = 1 / parent.world_sy;
+		irot = -parent.accum_rot;
+		isx = 1 / parent.accum_sx;
+		isy = 1 / parent.accum_sy;
 
-		this.world_flipx = (parent.world_flipx !== state.flipx);
-		this.world_flipy = (parent.world_flipy !== state.flipy);
+		this.accum_flipx = (parent.accum_flipx !== state.flipx);
+		this.accum_flipy = (parent.accum_flipy !== state.flipy);
 
 		if (this.inherit_rotation)
-			this.world_rot += parent.world_rot;
+			this.accum_rot += parent.accum_rot;
 		else
-			irot = -parent.world_rot;
+			irot = -parent.accum_rot;
 
 		if (this.inherit_scale)
 		{
-			this.world_sx *= parent.world_sx;
-			this.world_sy *= parent.world_sy;
+			this.accum_sx *= parent.accum_sx;
+			this.accum_sy *= parent.accum_sy;
 		}
 		else
 		{
-			isx = 1 / parent.world_sx;
-			isy = 1 / parent.world_sy;
+			isx = 1 / parent.accum_sx;
+			isy = 1 / parent.accum_sy;
 		}
 	}
 
 	// world_transform = parent_transform * translate * inv_parent_scale * inv_parent_rot *
-	//                   flip_scale * world_rot * world_scale
+	//                   flip_scale * accum_rot * accum_scale
 	//
 	// This stuff can be used in Maxima:
 	// parent_transform: matrix([a,c,e],[b,d,f],[0,0,1]);
@@ -280,9 +439,9 @@ Bone.prototype.update_transform = function()
 	var b = parent_transform[1], d = parent_transform[3], f = parent_transform[5];
 
 	var is = Math.sin(irot),             ic = Math.cos(irot);
-	var ws = Math.sin(this.world_rot),   wc = Math.cos(this.world_rot);
-	var fx = this.world_flipx ? -1 : 1,  fy = this.world_flipy ? -1 : 1;
-	var sx = this.world_sx,              sy = this.world_sy;
+	var ws = Math.sin(this.accum_rot),   wc = Math.cos(this.accum_rot);
+	var fx = this.accum_flipx ? -1 : 1,  fy = this.accum_flipy ? -1 : 1;
+	var sx = this.accum_sx,              sy = this.accum_sy;
 
 	// factors from the result to avoid repeating multiplications
 
@@ -336,6 +495,11 @@ function normalize_angle(theta)
 	return theta;
 }
 
+function to_radians(x)
+{
+	return x / 180 * Pi;
+}
+
 function lerp(a, b, p)
 {
 	return a + (b - a) * p;
@@ -357,7 +521,43 @@ function lerp_angle(a, b, p)
 	return normalize_angle(lerp(a, b, p));
 }
 
-function interpolator_linear(x)
-{
-	return x;
-}
+// --- export ---
+
+sk2 = {};
+
+sk2.Pi = Pi;
+sk2.Tau = Tau;
+
+sk2.TimelineBone      = TimelineBone;
+sk2.TimelineSlot      = TimelineSlot;
+sk2.TimelineDrawOrder = TimelineDrawOrder;
+sk2.TimelineEvents    = TimelineEvents;
+
+sk2.PropBoneX      = PropBoneX;
+sk2.PropBoneY      = PropBoneY;
+sk2.PropBoneRot    = PropBoneRot;
+sk2.PropBoneScaleX = PropBoneScaleX;
+sk2.PropBoneScaleY = PropBoneScaleY;
+sk2.PropBoneFlipX  = PropBoneFlipX;
+sk2.PropBoneFlipY  = PropBoneFlipY;
+
+sk2.PropSlotColorR     = PropSlotColorR;
+sk2.PropSlotColorG     = PropSlotColorG;
+sk2.PropSlotColorB     = PropSlotColorB;
+sk2.PropSlotColorA     = PropSlotColorA;
+sk2.PropSlotAttachment = PropSlotAttachment;
+
+sk2.Skeleton = Skeleton;
+sk2.Easing = Easing;
+sk2.Animation = Animation;
+sk2.Timeline = Timeline;
+sk2.Keyframe = Keyframe;
+sk2.BoneState = BoneState;
+sk2.Bone = Bone;
+
+sk2.mat2d = mat2d;
+sk2.mat2d_mul = mat2d_mul;
+sk2.mat2d_mulx = mat2d_mulx;
+sk2.mat2d_muly = mat2d_muly;
+
+}());
