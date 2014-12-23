@@ -212,14 +212,17 @@ Animation.prototype.apply = function(skeleton, t0, t1, percent)
 
 Animation.prototype.apply_timeline = function(timeline, skeleton, t0, t1, percent)
 {
-	if (t1 < timeline.keyframes[0].time)
-		return;
+	var begin = timeline.keyframes[0].time;
+	var prop = timeline.property;
 
 	switch (timeline.type)
 	{
 		case TimelineBone:
-			this.apply_timeline_bone(timeline, skeleton, t0, t1, percent);
-			break;
+		{
+			if (t1 >= begin || prop === PropBoneFlipX || prop === PropBoneFlipY)
+				this.apply_timeline_bone(timeline, skeleton, t0, t1, percent);
+		}
+		break;
 	}
 }
 
@@ -232,14 +235,12 @@ Animation.prototype.apply_timeline_bone = function(tl, skeleton, t0, t1, p)
 	switch (tl.property)
 	{
 		case PropBoneRot:    cur.rot = lerp_angle(cur.rot, def.rot + tl.val_rot(t1), p); break;
-
 		case PropBoneX:      cur.x   = lerp(cur.x,  def.x  + tl.val(t1), p); break;
 		case PropBoneY:      cur.y   = lerp(cur.y,  def.y  + tl.val(t1), p); break;
 		case PropBoneScaleX: cur.sx  = lerp(cur.sx, def.sx + tl.val(t1), p); break;
 		case PropBoneScaleY: cur.sy  = lerp(cur.sy, def.sy + tl.val(t1), p); break;
-
-		case PropBoneFlipX:  cur.flipx = tl.val_flip(t0, t1, def.flipx); break;
-		case PropBoneFlipY:  cur.flipy = tl.val_flip(t0, t1, def.flipy); break;
+		case PropBoneFlipX:  cur.flipx = tl.val_flip(t0, t1, cur.flipx); break;
+		case PropBoneFlipY:  cur.flipy = tl.val_flip(t0, t1, cur.flipy); break;
 	}
 }
 
@@ -300,6 +301,29 @@ Timeline.prototype.val_rot = function(t)
 
 Timeline.prototype.val_flip = function(t0, t1, def)
 {
+	var keyframes = this.keyframes;
+	var n = keyframes.length;
+
+	if (t1 < keyframes[0].time)
+	{
+		if (t0 > t1)
+		{
+			var end = keyframes[n - 1].time;
+			return this.val_flip(Math.min(t0, end), end, def);
+		}
+	}
+	else
+	{
+		if (t0 > t1)
+			t0 = -1;
+
+		var i = this.find(t1);
+
+		if (keyframes[i].time > t0)
+			return keyframes[i].value;
+	}
+
+	return def;
 }
 
 // --- Keyframe ---

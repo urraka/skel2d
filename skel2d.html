@@ -36,6 +36,11 @@ var animation_data = {
 				{"time": 1.0, "value": 0, "easing": "sin_in"},
 				{"time": 1.5, "value": 45, "easing": "sin_out"},
 				{"time": 2.0, "value": 0}
+			],
+			"flipy": [
+				{"time": 0.0, "value": false},
+				{"time": 1.0, "value": false},
+				{"time": 2.0, "value": false}
 			]
 		}
 	}
@@ -62,11 +67,21 @@ requestAnimationFrame(frame);
 
 // draw(skeleton);
 
+var t0 = 0;
+var t1 = 0;
+var time = performance.now() / 1000;
+
 function frame()
 {
-	var t = (performance.now() / 1000) % 2;
+	var t = performance.now() / 1000;
+	var dt = t - time;
 
-	animation.apply(skeleton, t, t, 1);
+	time = t;
+
+	t0 = t1;
+	t1 = (t1 + dt) % 2.0;
+
+	animation.apply(skeleton, t0, t1, 1);
 	skeleton.update_transform();
 
 	draw();
