@@ -352,8 +352,6 @@ function Bone()
 	this.accum_rot = 0;
 	this.accum_sx = 0;
 	this.accum_sy = 0;
-	this.accum_flipx = 0;
-	this.accum_flipy = 0;
 }
 
 Bone.prototype.reset = function()
@@ -380,8 +378,6 @@ Bone.prototype.update_transform = function()
 	this.accum_rot = state.rot;
 	this.accum_sx = state.sx;
 	this.accum_sy = state.sy;
-	this.accum_flipx = state.flipx;
-	this.accum_flipy = state.flipy;
 
 	var irot = 0; // inverse parent rotation
 	var isx = 1;  // inverse parent scale x
@@ -392,9 +388,6 @@ Bone.prototype.update_transform = function()
 		irot = -parent.accum_rot;
 		isx = 1 / parent.accum_sx;
 		isy = 1 / parent.accum_sy;
-
-		this.accum_flipx = (parent.accum_flipx !== state.flipx);
-		this.accum_flipy = (parent.accum_flipy !== state.flipy);
 
 		if (this.inherit_rotation)
 			this.accum_rot += parent.accum_rot;
@@ -440,7 +433,7 @@ Bone.prototype.update_transform = function()
 
 	var is = Math.sin(irot),             ic = Math.cos(irot);
 	var ws = Math.sin(this.accum_rot),   wc = Math.cos(this.accum_rot);
-	var fx = this.accum_flipx ? -1 : 1,  fy = this.accum_flipy ? -1 : 1;
+	var fx = state.flipx ? -1 : 1,       fy = state.flipy ? -1 : 1;
 	var sx = this.accum_sx,              sy = this.accum_sy;
 
 	// factors from the result to avoid repeating multiplications

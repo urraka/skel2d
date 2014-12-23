@@ -14,9 +14,9 @@
 
 var skeleton_data = {
 	"bones": [
-		{"name": "torso", "length": 100, "rot": 90},
+		{"name": "torso", "length": 100, "rot": 75},
 		{"name": "torso.arm_l", "length": 100, "x": 100, "y": 100, "rot": 90, "inhscale": false},
-		{"name": "torso.arm_r", "length": 100, "x": 100, "y": -100, "inhrot": false}
+		{"name": "torso.arm_r", "length": 100, "x": 100, "y": -100, "inhrot": false, "flipx": false}
 	]
 };
 
@@ -59,6 +59,8 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 requestAnimationFrame(frame);
+
+// draw(skeleton);
 
 function frame()
 {
