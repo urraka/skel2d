@@ -1,3 +1,7 @@
+- implement slots and slots animations
+- implement attachments
+- figure out how to do shape attachments (splines, rectangles, circles, etc)
+- figure out how to import images from computer (drop a folder?)
 x timeline val_flip
 x load skeleton and animations from data object
 x test flipping, it's probably fucked up too

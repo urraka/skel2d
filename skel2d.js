@@ -138,6 +138,170 @@ Skeleton.prototype.reset = function()
 		bones[i].reset();
 }
 
+// --- BoneState ---
+
+function BoneState()
+{
+	this.x     = 0;
+	this.y     = 0;
+	this.rot   = 0;
+	this.sx    = 1;
+	this.sy    = 1;
+	this.flipx = false;
+	this.flipy = false;
+}
+
+BoneState.prototype.set = function(state)
+{
+	this.x     = state.x;
+	this.y     = state.y;
+	this.rot   = state.rot;
+	this.sx    = state.sx;
+	this.sy    = state.sy;
+	this.flipx = state.flipx;
+	this.flipy = state.flipy;
+}
+
+// --- Bone ---
+
+function Bone()
+{
+	this.name = null;
+	this.skeleton = null;
+	this.parent = null;
+	this.length = 0;
+	this.inherit_rotation = true;
+	this.inherit_scale = true;
+	this.initial_state = new BoneState();
+	this.current_state = new BoneState();
+
+	this.world_transform = mat2d();
+	this.accum_rot = 0;
+	this.accum_sx = 0;
+	this.accum_sy = 0;
+}
+
+Bone.prototype.reset = function()
+{
+	this.current_state.set(this.initial_state);
+}
+
+Bone.prototype.to_worldx = function(x, y)
+{
+	return mat2d_mulx(this.world_transform, x, y);
+}
+
+Bone.prototype.to_worldy = function(x, y)
+{
+	return mat2d_muly(this.world_transform, x, y);
+}
+
+Bone.prototype.update_transform = function()
+{
+	// world_transform = parent_transform * translate * inv_parent_scale * inv_parent_rot *
+	//                   flip_scale * accum_rot * accum_scale
+	//
+	// This stuff can be used in Maxima:
+	// parent_transform: matrix([a,c,e],[b,d,f],[0,0,1]);
+	// translate:        matrix([1,0,x],[0,1,y],[0,0,1]);
+	// inv_parent_scale: matrix([isx,0,0],[0,isy,0],[0,0,1]);
+	// inv_parent_rot:   matrix([ic,-is,0],[is,ic,0],[0,0,1]);
+	// flip:             matrix([fx,0,0],[0,fy,0],[0,0,1]);
+	// rotate:           matrix([wc,-ws,0],[ws,wc,0],[0,0,1]);
+	// scale:            matrix([sx,0,0],[0,sy,0],[0,0,1]);
+	// result: parent_transform . translate . inv_parent_scale . inv_parent_rot . flip . rotate . scale;
+	//
+	// result.a = a isx (fx sx ic wc - fy sx is ws) + c isy (fy sx ic ws + fx sx is wc)
+	// result.b = b isx (fx sx ic wc - fy sx is ws) + d isy (fy sx ic ws + fx sx is wc)
+	// result.c = c isy (fy sy ic wc - fx sy is ws) - a isx (fx sy ic ws + fy sy is wc)
+	// result.d = d isy (fy sy ic wc - fx sy is ws) - b isx (fx sy ic ws + fy sy is wc)
+	// result.e = c y + a x + e
+	// result.f = d y + b x + f
+
+	var state = this.current_state;
+	var parent = this.parent;
+	var parent_transform = parent !== null ? parent.world_transform : this.skeleton.transform;
+	var world_transform = this.world_transform;
+
+	this.accum_rot = state.rot;
+	this.accum_sx = state.sx;
+	this.accum_sy = state.sy;
+
+	var irot = 0; // inverse parent rotation
+	var isx = 1;  // inverse parent scale x
+	var isy = 1;  // inverse parent scale y
+
+	if (parent !== null)
+	{
+		irot = -parent.accum_rot;
+		isx = 1 / parent.accum_sx;
+		isy = 1 / parent.accum_sy;
+
+		if (this.inherit_rotation)
+			this.accum_rot += parent.accum_rot;
+
+		if (this.inherit_scale)
+		{
+			this.accum_sx *= parent.accum_sx;
+			this.accum_sy *= parent.accum_sy;
+		}
+	}
+
+	var a = parent_transform[0], c = parent_transform[2], e = parent_transform[4];
+	var b = parent_transform[1], d = parent_transform[3], f = parent_transform[5];
+
+	var is = Math.sin(irot),             ic = Math.cos(irot);
+	var ws = Math.sin(this.accum_rot),   wc = Math.cos(this.accum_rot);
+	var fx = state.flipx ? -1 : 1,       fy = state.flipy ? -1 : 1;
+	var sx = this.accum_sx,              sy = this.accum_sy;
+
+	// factors from the result to avoid repeating multiplications
+
+	var ax = a * isx;
+	var bx = b * isx;
+	var cy = c * isy;
+	var dy = d * isy;
+
+	var fxx = fx * sx;
+	var fxy = fx * sy;
+	var fyx = fy * sx;
+	var fyy = fy * sy;
+
+	var cc = ic * wc;
+	var ss = is * ws;
+	var cs = ic * ws;
+	var sc = is * wc;
+
+	var fxxcc = fxx * cc; var fyxss = fyx * ss; var fyxcs = fyx * cs; var fxxsc = fxx * sc;
+	var fyycc = fyy * cc; var fxyss = fxy * ss; var fxycs = fxy * cs; var fyysc = fyy * sc;
+
+	world_transform[0] = ax * (fxxcc - fyxss) + cy * (fyxcs + fxxsc);
+	world_transform[1] = bx * (fxxcc - fyxss) + dy * (fyxcs + fxxsc);
+	world_transform[2] = cy * (fyycc - fxyss) - ax * (fxycs + fyysc);
+	world_transform[3] = dy * (fyycc - fxyss) - bx * (fxycs + fyysc);
+	world_transform[4] = c * state.y + a * state.x + e;
+	world_transform[5] = d * state.y + b * state.x + f;
+}
+
+// --- Slot ---
+
+function SlotState()
+{
+	this.r = 1.0;
+	this.g = 1.0;
+	this.b = 1.0;
+	this.a = 1.0;
+	this.attachment = 0;
+}
+
+function Slot()
+{
+	this.name = null;
+	this.attachments = [];
+	this.initial_state = new SlotState();
+	this.current_state = new SlotState();
+}
+
 // --- Easing ---
 
 function Easing() {}
@@ -333,159 +497,6 @@ function Keyframe()
 	this.time = 0;
 	this.value = 0;
 	this.easing = Easing.linear;
-}
-
-// --- BoneState ---
-
-function BoneState()
-{
-	this.x     = 0;
-	this.y     = 0;
-	this.rot   = 0;
-	this.sx    = 1;
-	this.sy    = 1;
-	this.flipx = false;
-	this.flipy = false;
-}
-
-BoneState.prototype.set = function(state)
-{
-	this.x     = state.x;
-	this.y     = state.y;
-	this.rot   = state.rot;
-	this.sx    = state.sx;
-	this.sy    = state.sy;
-	this.flipx = state.flipx;
-	this.flipy = state.flipy;
-}
-
-// --- Bone ---
-
-function Bone()
-{
-	this.name = null;
-	this.skeleton = null;
-	this.parent = null;
-	this.length = 0;
-	this.inherit_rotation = true;
-	this.inherit_scale = true;
-	this.initial_state = new BoneState();
-	this.current_state = new BoneState();
-
-	this.world_transform = mat2d();
-	this.accum_rot = 0;
-	this.accum_sx = 0;
-	this.accum_sy = 0;
-}
-
-Bone.prototype.reset = function()
-{
-	this.current_state.set(this.initial_state);
-}
-
-Bone.prototype.to_worldx = function(x, y)
-{
-	return mat2d_mulx(this.world_transform, x, y);
-}
-
-Bone.prototype.to_worldy = function(x, y)
-{
-	return mat2d_muly(this.world_transform, x, y);
-}
-
-Bone.prototype.update_transform = function()
-{
-	var state = this.current_state;
-	var parent = this.parent;
-	var parent_transform = parent !== null ? parent.world_transform : this.skeleton.transform;
-
-	this.accum_rot = state.rot;
-	this.accum_sx = state.sx;
-	this.accum_sy = state.sy;
-
-	var irot = 0; // inverse parent rotation
-	var isx = 1;  // inverse parent scale x
-	var isy = 1;  // inverse parent scale y
-
-	if (parent !== null)
-	{
-		irot = -parent.accum_rot;
-		isx = 1 / parent.accum_sx;
-		isy = 1 / parent.accum_sy;
-
-		if (this.inherit_rotation)
-			this.accum_rot += parent.accum_rot;
-		else
-			irot = -parent.accum_rot;
-
-		if (this.inherit_scale)
-		{
-			this.accum_sx *= parent.accum_sx;
-			this.accum_sy *= parent.accum_sy;
-		}
-		else
-		{
-			isx = 1 / parent.accum_sx;
-			isy = 1 / parent.accum_sy;
-		}
-	}
-
-	// world_transform = parent_transform * translate * inv_parent_scale * inv_parent_rot *
-	//                   flip_scale * accum_rot * accum_scale
-	//
-	// This stuff can be used in Maxima:
-	// parent_transform: matrix([a,c,e],[b,d,f],[0,0,1]);
-	// translate:        matrix([1,0,x],[0,1,y],[0,0,1]);
-	// inv_parent_scale: matrix([isx,0,0],[0,isy,0],[0,0,1]);
-	// inv_parent_rot:   matrix([ic,-is,0],[is,ic,0],[0,0,1]);
-	// flip:             matrix([fx,0,0],[0,fy,0],[0,0,1]);
-	// rotate:           matrix([wc,-ws,0],[ws,wc,0],[0,0,1]);
-	// scale:            matrix([sx,0,0],[0,sy,0],[0,0,1]);
-	// result: parent_transform . translate . inv_parent_scale . inv_parent_rot . flip . rotate . scale;
-	//
-	// result.a = a isx (fx sx ic wc - fy sx is ws) + c isy (fy sx ic ws + fx sx is wc)
-	// result.b = b isx (fx sx ic wc - fy sx is ws) + d isy (fy sx ic ws + fx sx is wc)
-	// result.c = c isy (fy sy ic wc - fx sy is ws) - a isx (fx sy ic ws + fy sy is wc)
-	// result.d = d isy (fy sy ic wc - fx sy is ws) - b isx (fx sy ic ws + fy sy is wc)
-	// result.e = c y + a x + e
-	// result.f = d y + b x + f
-
-	var world_transform = this.world_transform;
-
-	var a = parent_transform[0], c = parent_transform[2], e = parent_transform[4];
-	var b = parent_transform[1], d = parent_transform[3], f = parent_transform[5];
-
-	var is = Math.sin(irot),             ic = Math.cos(irot);
-	var ws = Math.sin(this.accum_rot),   wc = Math.cos(this.accum_rot);
-	var fx = state.flipx ? -1 : 1,       fy = state.flipy ? -1 : 1;
-	var sx = this.accum_sx,              sy = this.accum_sy;
-
-	// factors from the result to avoid repeating multiplications
-
-	var ax = a * isx;
-	var bx = b * isx;
-	var cy = c * isy;
-	var dy = d * isy;
-
-	var fxx = fx * sx;
-	var fxy = fx * sy;
-	var fyx = fy * sx;
-	var fyy = fy * sy;
-
-	var cc = ic * wc;
-	var ss = is * ws;
-	var cs = ic * ws;
-	var sc = is * wc;
-
-	var fxxcc = fxx * cc; var fyxss = fyx * ss; var fyxcs = fyx * cs; var fxxsc = fxx * sc;
-	var fyycc = fyy * cc; var fxyss = fxy * ss; var fxycs = fxy * cs; var fyysc = fyy * sc;
-
-	world_transform[0] = ax * (fxxcc - fyxss) + cy * (fyxcs + fxxsc);
-	world_transform[1] = bx * (fxxcc - fyxss) + dy * (fyxcs + fxxsc);
-	world_transform[2] = cy * (fyycc - fxyss) - ax * (fxycs + fyysc);
-	world_transform[3] = dy * (fyycc - fxyss) - bx * (fxycs + fyysc);
-	world_transform[4] = c * state.y + a * state.x + e;
-	world_transform[5] = d * state.y + b * state.x + f;
 }
 
 // --- functions ---
