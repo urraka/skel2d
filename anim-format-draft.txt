@@ -1,9 +1,4 @@
-- fix slots/attachments:
-	a bone can have N slots
-	a slot can have N attachments, but only 1 is active at a given time
-	the color belongs to the slot
-
-setup
+skeleton
 	leg-l
 		@leg-left :spline "white-circle.png"
 			0,0
@@ -12,13 +7,26 @@ setup
 	leg-l.foot
 	leg-r
 	body x0 y30 r90 i1 j1 l30
-		@body "body.png" #FFF
+		@body #FFF : "body.png" #0F0
+		@belt #00F
+		@belt[closed]
+		@belt[open]
 	body.arm-l
 	body.arm-r
 	body.head
 	body.head.eyes
 
-draw-order
+skin "blue"
+	@leg-left :inherit #00F
+	@belt[closed] "belt-closed-blue.png"
+	@belt[open] "belt-open-blue.png"
+
+skin "red"
+	@leg-left :inherit #F00
+	@belt[closed] "belt-closed-red.png"
+	@belt[open] "belt-open-red.png"
+
+order
 	@body
 	@head
 	@eyes
@@ -42,10 +50,9 @@ anim walk 0:5:lerp
 		r 0:5:lerp> 0 -> 45 -->   -90 -> 0
 		i      0::> 1       10::> 1.5          20::> 1   +20::> 1
 		j         > 1         --> 1.5            --> 1
-	body
-		@ 10::> body
-		@body
-			c > #000 --> #FFF
+	@belt
+		@ 10::> closed
+		c > #000 --> #FFF
 
 # draft3
 anim walk 0:5:lerp

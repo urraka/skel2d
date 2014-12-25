@@ -31,6 +31,7 @@ function Skeleton(data)
 	this.bones = [];
 	this.slots = [];
 	this.order = [];
+	this.skins = [];
 	this.transform = mat2d();
 
 	if (data)
@@ -283,7 +284,7 @@ Bone.prototype.update_transform = function()
 	world_transform[5] = d * state.y + b * state.x + f;
 }
 
-// --- Slot ---
+// --- SlotState ---
 
 function SlotState()
 {
@@ -294,12 +295,22 @@ function SlotState()
 	this.attachment = 0;
 }
 
+// --- Slot ---
+
 function Slot()
 {
 	this.name = null;
-	this.attachments = [];
+	this.bone = null;
 	this.initial_state = new SlotState();
 	this.current_state = new SlotState();
+}
+
+// --- Skin ---
+
+function Skin()
+{
+	this.name = null;
+	this.attachments = [];
 }
 
 // --- Easing ---
@@ -463,7 +474,7 @@ Timeline.prototype.val_rot = function(t)
 	return this.val_lerp(t, lerp_angle);
 }
 
-Timeline.prototype.val_flip = function(t0, t1, def)
+Timeline.prototype.val_discrete = function(t0, t1, def)
 {
 	var keyframes = this.keyframes;
 	var n = keyframes.length;
@@ -488,6 +499,11 @@ Timeline.prototype.val_flip = function(t0, t1, def)
 	}
 
 	return def;
+}
+
+Timeline.prototype.val_flip = function(t0, t1, def)
+{
+	return this.val_discrete(t0, t1, def);
 }
 
 // --- Keyframe ---
