@@ -26,84 +26,131 @@ var PropSlotAttachment = 4;
 
 // --- Skeleton ---
 
+function load_bones(bones)
+{
+	var n = bones.length;
+
+	for (var i = 0; i < n; i++)
+	{
+		var bone = new Bone();
+		var data = bones[i];
+
+		bone.name = data.name.toString();
+		bone.skeleton = this;
+		bone.length = ("length" in data ? Number(data.length) : 0);
+		bone.inherit_rotation = ("inhrot" in data ? !!data.inhrot : true);
+		bone.inherit_scale = ("inhscale" in data ? !!data.inhscale : true);
+		bone.initial_state.x = ("x" in data ? Number(data.x) : 0);
+		bone.initial_state.y = ("y" in data ? Number(data.y) : 0);
+		bone.initial_state.sx = ("sx" in data ? Number(data.sx) : 1);
+		bone.initial_state.sy = ("sy" in data ? Number(data.sy) : 1);
+		bone.initial_state.rot = ("rot" in data ? Number(data.rot) : 0);
+		bone.initial_state.flipx = ("flipx" in data ? !!data.flipx : false);
+		bone.initial_state.flipy = ("flipy" in data ? !!data.flipy : false);
+
+		if (isNaN(bone.length)) bone.length = 0;
+		if (isNaN(bone.initial_state.x)) bone.initial_state.x = 0;
+		if (isNaN(bone.initial_state.y)) bone.initial_state.y = 0;
+		if (isNaN(bone.initial_state.sx)) bone.initial_state.sx = 1;
+		if (isNaN(bone.initial_state.sy)) bone.initial_state.sy = 1;
+		if (isNaN(bone.initial_state.rot)) bone.initial_state.rot = 0;
+
+		bone.initial_state.rot = normalize_angle(to_radians(bone.initial_state.rot));
+
+		this.bones.push(bone);
+	}
+
+	for (var i = 0; i < n; i++)
+	{
+		var parent_name = this.bones[i].name.split(".");
+
+		parent_name.pop();
+		parent_name = parent_name.join(".");
+
+		if (parent_name.length > 0)
+		{
+			var index = this.find_bone(parent_name);
+
+			if (index >= 0)
+				this.bones[i].parent = this.bones[index];
+		}
+	}
+
+	this.bones.sort(function(a, b)
+	{
+		var a_depth = 0;
+		var b_depth = 0;
+
+		while (a.parent !== null)
+		{
+			a = a.parent;
+			a_depth++;
+		}
+
+		while (b.parent !== null)
+		{
+			b = b.parent;
+			b_depth++;
+		}
+
+		return a_depth - b_depth;
+	});
+}
+
+function load_slots(slots)
+{
+	var n = slots.length;
+
+	for (var i = 0; i < n; i++)
+	{
+		var slot = new Slot();
+		var data = slots[i];
+
+		var bone_index = "bone" in data ? this.find_bone(slot.bone.toString()) : -1;
+
+		if (bone_index === -1)
+			continue;
+
+		slot.name = data.name.toString();
+		slot.bone = this.bones[bone_index];
+
+		if ("attachment" in data)
+			slot.initial_state.attachment = this.skins[0].find_attachment(data.attachment.toString());
+
+		if ("color" in data)
+		{
+			var color = data.color.toString();
+
+			if (color.length === 8 && is_hex(color))
+			{
+				slot.initial_state.r = parseInt(color.substr(0, 2), 16);
+				slot.initial_state.g = parseInt(color.substr(2, 2), 16);
+				slot.initial_state.b = parseInt(color.substr(4, 2), 16);
+				slot.initial_state.a = parseInt(color.substr(6, 2), 16);
+			}
+		}
+
+		this.slots.push(slot);
+	}
+}
+
 function Skeleton(data)
 {
 	this.bones = [];
 	this.slots = [];
 	this.order = [];
-	this.skins = [];
+	this.skins = [new Skin()];
 	this.transform = mat2d();
 
 	if (data)
 	{
-		var bones = data.bones;
-		var n = bones.length;
+		// TODO: load skins before slots
 
-		for (var i = 0; i < n; i++)
-		{
-			var bone = new Bone();
-			var bone_data = bones[i];
+		if ("bones" in data)
+			load_bones.call(this, data.bones);
 
-			bone.name = bone_data.name.toString();
-			bone.skeleton = this;
-			bone.length = ("length" in bone_data ? Number(bone_data.length) : 0);
-			bone.inherit_rotation = ("inhrot" in bone_data ? !!bone_data.inhrot : true);
-			bone.inherit_scale = ("inhscale" in bone_data ? !!bone_data.inhscale : true);
-			bone.initial_state.x = ("x" in bone_data ? Number(bone_data.x) : 0);
-			bone.initial_state.y = ("y" in bone_data ? Number(bone_data.y) : 0);
-			bone.initial_state.sx = ("sx" in bone_data ? Number(bone_data.sx) : 1);
-			bone.initial_state.sy = ("sy" in bone_data ? Number(bone_data.sy) : 1);
-			bone.initial_state.rot = ("rot" in bone_data ? Number(bone_data.rot) : 0);
-			bone.initial_state.flipx = ("flipx" in bone_data ? !!bone_data.flipx : false);
-			bone.initial_state.flipy = ("flipy" in bone_data ? !!bone_data.flipy : false);
-
-			if (isNaN(bone.length)) bone.length = 0;
-			if (isNaN(bone.initial_state.x)) bone.initial_state.x = 0;
-			if (isNaN(bone.initial_state.y)) bone.initial_state.y = 0;
-			if (isNaN(bone.initial_state.sx)) bone.initial_state.sx = 1;
-			if (isNaN(bone.initial_state.sy)) bone.initial_state.sy = 1;
-			if (isNaN(bone.initial_state.rot)) bone.initial_state.rot = 0;
-
-			bone.initial_state.rot = normalize_angle(to_radians(bone.initial_state.rot));
-
-			this.bones.push(bone);
-		}
-
-		for (var i = 0; i < n; i++)
-		{
-			var parent_name = this.bones[i].name.split(".");
-
-			parent_name.pop();
-			parent_name = parent_name.join(".");
-
-			if (parent_name.length > 0)
-			{
-				var index = this.find_bone(parent_name);
-
-				if (index >= 0)
-					this.bones[i].parent = this.bones[index];
-			}
-		}
-
-		this.bones.sort(function(a, b)
-		{
-			var a_depth = 0;
-			var b_depth = 0;
-
-			while (a.parent !== null)
-			{
-				a = a.parent;
-				a_depth++;
-			}
-
-			while (b.parent !== null)
-			{
-				b = b.parent;
-				b_depth++;
-			}
-
-			return a_depth - b_depth;
-		});
+		if ("slots" in data)
+			load_slots.call(this, data.slots);
 
 		this.reset();
 		this.update_transform();
@@ -134,9 +181,13 @@ Skeleton.prototype.update_transform = function()
 Skeleton.prototype.reset = function()
 {
 	var bones = this.bones;
+	var slots = this.slots;
 
 	for (var i = 0, n = bones.length; i < n; i++)
 		bones[i].reset();
+
+	for (var i = 0, n = slots.length; i < n; i++)
+		slots[i].reset();
 }
 
 // --- BoneState ---
@@ -292,7 +343,16 @@ function SlotState()
 	this.g = 1.0;
 	this.b = 1.0;
 	this.a = 1.0;
-	this.attachment = 0;
+	this.attachment = -1;
+}
+
+SlotState.prototype.set = function(state)
+{
+	this.r = state.r;
+	this.g = state.g;
+	this.b = state.b;
+	this.a = state.a;
+	this.attachment = state.attachment;
 }
 
 // --- Slot ---
@@ -305,12 +365,30 @@ function Slot()
 	this.current_state = new SlotState();
 }
 
+Slot.prototype.reset = function()
+{
+	this.current_state.set(this.initial_state);
+}
+
 // --- Skin ---
 
 function Skin()
 {
 	this.name = null;
 	this.attachments = [];
+}
+
+Skin.prototype.find_attachment = function(name)
+{
+	var attachments = this.attachments;
+
+	for (var i = 0, n = attachments.length; i < n; i++)
+	{
+		if (attachments[i].name === name)
+			return i;
+	}
+
+	return -1;
 }
 
 // --- Easing ---
@@ -563,6 +641,19 @@ function lerp_angle(a, b, p)
 		b += Tau;
 
 	return normalize_angle(lerp(a, b, p));
+}
+
+function is_hex(str)
+{
+	for (var i = 0, n = str.length; i < n; i++)
+	{
+		var code = str.charCodeAt(i);
+
+		if ((code < 97 || code > 102) && (code < 65 || code > 70) && (code < 48 || code > 57))
+			return false;
+	}
+
+	return true;
 }
 
 // --- export ---
