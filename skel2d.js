@@ -607,11 +607,14 @@ function load_timelines(skeleton, type, data)
 
 					case TimelineSlot:
 					{
-						case "r": timeline.property = PropSlotColorR; break;
-						case "g": timeline.property = PropSlotColorG; break;
-						case "b": timeline.property = PropSlotColorB; break;
-						case "a": timeline.property = PropSlotColorA; break;
-						case "@": timeline.property = PropSlotAttachment; break;
+						switch (prop)
+						{
+							case "r": timeline.property = PropSlotColorR; break;
+							case "g": timeline.property = PropSlotColorG; break;
+							case "b": timeline.property = PropSlotColorB; break;
+							case "a": timeline.property = PropSlotColorA; break;
+							case "@": timeline.property = PropSlotAttachment; break;
+						}
 					}
 					break;
 				}
