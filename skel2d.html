@@ -17,7 +17,17 @@ var skeleton_data = {
 		{"name": "torso", "length": 100, "rot": 75},
 		{"name": "torso.arm_l", "length": 100, "x": 100, "y": 100, "rot": 90, "inhscale": false},
 		{"name": "torso.arm_r", "length": 100, "x": 100, "y": -100, "inhrot": false, "flipx": false}
-	]
+	],
+
+	"slots": [
+		{"name": "torso.torso", "color": "FFFFFFFF", "attachment": "torso"}
+	],
+
+	"skins": {
+		"default": [
+			{"name": "torso.torso.torso", "type": "rect", "width": 70, "height": 50, "rot": -90, "y": 35}
+		]
+	}
 };
 
 var animation_data = {
@@ -111,6 +121,34 @@ function draw_skeleton(skeleton)
 {
 	context.lineWidth = 2;
 	context.strokeStyle = "#000";
+
+	context.fillStyle = "#000";
+
+	for (var i = 0, n = skeleton.order.length; i < n; i++)
+	{
+		var slot = skeleton.slots[skeleton.order[i]];
+		var attachment_index = slot.current_state.attachment;
+
+		if (attachment_index >= 0)
+		{
+			var attachment = skeleton.skins[0].attachments[attachment_index];
+
+			if (attachment.type === sk2.AttachmentRect)
+			{
+				var srt = slot.bone.world_transform;
+
+				context.save();
+				context.transform(srt[0], srt[1], srt[2], srt[3], srt[4], srt[5]);
+				context.translate(attachment.x, attachment.y);
+				context.rotate(attachment.rot);
+				context.scale(attachment.sx, attachment.sy);
+				context.fillRect(0, 0, attachment.width, attachment.height);
+				context.strokeRect(0, 0, attachment.width, attachment.height);
+				context.restore();
+			}
+		}
+	}
+
 	context.fillStyle = "rgba(255, 255, 0, 0.2)";
 
 	for (var i = 0, n = skeleton.bones.length; i < n; i++)

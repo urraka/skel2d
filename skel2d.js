@@ -24,6 +24,20 @@ var PropSlotColorB     = 2;
 var PropSlotColorA     = 3;
 var PropSlotAttachment = 4;
 
+var AttachmentNone     = 0;
+var AttachmentSprite   = 1;
+var AttachmentSequence = 2;
+var AttachmentPoint    = 3;
+var AttachmentLine     = 4;
+var AttachmentRect     = 5;
+var AttachmentPolyline = 6;
+var AttachmentArc      = 7;
+var AttachmentOval     = 8;
+var AttachmentCircle   = 9;
+var AttachmentPolygon  = 10;
+var AttachmentSpline   = 11;
+var AttachmentMesh     = 12;
+
 // --- Skeleton ---
 
 function load_bones(bones)
@@ -37,24 +51,16 @@ function load_bones(bones)
 
 		bone.name = data.name.toString();
 		bone.skeleton = this;
-		bone.length = ("length" in data ? Number(data.length) : 0);
+		bone.length = ("length" in data ? to_number(data.length, 0) : 0);
 		bone.inherit_rotation = ("inhrot" in data ? !!data.inhrot : true);
 		bone.inherit_scale = ("inhscale" in data ? !!data.inhscale : true);
-		bone.initial_state.x = ("x" in data ? Number(data.x) : 0);
-		bone.initial_state.y = ("y" in data ? Number(data.y) : 0);
-		bone.initial_state.sx = ("sx" in data ? Number(data.sx) : 1);
-		bone.initial_state.sy = ("sy" in data ? Number(data.sy) : 1);
-		bone.initial_state.rot = ("rot" in data ? Number(data.rot) : 0);
+		bone.initial_state.x = ("x" in data ? to_number(data.x, 0) : 0);
+		bone.initial_state.y = ("y" in data ? to_number(data.y, 0) : 0);
+		bone.initial_state.sx = ("sx" in data ? to_number(data.sx, 1) : 1);
+		bone.initial_state.sy = ("sy" in data ? to_number(data.sy, 1) : 1);
 		bone.initial_state.flipx = ("flipx" in data ? !!data.flipx : false);
 		bone.initial_state.flipy = ("flipy" in data ? !!data.flipy : false);
-
-		if (isNaN(bone.length)) bone.length = 0;
-		if (isNaN(bone.initial_state.x)) bone.initial_state.x = 0;
-		if (isNaN(bone.initial_state.y)) bone.initial_state.y = 0;
-		if (isNaN(bone.initial_state.sx)) bone.initial_state.sx = 1;
-		if (isNaN(bone.initial_state.sy)) bone.initial_state.sy = 1;
-		if (isNaN(bone.initial_state.rot)) bone.initial_state.rot = 0;
-
+		bone.initial_state.rot = ("rot" in data ? to_number(data.rot, 0) : 0);
 		bone.initial_state.rot = normalize_angle(to_radians(bone.initial_state.rot));
 
 		this.bones.push(bone);
@@ -106,16 +112,16 @@ function load_slots(slots)
 		var slot = new Slot();
 		var data = slots[i];
 
-		var bone_index = "bone" in data ? this.find_bone(slot.bone.toString()) : -1;
+		var name = "name" in data ? data.name.toString() : "";
+		var bone_name = name.split(".");
 
-		if (bone_index === -1)
-			continue;
+		bone_name.pop();
+		bone_name = bone_name.join(".");
 
-		slot.name = data.name.toString();
-		slot.bone = this.bones[bone_index];
+		var bone_index = this.find_bone(bone_name);
 
-		if ("attachment" in data)
-			slot.initial_state.attachment = this.skins[0].find_attachment(data.attachment.toString());
+		slot.name = name;
+		slot.bone = bone_index >= 0 ? this.bones[bone_index] : null;
 
 		if ("color" in data)
 		{
@@ -131,6 +137,101 @@ function load_slots(slots)
 		}
 
 		this.slots.push(slot);
+		this.order.push(i);
+	}
+}
+
+function load_attachment(data)
+{
+	var attachment = null;
+	var type = "type" in data ? data.type.toString() : "none";
+	var name = "name" in data ? data.name.toString() : "";
+	var slot_name = name.split(".");
+
+	slot_name.pop();
+	slot_name = slot_name.join(".");
+
+	var slot_index = this.find_slot(slot_name);
+
+	if (slot_index === -1)
+		return null;
+
+	// TODO: do actual stuff in this switch
+
+	switch (type)
+	{
+		case "sprite":
+			attachment = new SpriteAttachment();
+			break;
+
+		case "rect":
+			attachment = new RectAttachment();
+			attachment.width = "width" in data ? to_number(data.width, 0) : 0;
+			attachment.height = "height" in data ? to_number(data.height, 0) : 0;
+			break;
+
+		default:
+			attachment = new Attachment();
+			break;
+	}
+
+	attachment.name = name;
+	attachment.slot = slot_index;
+	attachment.x = "x" in data ? to_number(data.x, 0) : 0;
+	attachment.y = "y" in data ? to_number(data.y, 0) : 0;
+	attachment.sx = "sx" in data ? to_number(data.sx, 1) : 1;
+	attachment.sy = "sy" in data ? to_number(data.sy, 1) : 1;
+	attachment.rot = "rot" in data ? to_number(data.rot, 0) : 0;
+	attachment.rot = normalize_angle(to_radians(attachment.rot));
+
+	return attachment;
+}
+
+function load_skins(skins)
+{
+	// load default/base skin
+
+	var data = skins["default"];
+	var default_skin = this.skins[0];
+
+	if (!data)
+		return;
+
+	for (var i = 0, n = data.length; i < n; i++)
+	{
+		var attachment = load_attachment.call(this, data[i]);
+
+		if (attachment !== null)
+			default_skin.attachments.push(attachment);
+	}
+
+	// load other skins
+
+	for (var skin_name in skins)
+	{
+		if (skin_name !== "default")
+		{
+			var data = skins[skin_name];
+			var skin = new Skin();
+
+			skin.name = skin_name;
+
+			for (var i = 0, n = default_skin.length; i < n; i++)
+				skin.attachments.push(default_skin.attachments[i]);
+
+			for (var i = 0, n = data.length; i < n; i++)
+			{
+				var attachment = load_attachment.call(this, data[i]);
+
+				if (attachment !== null)
+				{
+					var index = default_skin.find_attachment(attachment.name);
+
+					if (index >= 0)
+						skin.attachments[index] = attachment;
+				}
+			}
+		}
 	}
 }
 
@@ -144,13 +245,28 @@ function Skeleton(data)
 
 	if (data)
 	{
-		// TODO: load skins before slots
-
 		if ("bones" in data)
 			load_bones.call(this, data.bones);
 
 		if ("slots" in data)
 			load_slots.call(this, data.slots);
+
+		if ("skins" in data)
+			load_skins.call(this, data.skins);
+
+		// update attachments in slots now that they are loaded
+
+		if ("slots" in data)
+		{
+			for (var i = 0, n = data.slots.length; i < n; i++)
+			{
+				if ("attachment" in data.slots[i])
+				{
+					var attch_name = this.slots[i].name + "." + data.slots[i].attachment.toString();
+					this.slots[i].initial_state.attachment = this.skins[0].find_attachment(attch_name);
+				}
+			}
+		}
 
 		this.reset();
 		this.update_transform();
@@ -164,6 +280,19 @@ Skeleton.prototype.find_bone = function(name)
 	for (var i = 0, n = bones.length; i < n; i++)
 	{
 		if (bones[i].name === name)
+			return i;
+	}
+
+	return -1;
+}
+
+Skeleton.prototype.find_slot = function(name)
+{
+	var slots = this.slots;
+
+	for (var i = 0, n = slots.length; i < n; i++)
+	{
+		if (slots[i].name === name)
 			return i;
 	}
 
@@ -374,7 +503,7 @@ Slot.prototype.reset = function()
 
 function Skin()
 {
-	this.name = null;
+	this.name = "default";
 	this.attachments = [];
 }
 
@@ -391,6 +520,40 @@ Skin.prototype.find_attachment = function(name)
 	return -1;
 }
 
+// --- Attachment ---
+
+function Attachment()
+{
+	this.name = null;
+	this.type = AttachmentNone;
+	this.slot = -1;
+	this.data = null;
+	this.x = 0;
+	this.y = 0;
+	this.sx = 1;
+	this.sy = 1;
+	this.rot = 0;
+}
+
+function SpriteAttachment()
+{
+	Attachment.call(this);
+
+	this.type = AttachmentSprite;
+	this.width = 0;
+	this.height = 0;
+	this.image = null;
+}
+
+function RectAttachment()
+{
+	Attachment.call(this);
+
+	this.type = AttachmentRect;
+	this.width = 0;
+	this.height = 0;
+}
+
 // --- Easing ---
 
 function Easing() {}
@@ -401,59 +564,86 @@ Easing.sin_out = function(x) { return 1 - Math.sin(Pi/2 + x * Pi/2); };
 
 // --- Animation ---
 
+function load_timelines(skeleton, type, data)
+{
+	for (var name in data)
+	{
+		var index = -1;
+
+		switch (type)
+		{
+			case TimelineBone: index = skeleton.find_bone(name); break;
+			case TimelineSlot: index = skeleton.find_slot(name); break;
+		}
+
+		if (index >= 0)
+		{
+			var timelines = data[name];
+
+			for (var prop in timelines)
+			{
+				var timeline = new Timeline();
+				var keyframes = timelines[prop];
+
+				timeline.type = type;
+				timeline.index = index;
+
+				switch (type)
+				{
+					case TimelineBone:
+					{
+						switch (prop)
+						{
+							case "x":     timeline.property = PropBoneX;      break;
+							case "y":     timeline.property = PropBoneY;      break;
+							case "rot":   timeline.property = PropBoneRot;    break;
+							case "sx":    timeline.property = PropBoneScaleX; break;
+							case "sy":    timeline.property = PropBoneScaleY; break;
+							case "flipx": timeline.property = PropBoneFlipX;  break;
+							case "flipy": timeline.property = PropBoneFlipY;  break;
+						}
+					}
+					break;
+
+					case TimelineSlot:
+					{
+					}
+					break;
+				}
+
+				for (var i = 0, n = keyframes.length; i < n; i++)
+				{
+					var keyframe = new Keyframe();
+
+					keyframe.time = keyframes[i].time;
+					keyframe.value = keyframes[i].value;
+
+					if ("easing" in keyframes[i] && keyframes[i].easing in Easing)
+						keyframe.easing = Easing[keyframes[i].easing];
+
+					if (type === TimelineBone && timeline.property === PropBoneRot)
+						keyframe.value = normalize_angle(to_radians(keyframe.value));
+
+					timeline.keyframes.push(keyframe);
+				}
+
+				this.timelines.push(timeline);
+			}
+		}
+	}
+}
+
 function Animation(skeleton, data)
 {
 	this.timelines = [];
 
 	if (data)
 	{
-		for (var bone_name in data.bones)
-		{
-			var bone_index = skeleton.find_bone(bone_name);
+		if ("bones" in data)
+			load_timelines.call(this, skeleton, TimelineBone, data.bones);
 
-			if (bone_index >= 0)
-			{
-				var timelines = data.bones[bone_name];
-
-				for (var prop in timelines)
-				{
-					var timeline = new Timeline();
-					var keyframes = timelines[prop];
-
-					timeline.type = TimelineBone;
-					timeline.index = bone_index;
-
-					switch (prop)
-					{
-						case "x":     timeline.property = PropBoneX;      break;
-						case "y":     timeline.property = PropBoneY;      break;
-						case "rot":   timeline.property = PropBoneRot;    break;
-						case "sx":    timeline.property = PropBoneScaleX; break;
-						case "sy":    timeline.property = PropBoneScaleY; break;
-						case "flipx": timeline.property = PropBoneFlipX;  break;
-						case "flipy": timeline.property = PropBoneFlipY;  break;
-					}
-
-					for (var i = 0, n = keyframes.length; i < n; i++)
-					{
-						var keyframe = new Keyframe();
-
-						keyframe.time = keyframes[i].time;
-						keyframe.value = keyframes[i].value;
-
-						if ("easing" in keyframes[i] && keyframes[i].easing in Easing)
-							keyframe.easing = Easing[keyframes[i].easing];
-
-						if (timeline.property === PropBoneRot)
-							keyframe.value = normalize_angle(to_radians(keyframe.value));
-
-						timeline.keyframes.push(keyframe);
-					}
-
-					this.timelines.push(timeline);
-				}
-			}
-		}
+		if ("slots" in data)
+			load_timelines.call(this, skeleton, TimelineSlot, data.slots);
 	}
 }
 
@@ -476,6 +666,13 @@ Animation.prototype.apply_timeline = function(timeline, skeleton, t0, t1, percen
 				this.apply_timeline_bone(timeline, skeleton, t0, t1, percent);
 		}
 		break;
+
+		case TimelineSlot:
+		{
+			if (t1 >= begin || prop === PropSlotAttachment)
+				this.apply_timeline_slot(timeline, skeleton, t0, t1, percent);
+		}
+		break;
 	}
 }
 
@@ -492,8 +689,24 @@ Animation.prototype.apply_timeline_bone = function(tl, skeleton, t0, t1, p)
 		case PropBoneY:      cur.y   = lerp(cur.y,  def.y  + tl.val(t1), p); break;
 		case PropBoneScaleX: cur.sx  = lerp(cur.sx, def.sx + tl.val(t1), p); break;
 		case PropBoneScaleY: cur.sy  = lerp(cur.sy, def.sy + tl.val(t1), p); break;
-		case PropBoneFlipX:  cur.flipx = tl.val_flip(t0, t1, cur.flipx); break;
-		case PropBoneFlipY:  cur.flipy = tl.val_flip(t0, t1, cur.flipy); break;
+		case PropBoneFlipX:  cur.flipx = tl.val_discrete(t0, t1, cur.flipx); break;
+		case PropBoneFlipY:  cur.flipy = tl.val_discrete(t0, t1, cur.flipy); break;
+	}
+}
+
+Animation.prototype.apply_timeline_slot = function(tl, skeleton, t0, t1, p)
+{
+	var slot = skeleton.slots[tl.index];
+	var cur = slot.current_state;
+	var def = slot.initial_state;
+
+	switch (tl.property)
+	{
+		case PropSlotColorR: cur.r = lerp(cur.r, def.r + tl.val(t1), p); break;
+		case PropSlotColorG: cur.g = lerp(cur.g, def.g + tl.val(t1), p); break;
+		case PropSlotColorB: cur.b = lerp(cur.b, def.b + tl.val(t1), p); break;
+		case PropSlotColorA: cur.a = lerp(cur.a, def.a + tl.val(t1), p); break;
+		case PropSlotAttachment: cur.attachment = tl.val_discrete(t0, t1, cur.attachment); break;
 	}
 }
 
@@ -562,7 +775,7 @@ Timeline.prototype.val_discrete = function(t0, t1, def)
 		if (t0 > t1)
 		{
 			var end = keyframes[n - 1].time;
-			return this.val_flip(Math.min(t0, end), end, def);
+			return this.val_discrete(Math.min(t0, end), end, def);
 		}
 	}
 	else
@@ -577,11 +790,6 @@ Timeline.prototype.val_discrete = function(t0, t1, def)
 	}
 
 	return def;
-}
-
-Timeline.prototype.val_flip = function(t0, t1, def)
-{
-	return this.val_discrete(t0, t1, def);
 }
 
 // --- Keyframe ---
@@ -656,6 +864,12 @@ function is_hex(str)
 	return true;
 }
 
+function to_number(x, def)
+{
+	x = Number(x);
+	return isNaN(x) ? def : x;
+}
+
 // --- export ---
 
 sk2 = {};
@@ -682,13 +896,32 @@ sk2.PropSlotColorB     = PropSlotColorB;
 sk2.PropSlotColorA     = PropSlotColorA;
 sk2.PropSlotAttachment = PropSlotAttachment;
 
+sk2.AttachmentNone     = AttachmentNone;
+sk2.AttachmentSprite   = AttachmentSprite;
+sk2.AttachmentSequence = AttachmentSequence;
+sk2.AttachmentPoint    = AttachmentPoint;
+sk2.AttachmentLine     = AttachmentLine;
+sk2.AttachmentRect     = AttachmentRect;
+sk2.AttachmentPolyline = AttachmentPolyline;
+sk2.AttachmentArc      = AttachmentArc;
+sk2.AttachmentOval     = AttachmentOval;
+sk2.AttachmentCircle   = AttachmentCircle;
+sk2.AttachmentPolygon  = AttachmentPolygon;
+sk2.AttachmentSpline   = AttachmentSpline;
+sk2.AttachmentMesh     = AttachmentMesh;
+
 sk2.Skeleton = Skeleton;
+sk2.BoneState = BoneState;
+sk2.Bone = Bone;
+sk2.SlotState = SlotState;
+sk2.Slot = Slot;
+sk2.Skin = Skin;
+sk2.Attachment = Attachment;
+sk2.SpriteAttachment = SpriteAttachment;
 sk2.Easing = Easing;
 sk2.Animation = Animation;
 sk2.Timeline = Timeline;
 sk2.Keyframe = Keyframe;
-sk2.BoneState = BoneState;
-sk2.Bone = Bone;
 
 sk2.mat2d = mat2d;
 sk2.mat2d_mul = mat2d_mul;
