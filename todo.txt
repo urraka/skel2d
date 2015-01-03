@@ -1,3 +1,5 @@
+- strip down gfx.js to just what is needed
+- make webgl renderer
 - implement slots and slots animations
 - implement attachments
 - figure out how to do shape attachments (splines, rectangles, circles, etc)

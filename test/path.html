@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+	<title>path test</title>
+	<script type="text/javascript" src="../src/gfx.js"></script>
+	<script type="text/javascript" src="../src/gfx_path.js"></script>
+	<style type="text/css">
+		canvas { border: 1px solid #000; }
+	</style>
+</head>
+<body>
+<canvas width="640" height="480"></canvas>
+<canvas width="640" height="480"></canvas>
+<script type="text/javascript">
+
+var canvas2d = document.querySelectorAll("canvas")[1];
+var context = canvas2d.getContext("2d");
+
+context.lineWidth = 5;
+context.lineCap = "round";
+context.lineJoin = "round";
+context.beginPath();
+context.moveTo(100, 240);
+context.bezierCurveTo(120, 50, 300, 300, 420, 240);
+context.bezierCurveTo(450, 50, 400, 400, 520, 440);
+context.stroke();
+
+context.beginPath();
+context.moveTo(50, 200);
+context.quadraticCurveTo(70, 20, 300, 60);
+context.stroke();
+
+gfx.initialize(document.querySelectorAll("canvas")[0], {preserveDrawingBuffer:true});
+
+var vbo = new gfx.VBO(5, gfx.Stream);
+var ibo = new gfx.IBO(5, gfx.Stream);
+var path = new Path();
+
+path.line_join = Path.Round;
+path.line_cap = Path.Round;
+path.line_width = 5;
+path.miter_limit = 10;
+path.color[2] = 255;
+
+path.begin(100, 240);
+path.bezier_to(120, 50, 300, 300, 420, 240);
+path.bezier_to(450, 50, 400, 400, 520, 440);
+path.stroke(vbo, ibo);
+
+path.begin(50, 200);
+path.quad_to(70, 20, 300, 60);
+path.stroke(vbo, ibo);
+
+vbo.upload();
+ibo.upload();
+
+// vbo.mode = gfx.Points;
+
+gfx.pointSize(5);
+gfx.viewport(640, 480);
+gfx.bgcolor(255, 255, 255, 1);
+gfx.clear();
+gfx.draw(vbo, ibo, 0, ibo.size);
+
+vbo.mode = gfx.Triangles;
+
+var start = performance.now() / 1000;
+var prev = -1;
+
+function frame()
+{
+	var t = (8 * ((performance.now() / 1000) - start)) % (ibo.size / 3);
+	var tri = Math.floor(t);
+
+	if (prev !== tri)
+	{
+		gfx.draw(vbo, ibo, 3 * tri, 3);
+		prev = tri;
+	}
+
+	requestAnimationFrame(frame);
+}
+
+//requestAnimationFrame(frame);
+
+</script>
+</body>
+</html>

@@ -124,17 +124,7 @@ function load_slots(slots)
 		slot.bone = bone_index >= 0 ? this.bones[bone_index] : null;
 
 		if ("color" in data)
-		{
-			var color = data.color.toString();
-
-			if (color.length === 8 && is_hex(color))
-			{
-				slot.initial_state.r = parseInt(color.substr(0, 2), 16);
-				slot.initial_state.g = parseInt(color.substr(2, 2), 16);
-				slot.initial_state.b = parseInt(color.substr(4, 2), 16);
-				slot.initial_state.a = parseInt(color.substr(6, 2), 16);
-			}
-		}
+			parse_color(data.color.toString(), slot.initial_state);
 
 		this.slots.push(slot);
 		this.order.push(i);
@@ -156,19 +146,56 @@ function load_attachment(data)
 	if (slot_index === -1)
 		return null;
 
-	// TODO: do actual stuff in this switch
-
 	switch (type)
 	{
 		case "sprite":
 			attachment = new SpriteAttachment();
+			attachment.image = "image" in data ? data.image.toString() : null;
 			break;
 
 		case "rect":
 			attachment = new RectAttachment();
-			attachment.width = "width" in data ? to_number(data.width, 0) : 0;
-			attachment.height = "height" in data ? to_number(data.height, 0) : 0;
+			attachment.line_width = "line_width" in data ? to_number(data.line_width, 0) : 0;
+
+			if ("line_color" in data)
+				parse_color(data.line_color.toString(), attachment.line_color);
+
+			if ("fill_color" in data)
+				parse_color(data.fill_color.toString(), attachment.fill_color);
+
 			break;
+
+		case "spline":
+		{
+			attachment = new SplineAttachment();
+			attachment.line_width = "line_width" in data ? to_number(data.line_width, 1) : 1;
+
+			if ("line_color" in data)
+				parse_color(data.line_color.toString(), attachment.line_color);
+
+			if ("points" in data && data.points instanceof Array)
+			{
+				var points = data.points;
+				var def_bone = this.find_bone(this.slots[slot_index].bone.name);
+
+				for (var i = 0, n = points.length; i < n; i++)
+				{
+					var bone = -1;
+
+					if ("bone" in points[i])
+						bone = this.find_bone(points[i].bone);
+
+					if (bone === -1)
+						bone = def_bone;
+
+					var x = "x" in points[i] ? to_number(points[i].x, 0) : 0;
+					var y = "y" in points[i] ? to_number(points[i].y, 0) : 0;
+
+					attachment.points.push(new BoundPoint(bone, x, y));
+				}
+			}
+		}
+		break;
 
 		default:
 			attachment = new Attachment();
@@ -177,12 +204,18 @@ function load_attachment(data)
 
 	attachment.name = name;
 	attachment.slot = slot_index;
-	attachment.x = "x" in data ? to_number(data.x, 0) : 0;
-	attachment.y = "y" in data ? to_number(data.y, 0) : 0;
-	attachment.sx = "sx" in data ? to_number(data.sx, 1) : 1;
-	attachment.sy = "sy" in data ? to_number(data.sy, 1) : 1;
-	attachment.rot = "rot" in data ? to_number(data.rot, 0) : 0;
-	attachment.rot = normalize_angle(to_radians(attachment.rot));
+
+	if (attachment.type === AttachmentSprite || attachment.type === AttachmentRect)
+	{
+		attachment.x = "x" in data ? to_number(data.x, 0) : 0;
+		attachment.y = "y" in data ? to_number(data.y, 0) : 0;
+		attachment.sx = "sx" in data ? to_number(data.sx, 1) : 1;
+		attachment.sy = "sy" in data ? to_number(data.sy, 1) : 1;
+		attachment.rot = "rot" in data ? to_number(data.rot, 0) : 0;
+		attachment.rot = normalize_angle(to_radians(attachment.rot));
+		attachment.width = "width" in data ? to_number(data.width, 0) : 0;
+		attachment.height = "height" in data ? to_number(data.height, 0) : 0;
+	}
 
 	return attachment;
 }
@@ -522,17 +555,27 @@ Skin.prototype.find_attachment = function(name)
 
 // --- Attachment ---
 
+function BoundPoint(bone, x, y)
+{
+	this.bone = bone;
+	this.x = x;
+	this.y = y;
+}
+
+function Color(r, g, b, a)
+{
+	this.r = r;
+	this.g = g;
+	this.b = b;
+	this.a = a;
+}
+
 function Attachment()
 {
 	this.name = null;
 	this.type = AttachmentNone;
 	this.slot = -1;
 	this.data = null;
-	this.x = 0;
-	this.y = 0;
-	this.sx = 1;
-	this.sy = 1;
-	this.rot = 0;
 }
 
 function SpriteAttachment()
@@ -540,6 +583,11 @@ function SpriteAttachment()
 	Attachment.call(this);
 
 	this.type = AttachmentSprite;
+	this.x = 0;
+	this.y = 0;
+	this.sx = 1;
+	this.sy = 1;
+	this.rot = 0;
 	this.width = 0;
 	this.height = 0;
 	this.image = null;
@@ -550,8 +598,26 @@ function RectAttachment()
 	Attachment.call(this);
 
 	this.type = AttachmentRect;
+	this.x = 0;
+	this.y = 0;
+	this.sx = 1;
+	this.sy = 1;
+	this.rot = 0;
 	this.width = 0;
 	this.height = 0;
+	this.line_width = 0;
+	this.line_color = new Color(0, 0, 0, 1);
+	this.fill_color = new Color(0, 0, 0, 1);
+}
+
+function SplineAttachment()
+{
+	Attachment.call(this);
+
+	this.type = AttachmentSpline;
+	this.points = [];
+	this.line_width = 1;
+	this.line_color = new Color(0, 0, 0, 1);
 }
 
 // --- Easing ---
@@ -876,6 +942,17 @@ function to_number(x, def)
 {
 	x = Number(x);
 	return isNaN(x) ? def : x;
+}
+
+function parse_color(str, result)
+{
+	if (str.length === 8 && is_hex(str))
+	{
+		result.r = parseInt(str.substr(0, 2), 16) / 255;
+		result.g = parseInt(str.substr(2, 2), 16) / 255;
+		result.b = parseInt(str.substr(4, 2), 16) / 255;
+		result.a = parseInt(str.substr(6, 2), 16) / 255;
+	}
 }
 
 // --- export ---
