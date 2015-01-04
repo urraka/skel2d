@@ -165,6 +165,24 @@ Path.prototype.fill = function(vbo, ibo)
 				ibo.push(base, base + i, base + i + 1);
 		}
 	}
+	else
+	{
+		flatten(this);
+
+		var base = vbo.size;
+		var points = this.points;
+		var n = points.length;
+		var fill_color = this.fill_color;
+
+		vbo.reserve(base + n);
+		ibo.reserve(ibo.size + 3 * (n - 2));
+
+		for (var i = 0; i < n; i++)
+			vbo.push(points[i].x, points[i].y, 0, 0, fill_color);
+
+		for (var i = 1; i < n - 1; i++)
+			ibo.push(base, base + i, base + i + 1);
+	}
 }
 
 Path.prototype.stroke = function(vbo, ibo)
