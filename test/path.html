@@ -37,27 +37,79 @@ var vbo = new gfx.VBO(5, gfx.Stream);
 var ibo = new gfx.IBO(5, gfx.Stream);
 var path = new Path();
 
+// path.line_join = Path.Round;
+// path.line_cap = Path.Round;
+// path.stroke_width = 5;
+// path.miter_limit = 10;
+// path.stroke_color[3] = 100;
+
+// path.begin(100, 240);
+// path.bezier_to(120, 50, 300, 300, 420, 240);
+// path.bezier_to(450, 50, 400, 400, 520, 440);
+// path.stroke(vbo, ibo);
+
+// path.begin(50, 200);
+// path.quad_to(70, 20, 300, 60);
+// path.stroke(vbo, ibo);
+
+var cx = 300;
+var cy = 350;
+var rx = 120;
+var ry = 80;
+var kappa90 = 0.5522847493;
+
+path.stroke_width = 5;
 path.line_join = Path.Round;
 path.line_cap = Path.Round;
-path.line_width = 5;
-path.miter_limit = 10;
-path.color[2] = 255;
+// path.stroke_color[3] = 100;
+path.fill_color[0] = 255;
 
-path.begin(100, 240);
-path.bezier_to(120, 50, 300, 300, 420, 240);
-path.bezier_to(450, 50, 400, 400, 520, 440);
+path.begin(50, 50);
+path.bezier_to(1500, 50,   -1000, 600,   640 - 50, 480 - 50);
 path.stroke(vbo, ibo);
 
-path.begin(50, 200);
-path.quad_to(70, 20, 300, 60);
+// path.stroke_color[3] = 255;
+path.line_join = Path.Bevel;
+path.line_cap = Path.Butt;
+path.stroke_width = 1;
+path.begin(50, 50.5);
+path.line_to(640.5 - 50, 50.5);
+path.line_to(640.5 - 50, 480.5 - 50);
 path.stroke(vbo, ibo);
+
+
+// path.begin(cx-rx, cy);
+// path.bezier_to(cx-rx, cy+ry*kappa90, cx-rx*kappa90, cy+ry, cx, cy+ry);
+// path.bezier_to(cx+rx*kappa90, cy+ry, cx+rx, cy+ry*kappa90, cx+rx, cy);
+// path.bezier_to(cx+rx, cy-ry*kappa90, cx+rx*kappa90, cy-ry, cx, cy-ry);
+// path.bezier_to(cx-rx*kappa90, cy-ry, cx-rx, cy-ry*kappa90, cx-rx, cy);
+// path.close();
+// path.stroke(vbo, ibo);
+
+
+path.stroke_width = 5;
+path.begin(20, 300);
+path.quad_to(120, 300, 120, 400); // bug: missing endpoints
+path.line_to(20, 400);
+path.close();
+path.line_join = Path.Round;
+path.line_cap = Path.Butt;
+path.stroke(vbo, ibo);
+path.fill(vbo, ibo);
+
+// var n = path.fill_list.length;
+// var start = ibo.size;
+// ibo.reserve(ibo.size + 3 * n);
+
+// for (var i = 1; i < n - 1; i++)
+// 	ibo.push(path.fill_list[0], path.fill_list[i], path.fill_list[i + 1]);
 
 vbo.upload();
 ibo.upload();
 
 // vbo.mode = gfx.Points;
 
-gfx.pointSize(5);
+gfx.pointSize(2);
 gfx.viewport(640, 480);
 gfx.bgcolor(255, 255, 255, 1);
 gfx.clear();
