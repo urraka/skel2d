@@ -36,11 +36,8 @@ function Point()
 	this.flags = 0;
 }
 
-function Path(device_pixel_ratio)
+function Path()
 {
-	if (device_pixel_ratio === undefined)
-		device_pixel_ratio = 1;
-
 	this.stroke_width = 1;
 	this.line_cap = Path.Butt;
 	this.line_join = Path.Bevel;
@@ -55,10 +52,8 @@ function Path(device_pixel_ratio)
 	this.last_color = [0, 0, 0, 255];
 	this.closed = false;
 
-	this.device_pixel_ratio = device_pixel_ratio;
-	this.tess_tol = 0.25 / device_pixel_ratio;
-	this.dist_tol = 0.01 / device_pixel_ratio;
-	this.fringe_width = 1 / device_pixel_ratio;
+	this.tess_tol = 0.25;
+	this.dist_tol = 0.01;
 }
 
 Path.Butt   = Butt;
@@ -66,6 +61,12 @@ Path.Round  = Round;
 Path.Square = Square;
 Path.Bevel  = Bevel;
 Path.Miter  = Miter;
+
+Path.prototype.set_pixel_ratio = function(ratio)
+{
+	this.tess_tol = 0.25 / ratio;
+	this.dist_tol = 0.01 / ratio;
+}
 
 Path.prototype.begin = function(x, y)
 {

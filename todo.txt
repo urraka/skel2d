@@ -1,9 +1,9 @@
-- strip down gfx.js to just what is needed
 - make webgl renderer
 - implement slots and slots animations
 - implement attachments
 - figure out how to do shape attachments (splines, rectangles, circles, etc)
 - figure out how to import images from computer (drop a folder? maybe a zip)
+x strip down gfx.js to just what is needed
 x path: add fill without stroke (just flatten and add points to vbo)
 x path: check if point equals previous one when pushing points
 x path: check if first and last points are equal when shape is closed

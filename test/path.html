@@ -32,10 +32,10 @@ context.moveTo(50, 200);
 context.quadraticCurveTo(70, 20, 300, 60);
 context.stroke();
 
-gfx.initialize(document.querySelectorAll("canvas")[0], {preserveDrawingBuffer:true});
+var gfx = gfx_create_context(document.querySelectorAll("canvas")[0], {preserveDrawingBuffer:true});
 
-var vbo = new gfx.VBO(5, gfx.Stream);
-var ibo = new gfx.IBO(5, gfx.Stream);
+var vbo = gfx.create_vbo(5, gfx.Stream);
+var ibo = gfx.create_ibo(5, gfx.Stream);
 var path = new Path();
 
 path.line_join = Path.Round;
@@ -90,11 +90,11 @@ path.fill(vbo, ibo);
 vbo.upload();
 ibo.upload();
 
-gfx.pointSize(2);
-gfx.viewport(640, 480);
-gfx.bgcolor(255, 255, 255, 1);
+gfx.viewport(0, 0, 640, 480);
+gfx.projection(mat3ortho(0, 640, 480, 0, mat3()));
+gfx.clear_color(1, 1, 1, 1);
 gfx.clear();
-gfx.draw(vbo, ibo, 0, ibo.size);
+gfx.draw(gfx.Triangles, vbo, ibo, 0, ibo.size);
 
 var start = performance.now() / 1000;
 var prev = -1;
