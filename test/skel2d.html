@@ -18,6 +18,7 @@
 var skeleton_data = {
 	"bones": [
 		{"name": "torso", "length": 100, "rot": 90},
+		{"name": "torso.head", "length": 50, "rot": 0, "x": 100},
 		{"name": "torso.arm_l", "length": 50, "x": 100, "y": 60, "rot": 115, "sx": 1.3},
 		{"name": "torso.arm_l.forearm", "length": 50, "x": 50, "y": 0, "rot": 130},
 		{"name": "torso.arm_r", "length": 50, "x": 100, "y": -60, "rot": -50},
@@ -30,6 +31,7 @@ var skeleton_data = {
 
 	"slots": [
 		{"name": "torso.torso", "attachment": "torso"},
+		{"name": "torso.head.head", "attachment": "head"},
 		{"name": "torso.arm_l.arm", "attachment": "arm"},
 		{"name": "torso.arm_r.arm", "attachment": "arm"},
 		{"name": "torso.leg_l.leg", "attachment": "leg"},
@@ -39,7 +41,10 @@ var skeleton_data = {
 	"skins": {
 		"default": [
 			{"name": "torso.torso.torso", "type": "rect", "line_width": 4, "fill_color": "0000FFFF",
-			"width": 120, "height": 100, "rot": -90, "y": 60},
+			"width": 120, "height": 100, "rot": -90, "y": 60, "border_radius": 0, "line_join": "round"},
+
+			{"name": "torso.head.head.head", "type": "ellipse", "line_width": 4, "fill_color": "FFCC99FF",
+			"rx": 80, "ry": 70, "rot": -90, "x": 55, "line_join": "round"},
 
 			{"name": "torso.arm_l.arm.arm", "type": "path", "line_width": 4, "line_cap": "round",
 			"commands": [
@@ -129,20 +134,11 @@ function frame()
 	t0 = t1;
 	t1 = (t1 + dt) % 2.0;
 
+	animation.apply(skeleton, t0, t1, 1);
+	skeleton.update_transform();
+
 	gfx.clear();
-
-	var s = 0.4;
-
-	for (var y = -4; y <= 4; y++)
-	for (var x = -10; x <= 10; x++)
-	{
-		animation.apply(skeleton, t0, t1, 1);
-		skeleton.update_transform();
-		mat3translate(s * 180 * x, s * 200 * y, transform);
-		transform[0] = transform[4] = s;
-		gfx.transform(transform);
-		renderer.draw(skeleton, s);
-	}
+	renderer.draw(skeleton, 1);
 
 	requestAnimationFrame(frame);
 }

@@ -7,6 +7,7 @@ var bone_transforms = [];
 var coords = [];
 var bone_color = [0.7, 0.7, 0, 0.7];
 var matrix_pool = [sk2.mat2d()];
+var kappa90 = 0.5522847493;
 
 bone_color[0] = (bone_color[3] * bone_color[0] * 255)|0;
 bone_color[1] = (bone_color[3] * bone_color[1] * 255)|0;
@@ -15,6 +16,12 @@ bone_color[3] = (bone_color[3] * 255)|0;
 
 function mat2d_alloc() { return matrix_pool.length > 0 ? matrix_pool.pop() : sk2.mat2d(); }
 function mat2d_free(m) { matrix_pool.push(m); }
+
+function clear_coords()
+{
+	for (var i = 0, n = coords.length; i < n; i++)
+		coords.pop();
+}
 
 function SkeletonRenderer(gfx)
 {
@@ -49,7 +56,7 @@ SkeletonRenderer.prototype.draw = function(skeleton, scale)
 		{
 			case sk2.AttachmentRect:    add_rect(slot, attachment, vbo, ibo); break;
 			case sk2.AttachmentEllipse: add_ellipse(slot, attachment, vbo, ibo); break;
-			case sk2.AttachmentCircle:  add_circle(slot, attachment, vbo, ibo); break;
+			case sk2.AttachmentCircle:  add_ellipse(slot, attachment, vbo, ibo); break;
 			case sk2.AttachmentPath:    add_path(skeleton, slot, attachment, vbo, ibo); break;
 		}
 	}
@@ -74,9 +81,6 @@ SkeletonRenderer.prototype.draw = function(skeleton, scale)
 		ibo.push(base + 0, base + 2, base + 3);
 	}
 
-	for (var i = 0, n = coords.length; i < n; i++)
-		coords.pop();
-
 	vbo.upload();
 	ibo.upload();
 
@@ -86,20 +90,51 @@ SkeletonRenderer.prototype.draw = function(skeleton, scale)
 function add_rect(slot, attachment, vbo, ibo)
 {
 	var m = sk2.mat2d_mul(slot.bone.world_transform, attachment.transform, mat2d_alloc());
+	var r = attachment.border_radius;
+	var w = attachment.width;
+	var h = attachment.height;
 
-	var x0 = 0, x1 = attachment.width;
-	var y0 = 0, y1 = attachment.height;
-
-	x0 = sk2.mat2d_mulx(m, x0, y0);
-	y0 = sk2.mat2d_muly(m, x0, y0);
-	x1 = sk2.mat2d_mulx(m, x1, y1);
-	y1 = sk2.mat2d_muly(m, x1, y1);
-
-	if (attachment.border_radius > 0)
+	if (r > path.dist_tol)
 	{
+		var rx = Math.min(r, Math.abs(w) * 0.5) * (w > 0 ? 1 : -1);
+		var ry = Math.min(r, Math.abs(h) * 0.5) * (h > 0 ? 1 : -1);
+
+		var k = 1 - kappa90;
+
+		coords.push(0, ry);
+		coords.push(0, h - ry);
+		coords.push(0, h - ry * k, rx * k, h, rx, h);
+		coords.push(w - rx, h);
+		coords.push(w - rx * k, h, w, h - ry * k, w, h - ry);
+		coords.push(w, ry);
+		coords.push(w, ry * k, w - rx * k, 0, w - rx, 0);
+		coords.push(rx, 0);
+		coords.push(rx * k, 0, 0, ry * k, 0, ry);
+
+		for (var i = 0, n = coords.length; i < n; i += 2)
+		{
+			coords[i + 0] = sk2.mat2d_mulx(m, coords[i + 0], coords[i + 1]);
+			coords[i + 1] = sk2.mat2d_muly(m, coords[i + 0], coords[i + 1]);
+		}
+
+		path.begin(coords[0], coords[1]);
+
+		for (var i = 0, j = 2, p = coords; i < 4; i++, j += 8)
+		{
+			path.line_to(p[j + 0], p[j + 1]);
+			path.bezier_to(p[j + 2], p[j + 3], p[j + 4], p[j + 5], p[j + 6], p[j + 7]);
+		}
+
+		path.close();
+		clear_coords();
 	}
 	else
 	{
+		var x0 = sk2.mat2d_mulx(m, 0, 0);
+		var y0 = sk2.mat2d_muly(m, 0, 0);
+		var x1 = sk2.mat2d_mulx(m, w, h);
+		var y1 = sk2.mat2d_muly(m, w, h);
+
 		path.begin(x0, y0);
 		path.line_to(x1, y0);
 		path.line_to(x1, y1);
@@ -108,16 +143,50 @@ function add_rect(slot, attachment, vbo, ibo)
 	}
 
 	stroke_and_fill(slot, attachment, vbo, ibo);
-
 	mat2d_free(m);
 }
 
 function add_ellipse(slot, attachment, vbo, ibo)
 {
-}
+	var m = sk2.mat2d_mul(slot.bone.world_transform, attachment.transform, mat2d_alloc());
+	var rx = 0;
+	var ry = 0;
 
-function add_circle(slot, attachment, vbo, ibo)
-{
+	if (attachment.type === sk2.AttachmentEllipse)
+	{
+		rx = attachment.rx;
+		ry = attachment.ry;
+	}
+	else
+	{
+		rx = attachment.radius;
+		ry = attachment.radius;
+	}
+
+	var k = kappa90;
+	var p = coords;
+
+	p.push(-rx, 0);
+	p.push(-rx, ry * k, -rx * k, ry, 0, ry);
+	p.push(rx * k, ry, rx, ry * k, rx, 0);
+	p.push(rx, -ry * k, rx * k, -ry, 0, -ry);
+	p.push(-rx * k, -ry, -rx, -ry * k, -rx, 0);
+
+	for (var i = 0, n = p.length; i < n; i += 2)
+	{
+		p[i + 0] = sk2.mat2d_mulx(m, p[i + 0], p[i + 1]);
+		p[i + 1] = sk2.mat2d_muly(m, p[i + 0], p[i + 1]);
+	}
+
+	path.begin(p[0], p[1]);
+
+	for (var i = 0, j = 2; i < 4; i++, j += 6)
+		path.bezier_to(p[j + 0], p[j + 1], p[j + 2], p[j + 3], p[j + 4], p[j + 5]);
+
+	path.close();
+	clear_coords();
+	stroke_and_fill(slot, attachment, vbo, ibo);
+	mat2d_free(m);
 }
 
 function add_path(skeleton, slot, attachment, vbo, ibo)
@@ -162,9 +231,7 @@ function add_path(skeleton, slot, attachment, vbo, ibo)
 		}
 
 		path_func.apply(path, coords);
-
-		for (var k = 0, n = coords.length; k < n; k++)
-			coords.pop();
+		clear_coords();
 	}
 
 	for (var i = 0; i < nbones; i++)
