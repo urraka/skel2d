@@ -38,28 +38,24 @@ var skeleton_data = {
 			{"name": "torso.torso.torso", "type": "rect", "line_width": 4, "fill_color": "0000FFFF",
 			"width": 120, "height": 100, "rot": -90, "y": 60},
 
-			{"name": "torso.arm_l.arm.arm", "type": "spline", "line_width": 4, "points": [
-				{"x": 0, "y": 0, "bone": "torso.arm_l"},
-				{"x": 50, "y": 0, "bone": "torso.arm_l"},
-				{"x": 50, "y": 0, "bone": "torso.arm_l.forearm"}
+			{"name": "torso.arm_l.arm.arm", "type": "path", "line_width": 4, "commands": [
+				"M", 0, 0, "torso.arm_l",
+				"Q", 50, 0, "torso.arm_l", 50, 0, "torso.arm_l.forearm"
 			]},
 
-			{"name": "torso.arm_r.arm.arm", "type": "spline", "line_width": 4, "points": [
-				{"x": 0, "y": 0, "bone": "torso.arm_r"},
-				{"x": 50, "y": 0, "bone": "torso.arm_r"},
-				{"x": 50, "y": 0, "bone": "torso.arm_r.forearm"}
+			{"name": "torso.arm_r.arm.arm", "type": "path", "line_width": 4, "commands": [
+				"M", 0, 0, "torso.arm_r",
+				"Q", 50, 0, "torso.arm_r", 50, 0, "torso.arm_r.forearm"
 			]},
 
-			{"name": "torso.leg_r.leg.leg", "type": "spline", "line_width": 4, "points": [
-				{"x": 0, "y": 0, "bone": "torso.leg_r"},
-				{"x": 50, "y": 0, "bone": "torso.leg_r"},
-				{"x": 50, "y": 0, "bone": "torso.leg_r.lower_leg"}
+			{"name": "torso.leg_r.leg.leg", "type": "path", "line_width": 4, "commands": [
+				"M", 0, 0, "torso.leg_r",
+				"Q", 50, 0, "torso.leg_r", 50, 0, "torso.leg_r.lower_leg"
 			]},
 
-			{"name": "torso.leg_l.leg.leg", "type": "spline", "line_width": 4, "points": [
-				{"x": 0, "y": 0, "bone": "torso.leg_l"},
-				{"x": 50, "y": 0, "bone": "torso.leg_l"},
-				{"x": 50, "y": 0, "bone": "torso.leg_l.lower_leg"}
+			{"name": "torso.leg_l.leg.leg", "type": "path", "line_width": 4, "commands": [
+				"M", 0, 0, "torso.leg_l",
+				"Q", 50, 0, "torso.leg_l", 50, 0, "torso.leg_l.lower_leg"
 			]}
 		]
 	}
@@ -138,6 +134,7 @@ function draw()
 	context.lineTo(0.5, canvas.height / 2);
 	context.moveTo(-canvas.width / 2, 0.5);
 	context.lineTo(canvas.width / 2, 0.5);
+	context.lineWidth = 1;
 	context.stroke();
 
 	draw_skeleton(skeleton);
@@ -189,38 +186,87 @@ function draw_skeleton(skeleton)
 
 				context.restore();
 			}
-			else if (attachment.type === sk2.AttachmentSpline)
+			else if (attachment.type === sk2.AttachmentPath)
 			{
+				var commands = attachment.commands;
 				var points = attachment.points;
-				var m = points.length;
+				var ncommands = commands.length;
 
-				if (m >= 3)
+				context.beginPath();
+
+				for (var j = 0, k = 0; j < ncommands; j++)
 				{
-					context.beginPath();
-
-					var bone = skeleton.bones[points[0].bone];
-					var x = bone.to_worldx(points[0].x, points[0].y);
-					var y = bone.to_worldy(points[0].x, points[0].y);
-
-					context.moveTo(x, y);
-
-					for (var j = 1; j < m - 1; j += 2)
+					switch (commands[j])
 					{
-						bone = skeleton.bones[points[j].bone];
-						var cpx = bone.to_worldx(points[j].x, points[j].y);
-						var cpy = bone.to_worldy(points[j].x, points[j].y);
+						case "M":
+						{
+							var p = points[k++];
+							var bone = skeleton.bones[p.bone];
+							var x = bone.to_worldx(p.x, p.y);
+							var y = bone.to_worldy(p.x, p.y);
 
-						bone = skeleton.bones[points[j + 1].bone];
-						var x = bone.to_worldx(points[j + 1].x, points[j + 1].y);
-						var y = bone.to_worldy(points[j + 1].x, points[j + 1].y);
+							context.moveTo(x, y);
+						}
+						break;
 
-						context.quadraticCurveTo(cpx, cpy, x, y);
+						case "L":
+						{
+							var p = points[k++];
+							var bone = skeleton.bones[p.bone];
+							var x = bone.to_worldx(p.x, p.y);
+							var y = bone.to_worldy(p.x, p.y);
+
+							context.lineTo(x, y);
+						}
+						break;
+
+						case "B":
+						{
+							var p1 = points[k++];
+							var p2 = points[k++];
+							var p3 = points[k++];
+
+							var bone1 = skeleton.bones[p1.bone];
+							var bone2 = skeleton.bones[p2.bone];
+							var bone3 = skeleton.bones[p3.bone];
+
+							var x1 = bone1.to_worldx(p1.x, p1.y);
+							var y1 = bone1.to_worldy(p1.x, p1.y);
+							var x2 = bone2.to_worldx(p2.x, p2.y);
+							var y2 = bone2.to_worldy(p2.x, p2.y);
+							var x3 = bone3.to_worldx(p3.x, p3.y);
+							var y3 = bone3.to_worldy(p3.x, p3.y);
+
+							context.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+						}
+						break;
+
+						case "Q":
+						{
+							var p1 = points[k++];
+							var p2 = points[k++];
+
+							var bone1 = skeleton.bones[p1.bone];
+							var bone2 = skeleton.bones[p2.bone];
+
+							var x1 = bone1.to_worldx(p1.x, p1.y);
+							var y1 = bone1.to_worldy(p1.x, p1.y);
+							var x2 = bone2.to_worldx(p2.x, p2.y);
+							var y2 = bone2.to_worldy(p2.x, p2.y);
+
+							context.quadraticCurveTo(x1, y1, x2, y2);
+						}
+						break;
+
+						case "C":
+							context.closePath();
+							break;
 					}
-
-					context.lineWidth = attachment.line_width;
-					context.strokeStyle = to_style(attachment.line_color);
-					context.stroke();
 				}
+
+				context.lineWidth = attachment.line_width;
+				context.strokeStyle = to_style(attachment.line_color);
+				context.stroke();
 			}
 		}
 	}

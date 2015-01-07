@@ -24,19 +24,18 @@ var PropSlotColorB     = 2;
 var PropSlotColorA     = 3;
 var PropSlotAttachment = 4;
 
-var AttachmentNone     = 0;
-var AttachmentSprite   = 1;
-var AttachmentSequence = 2;
-var AttachmentPoint    = 3;
-var AttachmentLine     = 4;
-var AttachmentRect     = 5;
-var AttachmentPolyline = 6;
-var AttachmentArc      = 7;
-var AttachmentOval     = 8;
-var AttachmentCircle   = 9;
-var AttachmentPolygon  = 10;
-var AttachmentSpline   = 11;
-var AttachmentMesh     = 12;
+var AttachmentNone    = 0;
+var AttachmentSprite  = 1;
+var AttachmentRect    = 2;
+var AttachmentEllipse = 3;
+var AttachmentCircle  = 4;
+var AttachmentPath    = 5;
+
+var Butt   = 0;
+var Round  = 1;
+var Square = 2;
+var Bevel  = 3;
+var Miter  = 4;
 
 // --- Skeleton ---
 
@@ -150,48 +149,80 @@ function load_attachment(data)
 	{
 		case "sprite":
 			attachment = new SpriteAttachment();
+			attachment.width = "width" in data ? to_number(data.width, 0) : 0;
+			attachment.height = "height" in data ? to_number(data.height, 0) : 0;
 			attachment.image = "image" in data ? data.image.toString() : null;
 			break;
 
 		case "rect":
 			attachment = new RectAttachment();
-			attachment.line_width = "line_width" in data ? to_number(data.line_width, 0) : 0;
-
-			if ("line_color" in data)
-				parse_color(data.line_color.toString(), attachment.line_color);
-
-			if ("fill_color" in data)
-				parse_color(data.fill_color.toString(), attachment.fill_color);
-
+			attachment.width = "width" in data ? to_number(data.width, 0) : 0;
+			attachment.height = "height" in data ? to_number(data.height, 0) : 0;
+			attachment.border_radius = "border_radius" in data ? to_number(data.border_radius, 0) : 0;
 			break;
 
-		case "spline":
+		case "ellipse":
+			attachment = new EllipseAttachment();
+			attachment.rx = "rx" in data ? to_number(data.rx, 0) : 0;
+			attachment.ry = "ry" in data ? to_number(data.ry, 0) : 0;
+			break;
+
+		case "circle":
+			attachment = new EllipseAttachment();
+			attachment.radius = "radius" in data ? to_number(data.radius, 0) : 0;
+			break;
+
+		case "path":
 		{
-			attachment = new SplineAttachment();
-			attachment.line_width = "line_width" in data ? to_number(data.line_width, 1) : 1;
+			attachment = new PathAttachment();
 
-			if ("line_color" in data)
-				parse_color(data.line_color.toString(), attachment.line_color);
-
-			if ("points" in data && data.points instanceof Array)
+			if ("line_cap" in data)
 			{
-				var points = data.points;
+				switch (data.line_cap)
+				{
+					case "butt":   attachment.line_cap = Butt;   break;
+					case "square": attachment.line_cap = Square; break;
+					case "round":  attachment.line_cap = Round;  break;
+				}
+			}
+
+			if ("commands" in data && data.commands instanceof Array)
+			{
+				var commands = data.commands;
+				var ncommands = commands.length;
 				var def_bone = this.find_bone(this.slots[slot_index].bone.name);
 
-				for (var i = 0, n = points.length; i < n; i++)
+				var i = 0;
+
+				while (i < ncommands)
 				{
-					var bone = -1;
+					var command = commands[i++];
+					var npoints = 0;
 
-					if ("bone" in points[i])
-						bone = this.find_bone(points[i].bone);
+					switch (command)
+					{
+						case "M": npoints = 1; break;
+						case "L": npoints = 1; break;
+						case "B": npoints = 3; break;
+						case "Q": npoints = 2; break;
+						case "C": npoints = 0; break;
+						default: npoints = -1; break;
+					}
 
-					if (bone === -1)
-						bone = def_bone;
+					if (npoints >= 0)
+						attachment.commands.push(command);
 
-					var x = "x" in points[i] ? to_number(points[i].x, 0) : 0;
-					var y = "y" in points[i] ? to_number(points[i].y, 0) : 0;
+					for (var j = 0; j < npoints; j++)
+					{
+						var x = to_number(commands[i++], 0);
+						var y = to_number(commands[i++], 0);
+						var bone = this.find_bone(commands[i++]);
 
-					attachment.points.push(new BoundPoint(bone, x, y));
+						if (bone === -1)
+							bone = def_bone;
+
+						attachment.points.push(new BoundPoint(bone, x, y));
+					}
 				}
 			}
 		}
@@ -204,17 +235,45 @@ function load_attachment(data)
 
 	attachment.name = name;
 	attachment.slot = slot_index;
+	attachment.x = "x" in data ? to_number(data.x, 0) : 0;
+	attachment.y = "y" in data ? to_number(data.y, 0) : 0;
+	attachment.sx = "sx" in data ? to_number(data.sx, 1) : 1;
+	attachment.sy = "sy" in data ? to_number(data.sy, 1) : 1;
+	attachment.rot = "rot" in data ? to_number(data.rot, 0) : 0;
+	attachment.rot = normalize_angle(to_radians(attachment.rot));
 
-	if (attachment.type === AttachmentSprite || attachment.type === AttachmentRect)
+	var c = Math.cos(attachment.rot);
+	var s = Math.sin(attachment.rot);
+
+	attachment.transform[0] =  c * attachment.sx;
+	attachment.transform[1] =  s * attachment.sx;
+	attachment.transform[2] = -s * attachment.sy;
+	attachment.transform[3] =  c * attachment.sy;
+	attachment.transform[4] = attachment.x;
+	attachment.transform[5] = attachment.y;
+
+	var type = attachment.type;
+
+	if (type === AttachmentPath || type === AttachmentRect ||
+		type === AttachmentEllipse || type === AttachmentCircle)
 	{
-		attachment.x = "x" in data ? to_number(data.x, 0) : 0;
-		attachment.y = "y" in data ? to_number(data.y, 0) : 0;
-		attachment.sx = "sx" in data ? to_number(data.sx, 1) : 1;
-		attachment.sy = "sy" in data ? to_number(data.sy, 1) : 1;
-		attachment.rot = "rot" in data ? to_number(data.rot, 0) : 0;
-		attachment.rot = normalize_angle(to_radians(attachment.rot));
-		attachment.width = "width" in data ? to_number(data.width, 0) : 0;
-		attachment.height = "height" in data ? to_number(data.height, 0) : 0;
+		attachment.line_width = "line_width" in data ? to_number(data.line_width, 0) : 0;
+
+		if ("line_color" in data)
+			parse_color(data.line_color.toString(), attachment.line_color);
+
+		if ("fill_color" in data)
+			parse_color(data.fill_color.toString(), attachment.fill_color);
+
+		if ("line_join" in data)
+		{
+			switch (data.line_join)
+			{
+				case "miter": attachment.line_join = Miter; break;
+				case "bevel": attachment.line_join = Bevel; break;
+				case "round": attachment.line_join = Round; break;
+			}
+		}
 	}
 
 	return attachment;
@@ -576,6 +635,14 @@ function Attachment()
 	this.type = AttachmentNone;
 	this.slot = -1;
 	this.data = null;
+
+	this.x = 0;
+	this.y = 0;
+	this.sx = 1;
+	this.sy = 1;
+	this.rot = 0;
+
+	this.transform = mat2d();
 }
 
 function SpriteAttachment()
@@ -583,41 +650,56 @@ function SpriteAttachment()
 	Attachment.call(this);
 
 	this.type = AttachmentSprite;
-	this.x = 0;
-	this.y = 0;
-	this.sx = 1;
-	this.sy = 1;
-	this.rot = 0;
 	this.width = 0;
 	this.height = 0;
 	this.image = null;
 }
 
-function RectAttachment()
+function ShapeAttachment()
 {
 	Attachment.call(this);
 
-	this.type = AttachmentRect;
-	this.x = 0;
-	this.y = 0;
-	this.sx = 1;
-	this.sy = 1;
-	this.rot = 0;
-	this.width = 0;
-	this.height = 0;
+	this.line_join = Miter;
 	this.line_width = 0;
 	this.line_color = new Color(0, 0, 0, 1);
 	this.fill_color = new Color(0, 0, 0, 1);
 }
 
-function SplineAttachment()
+function RectAttachment()
 {
-	Attachment.call(this);
+	ShapeAttachment.call(this);
 
-	this.type = AttachmentSpline;
+	this.type = AttachmentRect;
+	this.width = 0;
+	this.height = 0;
+	this.border_radius = 0;
+}
+
+function EllipseAttachment()
+{
+	ShapeAttachment.call(this);
+
+	this.type = AttachmentEllipse;
+	this.rx = 0;
+	this.ry = 0;
+}
+
+function CircleAttachment()
+{
+	ShapeAttachment.call(this);
+
+	this.type = AttachmentCircle;
+	this.radius = 0;
+}
+
+function PathAttachment()
+{
+	ShapeAttachment.call(this);
+
+	this.type = AttachmentPath;
+	this.commands = [];
 	this.points = [];
-	this.line_width = 1;
-	this.line_color = new Color(0, 0, 0, 1);
+	this.line_cap = Butt;
 }
 
 // --- Easing ---
@@ -981,19 +1063,18 @@ sk2.PropSlotColorB     = PropSlotColorB;
 sk2.PropSlotColorA     = PropSlotColorA;
 sk2.PropSlotAttachment = PropSlotAttachment;
 
-sk2.AttachmentNone     = AttachmentNone;
-sk2.AttachmentSprite   = AttachmentSprite;
-sk2.AttachmentSequence = AttachmentSequence;
-sk2.AttachmentPoint    = AttachmentPoint;
-sk2.AttachmentLine     = AttachmentLine;
-sk2.AttachmentRect     = AttachmentRect;
-sk2.AttachmentPolyline = AttachmentPolyline;
-sk2.AttachmentArc      = AttachmentArc;
-sk2.AttachmentOval     = AttachmentOval;
-sk2.AttachmentCircle   = AttachmentCircle;
-sk2.AttachmentPolygon  = AttachmentPolygon;
-sk2.AttachmentSpline   = AttachmentSpline;
-sk2.AttachmentMesh     = AttachmentMesh;
+sk2.AttachmentNone    = AttachmentNone;
+sk2.AttachmentSprite  = AttachmentSprite;
+sk2.AttachmentRect    = AttachmentRect;
+sk2.AttachmentEllipse = AttachmentEllipse;
+sk2.AttachmentCircle  = AttachmentCircle;
+sk2.AttachmentPath    = AttachmentPath;
+
+sk2.Butt   = Butt;
+sk2.Round  = Round;
+sk2.Square = Square;
+sk2.Bevel  = Bevel;
+sk2.Miter  = Miter;
 
 sk2.Skeleton = Skeleton;
 sk2.BoneState = BoneState;
