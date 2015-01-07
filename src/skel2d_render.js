@@ -5,7 +5,13 @@ scope.SkeletonRenderer = SkeletonRenderer;
 var path = new Path();
 var bone_transforms = [];
 var coords = [];
+var bone_color = [0.7, 0.7, 0, 0.7];
 var matrix_pool = [sk2.mat2d()];
+
+bone_color[0] = (bone_color[3] * bone_color[0] * 255)|0;
+bone_color[1] = (bone_color[3] * bone_color[1] * 255)|0;
+bone_color[2] = (bone_color[3] * bone_color[2] * 255)|0;
+bone_color[3] = (bone_color[3] * 255)|0;
 
 function mat2d_alloc() { return matrix_pool.length > 0 ? matrix_pool.pop() : sk2.mat2d(); }
 function mat2d_free(m) { matrix_pool.push(m); }
@@ -13,8 +19,8 @@ function mat2d_free(m) { matrix_pool.push(m); }
 function SkeletonRenderer(gfx)
 {
 	this.gfx = gfx;
-	this.vbo = gfx.create_vbo(100, gfx.Stream);
-	this.ibo = gfx.create_ibo(100, gfx.Stream);
+	this.vbo = gfx.create_vbo(500, gfx.Stream);
+	this.ibo = gfx.create_ibo(500, gfx.Stream);
 }
 
 SkeletonRenderer.prototype.draw = function(skeleton, scale)
@@ -27,7 +33,7 @@ SkeletonRenderer.prototype.draw = function(skeleton, scale)
 	vbo.clear();
 	ibo.clear();
 
-	path.set_pixel_ratio(1 / scale);
+	path.set_pixel_ratio(scale);
 
 	for (var i = 0, n = skeleton.order.length; i < n; i++)
 	{
@@ -41,12 +47,40 @@ SkeletonRenderer.prototype.draw = function(skeleton, scale)
 
 		switch (attachment.type)
 		{
-			case sk2.AttachmentRect:    add_rect(attachment, vbo, ibo); break;
-			case sk2.AttachmentEllipse: add_ellipse(attachment, vbo, ibo); break;
-			case sk2.AttachmentCircle:  add_circle(attachment, vbo, ibo); break;
-			case sk2.AttachmentPath:    add_path(skeleton, attachment, vbo, ibo); break;
+			case sk2.AttachmentRect:    add_rect(slot, attachment, vbo, ibo); break;
+			case sk2.AttachmentEllipse: add_ellipse(slot, attachment, vbo, ibo); break;
+			case sk2.AttachmentCircle:  add_circle(slot, attachment, vbo, ibo); break;
+			case sk2.AttachmentPath:    add_path(skeleton, slot, attachment, vbo, ibo); break;
 		}
 	}
+
+	var s = 4;
+	var nbones = skeleton.bones.length;
+
+	vbo.reserve(vbo.size + nbones * 4);
+	ibo.reserve(ibo.size + 3 * nbones * 2);
+
+	for (var i = 0, n = nbones; i < n; i++)
+	{
+		var bone = skeleton.bones[i];
+		var base = vbo.size;
+
+		vbo.push(bone.to_worldx(0, 0), bone.to_worldy(0, 0), 0, 0, bone_color);
+		vbo.push(bone.to_worldx(s, s), bone.to_worldy(s, s), 0, 0, bone_color);
+		vbo.push(bone.to_worldx(bone.length, 0), bone.to_worldy(bone.length, 0), 0, 0, bone_color);
+		vbo.push(bone.to_worldx(s, -s), bone.to_worldy(s, -s), 0, 0, bone_color);
+
+		ibo.push(base + 0, base + 1, base + 2);
+		ibo.push(base + 0, base + 2, base + 3);
+	}
+
+	for (var i = 0, n = coords.length; i < n; i++)
+		coords.pop();
+
+	vbo.upload();
+	ibo.upload();
+
+	gfx.draw(gfx.Triangles, vbo, ibo, 0, ibo.size);
 }
 
 function add_rect(slot, attachment, vbo, ibo)
@@ -129,7 +163,7 @@ function add_path(skeleton, slot, attachment, vbo, ibo)
 
 		path_func.apply(path, coords);
 
-		for (var k = 0, n = 2 * npoints; k < n; k++)
+		for (var k = 0, n = coords.length; k < n; k++)
 			coords.pop();
 	}
 
@@ -166,19 +200,22 @@ function stroke_and_fill(slot, attachment, vbo, ibo)
 		path.stroke(vbo, ibo);
 	}
 
-	var src = attachment.fill_color;
-	var alpha = slot_color.a * src.a;
-
-	if (alpha > 0)
+	if (path.closed)
 	{
-		var dst = path.fill_color;
+		var src = attachment.fill_color;
+		var alpha = slot_color.a * src.a;
 
-		dst[0] = (alpha * slot_color.r * src.r * 255)|0;
-		dst[1] = (alpha * slot_color.g * src.g * 255)|0;
-		dst[2] = (alpha * slot_color.b * src.b * 255)|0;
-		dst[3] = (alpha * 255)|0;
+		if (alpha > 0)
+		{
+			var dst = path.fill_color;
 
-		path.fill(vbo, ibo);
+			dst[0] = (alpha * slot_color.r * src.r * 255)|0;
+			dst[1] = (alpha * slot_color.g * src.g * 255)|0;
+			dst[2] = (alpha * slot_color.b * src.b * 255)|0;
+			dst[3] = (alpha * 255)|0;
+
+			path.fill(vbo, ibo);
+		}
 	}
 }
 
