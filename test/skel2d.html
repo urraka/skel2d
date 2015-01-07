@@ -129,18 +129,22 @@ function frame()
 	t0 = t1;
 	t1 = (t1 + dt) % 2.0;
 
-	animation.apply(skeleton, t0, t1, 1);
-	skeleton.update_transform();
+	gfx.clear();
 
-	draw();
+	var s = 0.4;
+
+	for (var y = -4; y <= 4; y++)
+	for (var x = -10; x <= 10; x++)
+	{
+		animation.apply(skeleton, t0, t1, 1);
+		skeleton.update_transform();
+		mat3translate(s * 180 * x, s * 200 * y, transform);
+		transform[0] = transform[4] = s;
+		gfx.transform(transform);
+		renderer.draw(skeleton, s);
+	}
 
 	requestAnimationFrame(frame);
-}
-
-function draw()
-{
-	gfx.clear();
-	renderer.draw(skeleton, 1);
 }
 
 </script>
