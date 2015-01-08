@@ -1,6 +1,12 @@
 skeleton
 	leg-l
-		@leg-left :path w5 rj sc f#F00 l#000
+		@leg-left :path {
+				w5 x500 y-50 i2 j2 r160
+				round-join
+				square-cap
+				f#F000FF,1
+				s#000000,0.5
+			}
 			M 0,0                      # move_to
 			Q 0,-15 0,-30:leg-l.foot   # quad_to
 			: leg-l.foot               # switch default bone binding

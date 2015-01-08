@@ -3,7 +3,6 @@
 scope.SkeletonRenderer = SkeletonRenderer;
 
 var path = new Path();
-var bone_transforms = [];
 var coords = [];
 var bone_color = [0.7, 0.7, 0, 0.7];
 var matrix_pool = [sk2.mat2d()];
@@ -194,10 +193,10 @@ function add_path(skeleton, slot, attachment, vbo, ibo)
 	var commands = attachment.commands;
 	var ncommands = commands.length;
 	var points = attachment.points;
-	var nbones = skeleton.bones.length;
+	var slot_bone = slot.bone;
 
-	for (var i = 0; i < nbones; i++)
-		bone_transforms.push(null);
+	var m = sk2.mat2d_mul(slot_bone.world_transform, attachment.transform, mat2d_alloc());
+	var im = sk2.mat2d_inverse(slot_bone.world_transform, mat2d_alloc());
 
 	for (var i = 0, j = 0; i < ncommands; i++)
 	{
@@ -217,32 +216,30 @@ function add_path(skeleton, slot, attachment, vbo, ibo)
 		{
 			var p = points[j++];
 			var bone = skeleton.bones[p.bone];
-			var m = bone_transforms[p.bone];
+			var x = p.x;
+			var y = p.y;
 
-			if (m === null)
+			if (bone !== slot_bone)
 			{
-				m = mat2d_alloc();
-				sk2.mat2d_mul(bone.world_transform, attachment.transform, m);
-				bone_transforms[p.bone] = m;
+				var wx = bone.to_worldx(x, y);
+				var wy = bone.to_worldy(x, y);
+				x = sk2.mat2d_mulx(im, wx, wy);
+				y = sk2.mat2d_muly(im, wx, wy);
 			}
 
-			coords.push(sk2.mat2d_mulx(m, p.x, p.y));
-			coords.push(sk2.mat2d_muly(m, p.x, p.y));
+			coords.push(sk2.mat2d_mulx(m, x, y));
+			coords.push(sk2.mat2d_muly(m, x, y));
 		}
 
 		path_func.apply(path, coords);
 		clear_coords();
 	}
 
-	for (var i = 0; i < nbones; i++)
-	{
-		var m = bone_transforms.pop();
-		if (m) mat2d_free(m);
-	}
-
 	path.line_cap = attachment.line_cap;
-
 	stroke_and_fill(slot, attachment, vbo, ibo);
+
+	mat2d_free(m);
+	mat2d_free(im);
 }
 
 function stroke_and_fill(slot, attachment, vbo, ibo)

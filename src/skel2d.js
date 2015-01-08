@@ -854,14 +854,13 @@ Animation.prototype.apply_timeline_slot = function(tl, skeleton, t0, t1, p)
 {
 	var slot = skeleton.slots[tl.index];
 	var cur = slot.current_state;
-	var def = slot.initial_state;
 
 	switch (tl.property)
 	{
-		case PropSlotColorR: cur.r = lerp(cur.r, def.r + tl.val(t1), p); break;
-		case PropSlotColorG: cur.g = lerp(cur.g, def.g + tl.val(t1), p); break;
-		case PropSlotColorB: cur.b = lerp(cur.b, def.b + tl.val(t1), p); break;
-		case PropSlotColorA: cur.a = lerp(cur.a, def.a + tl.val(t1), p); break;
+		case PropSlotColorR: cur.r = lerp(cur.r, tl.val(t1), p); break;
+		case PropSlotColorG: cur.g = lerp(cur.g, tl.val(t1), p); break;
+		case PropSlotColorB: cur.b = lerp(cur.b, tl.val(t1), p); break;
+		case PropSlotColorA: cur.a = lerp(cur.a, tl.val(t1), p); break;
 		case PropSlotAttachment: cur.attachment = tl.val_discrete(t0, t1, cur.attachment); break;
 	}
 }
@@ -963,6 +962,13 @@ function mat2d() { return [1, 0, 0, 1, 0, 0]; }
 function mat2d_mulx(m, x, y) { return m[0] * x + m[2] * y + m[4] }
 function mat2d_muly(m, x, y) { return m[1] * x + m[3] * y + m[5]; }
 
+function mat2d_identity(m)
+{
+	m[0] = 1; m [2] = 0; m [4] = 0;
+	m[1] = 0; m [3] = 1; m [5] = 0;
+	return m;
+}
+
 function mat2d_mul(m, n, result)
 {
 	result[0] = m[0] * n[0] + m[2] * n[1];
@@ -971,6 +977,25 @@ function mat2d_mul(m, n, result)
 	result[3] = m[1] * n[2] + m[3] * n[3];
 	result[4] = m[0] * n[4] + m[2] * n[5] + m[4];
 	result[5] = m[1] * n[4] + m[3] * n[5] + m[5];
+	return result;
+}
+
+function mat2d_inverse(m, result)
+{
+	var det = m[0] * m[3] - m[2] * m[1];
+
+	if (det > -1e-6 && det < 1e-6)
+		return mat2d_identity(result);
+
+	var invdet = 1 / det;
+
+	result[0] =  m[3] * invdet;
+	result[1] = -m[1] * invdet;
+	result[2] = -m[2] * invdet;
+	result[3] =  m[0] * invdet;
+	result[4] = (m[2] * m[5] - m[3] * m[4]) * invdet;
+	result[5] = (m[1] * m[4] - m[0] * m[5]) * invdet;
+
 	return result;
 }
 
@@ -1093,5 +1118,7 @@ sk2.mat2d = mat2d;
 sk2.mat2d_mul = mat2d_mul;
 sk2.mat2d_mulx = mat2d_mulx;
 sk2.mat2d_muly = mat2d_muly;
+sk2.mat2d_identity = mat2d_identity;
+sk2.mat2d_inverse = mat2d_inverse;
 
 }());

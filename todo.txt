@@ -1,12 +1,16 @@
-- make webgl renderer
-- implement slots and slots animations
-- implement attachments
-- figure out how to do shape attachments (splines, rectangles, circles, etc)
+- add sprite rendering
+- test slot animations
 - figure out how to import images from computer (drop a folder? maybe a zip)
+x test attachment transform on paths.. what i did is probably not useful. better if the transform
+  is applied relative to the main bone
+x implement attachments
+x figure out how to do shape attachments (splines, rectangles, circles, etc)
+x make webgl renderer
 x strip down gfx.js to just what is needed
 x path: add fill without stroke (just flatten and add points to vbo)
 x path: check if point equals previous one when pushing points
 x path: check if first and last points are equal when shape is closed
+x implement slots and slots animations
 x timeline val_flip
 x load skeleton and animations from data object
 x test flipping, it's probably fucked up too
