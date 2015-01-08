@@ -77,29 +77,38 @@ var animation_data = {
 	"bones": {
 		"torso.arm_r.forearm": {
 			"rot": [
-				{"time": 0.0 / 2, "value": 0, "easing": "sin_in"},
-				{"time": 0.5 / 2, "value": -30, "easing": "sin_out"},
-				{"time": 1.0 / 2, "value": 0, "easing": "sin_in"},
-				{"time": 1.5 / 2, "value": 30, "easing": "sin_out"},
-				{"time": 2.0 / 2, "value": 0, "easing": "sin_in"},
-				{"time": 2.5 / 2, "value": -30, "easing": "sin_out"},
-				{"time": 3.0 / 2, "value": 0, "easing": "sin_in"},
-				{"time": 3.5 / 2, "value": 30, "easing": "sin_out"},
+				{"time": 0.0 / 2, "value": 0, "easing": "sin_out"},
+				{"time": 0.5 / 2, "value": -30, "easing": "sin_in"},
+				{"time": 1.0 / 2, "value": 0, "easing": "sin_out"},
+				{"time": 1.5 / 2, "value": 30, "easing": "sin_in"},
+				{"time": 2.0 / 2, "value": 0, "easing": "sin_out"},
+				{"time": 2.5 / 2, "value": -30, "easing": "sin_in"},
+				{"time": 3.0 / 2, "value": 0, "easing": "sin_out"},
+				{"time": 3.5 / 2, "value": 30, "easing": "sin_in"},
 				{"time": 4.0 / 2, "value": 0}
 			]
 		}
 	},
 	"slots": {
 		"torso.torso": {
+			"r": [
+				{"time": 0.0, "value": 0.0, "easing": "sin_in_out"},
+				{"time": 0.5, "value": 0.5, "easing": "sin_in_out"},
+				{"time": 1.0, "value": 1.0, "easing": "sin_in_out"},
+				{"time": 1.5, "value": 0.5, "easing": "sin_in_out"},
+				{"time": 2.0, "value": 0.0}
+			],
 			"g": [
-				{"time": 0, "value": 1, "easing": "sin_in"},
-				{"time": 1, "value": 0, "easing": "sin_out"},
-				{"time": 2, "value": 1}
+				{"time": 0, "value": 0},
+				{"time": 1, "value": 0},
+				{"time": 2, "value": 0}
 			],
 			"b": [
-				{"time": 0, "value": 1, "easing": "sin_in"},
-				{"time": 1, "value": 0, "easing": "sin_out"},
-				{"time": 2, "value": 1}
+				{"time": 0.0, "value": 1.0, "easing": "sin_in_out"},
+				{"time": 0.5, "value": 0.5, "easing": "sin_in_out"},
+				{"time": 1.0, "value": 0.0, "easing": "sin_in_out"},
+				{"time": 1.5, "value": 0.5, "easing": "sin_in_out"},
+				{"time": 2.0, "value": 1.0}
 			]
 		}
 	}

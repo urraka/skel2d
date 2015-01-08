@@ -3,6 +3,7 @@
 // --- enums/constants ---
 
 var Pi = Math.PI;
+var Pi2 = Pi / 2;
 var Tau = 2 * Pi;
 
 var TimelineBone      = 0;
@@ -707,8 +708,9 @@ function PathAttachment()
 function Easing() {}
 
 Easing.linear = function(x) { return x };
-Easing.sin_in = function(x) { return Math.sin(x * Pi/2); };
-Easing.sin_out = function(x) { return 1 - Math.sin(Pi/2 + x * Pi/2); };
+Easing.sin_in = function(x) { return 1 - Math.sin(Pi2 + x * Pi2); };
+Easing.sin_out = function(x) { return Math.sin(x * Pi2); };
+Easing.sin_in_out = function(x) { return 0.5 + 0.5 * Math.sin(x * Pi - Pi2); };
 
 // --- Animation ---
 
