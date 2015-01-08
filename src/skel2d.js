@@ -782,6 +782,12 @@ function load_timelines(skeleton, type, data)
 					if (type === TimelineBone && timeline.property === PropBoneRot)
 						keyframe.value = normalize_angle(to_radians(keyframe.value));
 
+					if (type === TimelineSlot && timeline.property === PropSlotAttachment)
+					{
+						var name = skeleton.slots[index].name + "." + keyframe.value;
+						keyframe.value = skeleton.skins[0].find_attachment(name);
+					}
+
 					timeline.keyframes.push(keyframe);
 				}
 

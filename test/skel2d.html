@@ -43,6 +43,9 @@ var skeleton_data = {
 			{"name": "torso.torso.torso", "type": "rect", "line_width": 4, "fill_color": "FFFFFFFF",
 			"width": 120, "height": 100, "rot": -90, "y": 60, "border_radius": 0, "line_join": "round"},
 
+			{"name": "torso.torso.round", "type": "rect", "line_width": 4, "fill_color": "FFFFFFFF",
+			"width": 120, "height": 100, "rot": -90, "y": 60, "border_radius": 10, "line_join": "round"},
+
 			{"name": "torso.head.head.head", "type": "ellipse", "line_width": 4, "fill_color": "FFCC99FF",
 			"rx": 80, "ry": 70, "rot": -90, "x": 55, "line_join": "round"},
 
@@ -109,6 +112,10 @@ var animation_data = {
 				{"time": 1.0, "value": 0.0, "easing": "sin_in_out"},
 				{"time": 1.5, "value": 0.5, "easing": "sin_in_out"},
 				{"time": 2.0, "value": 1.0}
+			],
+			"@": [
+				{"time": 0, "value": "torso"},
+				{"time": 1, "value": "round"}
 			]
 		}
 	}
