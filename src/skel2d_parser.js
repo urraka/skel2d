@@ -127,12 +127,34 @@ function parse(source)
 		}
 	}
 
-	var bones = data.bones;
-	var nbones = bones.length;
-	var slots = data.slots;
-	var nslots = slots.length;
-	var attachments = data.attachments;
-	var nattachments = attachments.length;
+	var bones = data.bones, nbones = bones.length;
+	var slots = data.slots, nslots = slots.length;
+	var attachments = data.attachments, nattachments = attachments.length;
+
+	var parent_bones = [];
+
+	for (var i = 0; i < nbones; i++)
+	{
+		var name = bones[i].name;
+		var index = -1;
+
+		next: while (-1 !== (index = name.indexOf(".", index + 1)))
+		{
+			var parent_name = name.substring(0, index);
+
+			for (var j = 0; j < nbones; j++)
+				if (bones[j].name === parent_name)
+					continue next;
+
+			parent_bones.push({name: parent_name});
+		}
+	}
+
+	for (var i = 0, n = parent_bones.length; i < n; i++)
+	{
+		bones.push(parent_bones[i]);
+		nbones++;
+	}
 
 	for (var i = 0; i < nattachments; i++)
 	{
