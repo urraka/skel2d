@@ -3,25 +3,81 @@
 <head>
 <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 <title>Skel2D</title>
+<script type="text/javascript" src="ace/ace.js"></script>
+<script type="text/javascript" src="src/gfx.js"></script>
+<script type="text/javascript" src="src/gfx_path.js"></script>
+<script type="text/javascript" src="src/skel2d.js"></script>
+<script type="text/javascript" src="src/skel2d_render.js"></script>
+<script type="text/javascript" src="src/skel2d_parser.js"></script>
 <style type="text/css">
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
 body { background: #333; }
 #code { position: absolute; top: 0; bottom: 0; width: 600px; }
 #code { border-right: 1px solid #666; display: none; }
-canvas { position: absolute; top: 0; bottom: 0; left: 601px; right: 0; }
+#canvas { position: absolute; top: 0; bottom: 0; left: 601px; right: 0; }
+canvas { display: block; width: 100%; height: 100%; }
 </style>
 </head>
 <body>
-<canvas></canvas>
+<div id="canvas"><canvas></canvas></div>
 <div id="code"></div>
-<script type="text/javascript" src="ace/ace.js"></script>
-<script type="text/javascript" src="src/parser.js"></script>
 <script type="text/javascript">
+
 var editor = ace.edit("code");
+var canvas = document.querySelector("canvas");
+var gfx = gfx_create_context(canvas);
+var renderer = new SkeletonRenderer(gfx);
+var skeleton = null;
+var update_timer = null;
+
+window.addEventListener("resize", resize);
+
+editor.session.on("change", function() {
+	if (update_timer !== null)
+		clearTimeout(update_timer);
+
+	update_timer = setTimeout(update, 1000);
+});
+
 editor.setTheme("ace/theme/terminal");
-editor.getSession().setTabSize(2);
+editor.session.setTabSize(2);
+editor.session.setUseSoftTabs(false);
 editor.$blockScrolling = Infinity;
 document.querySelector("#code").style.display = "block";
+
+gfx.clear_color(0x33/255, 0x33/255, 0x33/255, 1);
+
+resize();
+
+function update()
+{
+	update_timer = null;
+
+	var data = skel2d_parse(editor.session.getValue());
+	skeleton = new sk2.Skeleton(data);
+
+	draw();
+}
+
+function resize()
+{
+	var w = canvas.width = canvas.offsetWidth;
+	var h = canvas.height = canvas.offsetHeight;
+
+	gfx.viewport(0, 0, canvas.width, canvas.height);
+	gfx.projection(mat3ortho(-w/2, w/2, -h/2, h/2, mat3()));
+
+	draw();
+}
+
+function draw()
+{
+	gfx.clear();
+
+	if (skeleton)
+		renderer.draw(skeleton, 1);
+}
+
 </script>
 </body>
 </html>

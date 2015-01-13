@@ -258,7 +258,7 @@ function load_attachment(data)
 	if (type === AttachmentPath || type === AttachmentRect ||
 		type === AttachmentEllipse || type === AttachmentCircle)
 	{
-		attachment.line_width = "line_width" in data ? to_number(data.line_width, 0) : 0;
+		attachment.line_width = "line_width" in data ? to_number(data.line_width, 1) : 1;
 
 		if ("line_color" in data)
 			parse_color(data.line_color.toString(), attachment.line_color);

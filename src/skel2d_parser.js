@@ -126,9 +126,12 @@ function parse(source)
 
 	var bones = data.bones;
 	var nbones = bones.length;
+	var slots = data.slots;
+	var nslots = slots.length;
 	var attachments = data.attachments;
+	var nattachments = attachments.length;
 
-	for (var i = 0, n = attachments.length; i < n; i++)
+	for (var i = 0; i < nattachments; i++)
 	{
 		var attachment = attachments[i];
 
@@ -140,7 +143,7 @@ function parse(source)
 			var name = attachment.name;
 			var def = name.substring(0, name.lastIndexOf(".", name.lastIndexOf(".") - 1));
 
-			for (var j = 0, m = src_commands.length; j < m; j++)
+			for (var j = 0, n = src_commands.length; j < n; j++)
 			{
 				var cmd = src_commands[j];
 
@@ -177,6 +180,27 @@ function parse(source)
 			}
 		}
 	}
+
+	for (var i = 0; i < nslots; i++)
+	{
+		var sname = slots[i].name;
+		var slen = sname.length;
+
+		for (var j = 0; j < nattachments; j++)
+		{
+			var aname = attachments[j].name;
+			var alen = aname.length;
+
+			if (aname.lastIndexOf(sname, alen - slen) !== -1)
+			{
+				slots[i].attachment = aname.substr(aname.lastIndexOf(".") + 1);
+				break;
+			}
+		}
+	}
+
+	data.skins = {"default": attachments};
+	delete data.attachments;
 
 	return data;
 }

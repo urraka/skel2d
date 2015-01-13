@@ -112,8 +112,10 @@ function add_rect(slot, attachment, vbo, ibo)
 
 		for (var i = 0, n = coords.length; i < n; i += 2)
 		{
-			coords[i + 0] = sk2.mat2d_mulx(m, coords[i + 0], coords[i + 1]);
-			coords[i + 1] = sk2.mat2d_muly(m, coords[i + 0], coords[i + 1]);
+			var x = coords[i + 0];
+			var y = coords[i + 1];
+			coords[i + 0] = sk2.mat2d_mulx(m, x, y);
+			coords[i + 1] = sk2.mat2d_muly(m, x, y);
 		}
 
 		path.begin(coords[0], coords[1]);
@@ -173,8 +175,10 @@ function add_ellipse(slot, attachment, vbo, ibo)
 
 	for (var i = 0, n = p.length; i < n; i += 2)
 	{
-		p[i + 0] = sk2.mat2d_mulx(m, p[i + 0], p[i + 1]);
-		p[i + 1] = sk2.mat2d_muly(m, p[i + 0], p[i + 1]);
+		var x = p[i + 0];
+		var y = p[i + 1];
+		p[i + 0] = sk2.mat2d_mulx(m, x, y);
+		p[i + 1] = sk2.mat2d_muly(m, x, y);
 	}
 
 	path.begin(p[0], p[1]);
