@@ -92,7 +92,10 @@ function parse(source)
 							data.attachments.push(attachment);
 
 							if (attachment.type === "path")
+							{
 								current_attachment = attachment;
+								current_attachment.commands = [];
+							}
 						}
 
 					}
@@ -481,9 +484,6 @@ function parse_attachment(attachments, bone, tokens)
 			}
 		}
 	}
-
-	if (is_path)
-		attachment.commands = [];
 
 	return attachment;
 }

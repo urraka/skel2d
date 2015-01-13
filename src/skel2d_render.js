@@ -199,6 +199,9 @@ function add_path(skeleton, slot, attachment, vbo, ibo)
 	var points = attachment.points;
 	var slot_bone = slot.bone;
 
+	if (ncommands === 0)
+		return;
+
 	var m = sk2.mat2d_mul(slot_bone.world_transform, attachment.transform, mat2d_alloc());
 	var im = sk2.mat2d_inverse(slot_bone.world_transform, mat2d_alloc());
 
