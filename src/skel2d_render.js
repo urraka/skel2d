@@ -143,7 +143,7 @@ function add_rect(slot, attachment, vbo, ibo)
 		path.close();
 	}
 
-	stroke_and_fill(slot, attachment, vbo, ibo);
+	stroke_and_fill(slot, attachment, true, vbo, ibo);
 	mat2d_free(m);
 }
 
@@ -188,7 +188,7 @@ function add_ellipse(slot, attachment, vbo, ibo)
 
 	path.close();
 	clear_coords();
-	stroke_and_fill(slot, attachment, vbo, ibo);
+	stroke_and_fill(slot, attachment, true, vbo, ibo);
 	mat2d_free(m);
 }
 
@@ -204,6 +204,8 @@ function add_path(skeleton, slot, attachment, vbo, ibo)
 
 	var m = sk2.mat2d_mul(slot_bone.world_transform, attachment.transform, mat2d_alloc());
 	var im = sk2.mat2d_inverse(slot_bone.world_transform, mat2d_alloc());
+
+	var closed = false;
 
 	for (var i = 0, j = 0; i < ncommands; i++)
 	{
@@ -240,16 +242,22 @@ function add_path(skeleton, slot, attachment, vbo, ibo)
 
 		path_func.apply(path, coords);
 		clear_coords();
+
+		if (path_func === path.close)
+		{
+			closed = true;
+			break;
+		}
 	}
 
 	path.line_cap = attachment.line_cap;
-	stroke_and_fill(slot, attachment, vbo, ibo);
+	stroke_and_fill(slot, attachment, closed, vbo, ibo);
 
 	mat2d_free(m);
 	mat2d_free(im);
 }
 
-function stroke_and_fill(slot, attachment, vbo, ibo)
+function stroke_and_fill(slot, attachment, closed, vbo, ibo)
 {
 	var w = attachment.line_width;
 	var slot_color = slot.current_state;
@@ -271,7 +279,7 @@ function stroke_and_fill(slot, attachment, vbo, ibo)
 		path.stroke(vbo, ibo);
 	}
 
-	if (path.closed)
+	if (closed)
 	{
 		var src = attachment.fill_color;
 		var alpha = slot_color.a * src.a;

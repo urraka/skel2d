@@ -150,8 +150,6 @@ function load_attachment(data)
 	{
 		case "sprite":
 			attachment = new SpriteAttachment();
-			attachment.width = "width" in data ? to_number(data.width, 0) : 0;
-			attachment.height = "height" in data ? to_number(data.height, 0) : 0;
 			attachment.image = "image" in data ? data.image.toString() : null;
 			break;
 
@@ -169,7 +167,7 @@ function load_attachment(data)
 			break;
 
 		case "circle":
-			attachment = new EllipseAttachment();
+			attachment = new CircleAttachment();
 			attachment.radius = "radius" in data ? to_number(data.radius, 0) : 0;
 			break;
 
@@ -651,8 +649,6 @@ function SpriteAttachment()
 	Attachment.call(this);
 
 	this.type = AttachmentSprite;
-	this.width = 0;
-	this.height = 0;
 	this.image = null;
 }
 

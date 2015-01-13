@@ -403,7 +403,7 @@ function parse_attachment(attachments, bone, tokens)
 		}
 		else if (/^[wh]-?\d+(\.\d+)?$/.test(tok))
 		{
-			if (is_sprite || is_rect || is_ellipse)
+			if (is_rect || is_ellipse)
 			{
 				var value = parseFloat(tok.substr(1));
 
