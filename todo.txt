@@ -1,6 +1,9 @@
-- add bone colors
-- add more easing functions
-- add sprite rendering
+- renderer: improve bone rendering so bones with no length are visible
+- parser: create implicit parent bones
+- parser: border_radius shortcut in rect attachment
+- renderer/core: add bone colors
+- core: add more easing functions
+- renderer: add sprite rendering
 - figure out how to import images from computer (drop a folder? maybe a zip)
 x test slot animations
 x test attachment transform on paths.. what i did is probably not useful. better if the transform
