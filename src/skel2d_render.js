@@ -131,15 +131,10 @@ function add_rect(slot, attachment, vbo, ibo)
 	}
 	else
 	{
-		var x0 = sk2.mat2d_mulx(m, 0, 0);
-		var y0 = sk2.mat2d_muly(m, 0, 0);
-		var x1 = sk2.mat2d_mulx(m, w, h);
-		var y1 = sk2.mat2d_muly(m, w, h);
-
-		path.begin(x0, y0);
-		path.line_to(x1, y0);
-		path.line_to(x1, y1);
-		path.line_to(x0, y1);
+		path.begin(sk2.mat2d_mulx(m, 0, 0), sk2.mat2d_muly(m, 0, 0));
+		path.line_to(sk2.mat2d_mulx(m, w, 0), sk2.mat2d_muly(m, w, 0));
+		path.line_to(sk2.mat2d_mulx(m, w, h), sk2.mat2d_muly(m, w, h));
+		path.line_to(sk2.mat2d_mulx(m, 0, h), sk2.mat2d_muly(m, 0, h));
 		path.close();
 	}
 

@@ -1,3 +1,4 @@
+- renderer/core: add miter limit
 - renderer: improve bone rendering so bones with no length are visible
 - parser: border_radius shortcut in rect attachment
 - renderer/core: add bone colors

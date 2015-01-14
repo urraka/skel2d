@@ -11,10 +11,12 @@
 <script type="text/javascript" src="src/skel2d_parser.js"></script>
 <style type="text/css">
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
-#code { position: absolute; top: 0; bottom: 0; width: 600px; }
+#code { position: absolute; top: 0; bottom: 0; width: 610px; }
 #code { border-right: 1px solid #666; display: none; }
-#canvas { position: absolute; top: 0; bottom: 0; left: 601px; right: 0; }
+#canvas { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
 canvas { display: block; width: 100%; height: 100%; }
+.ace_bracket {border: none!important;}
+.ace_cursor {border-left-width: 1px!important;}
 </style>
 </head>
 <body>
@@ -37,6 +39,8 @@ window.addEventListener("beforeunload", function() {
 
 editor.session.setTabSize(2);
 editor.session.setUseSoftTabs(false);
+editor.setOption("fixedWidthGutter", true);
+editor.setOption("displayIndentGuides", false);
 editor.$blockScrolling = Infinity;
 
 var code = localStorage.getItem("testcode");
