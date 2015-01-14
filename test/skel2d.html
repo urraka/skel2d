@@ -41,10 +41,10 @@ var skeleton_data = {
 	"skins": {
 		"default": [
 			{"name": "torso.torso.torso", "type": "rect", "line_width": 4, "fill_color": "FFFFFFFF",
-			"width": 120, "height": 100, "rot": -90, "y": 60, "border_radius": 0, "line_join": "round"},
+			"width": 120, "height": 100, "rot": -90, "x": 50, "border_radius": 0, "line_join": "round"},
 
 			{"name": "torso.torso.round", "type": "rect", "line_width": 4, "fill_color": "FFFFFFFF",
-			"width": 120, "height": 100, "rot": -90, "y": 60, "border_radius": 10, "line_join": "round"},
+			"width": 120, "height": 100, "rot": -90, "x": 50, "border_radius": 10, "line_join": "round"},
 
 			{"name": "torso.head.head.head", "type": "ellipse", "line_width": 4, "fill_color": "FFCC99FF",
 			"rx": 80, "ry": 70, "rot": -90, "x": 55, "line_join": "round"},
@@ -168,7 +168,7 @@ function frame()
 	skeleton.update_transform();
 
 	gfx.clear();
-	renderer.draw(skeleton, 1);
+	renderer.draw(skeleton, 0, 0, 1);
 
 	requestAnimationFrame(frame);
 }
