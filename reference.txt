@@ -1,0 +1,26 @@
+x: position x
+y: position y
+i: scale x
+j: scale y
+r: rotation  -> degrees
+t: thickness -> stroke width
+w: width     -> rect width, ellipse radius x
+h: height    -> rect height, ellipse radius y
+d: diameter  -> circle radius, rect border radius
+l: length    -> bone length
+f: fill      -> fill color
+s: stroke    -> stroke color
+m: miter     -> miter limit
+
+miter-join   -> line join
+bevel-join   -> line join
+round-join   -> line join
+
+butt-cap     -> line cap (non-closed path)
+square-cap   -> line cap (non-closed path)
+round-cap    -> line cap (non-closed path)
+
+no-rot       -> bone don't inherit rotation
+no-scale     -> bone don't inherit scale
+flip-x       -> bone flip-x
+flip-y       -> bone flip-y

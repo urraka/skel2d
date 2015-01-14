@@ -63,6 +63,9 @@ function load_bones(bones)
 		bone.initial_state.rot = ("rot" in data ? to_number(data.rot, 0) : 0);
 		bone.initial_state.rot = normalize_angle(to_radians(bone.initial_state.rot));
 
+		if ("color" in data)
+			parse_color(data.color.toString(), bone.color);
+
 		this.bones.push(bone);
 	}
 
@@ -257,6 +260,7 @@ function load_attachment(data)
 		type === AttachmentEllipse || type === AttachmentCircle)
 	{
 		attachment.line_width = "line_width" in data ? to_number(data.line_width, 1) : 1;
+		attachment.miter_limit = "miter_limit" in data ? to_number(data.miter_limit, 10) : 10;
 
 		if ("line_color" in data)
 			parse_color(data.line_color.toString(), attachment.line_color);
@@ -442,6 +446,7 @@ function Bone()
 	this.skeleton = null;
 	this.parent = null;
 	this.length = 0;
+	this.color = new Color(0, 0, 0, 1);
 	this.inherit_rotation = true;
 	this.inherit_scale = true;
 	this.initial_state = new BoneState();
@@ -660,6 +665,7 @@ function ShapeAttachment()
 	this.line_width = 0;
 	this.line_color = new Color(0, 0, 0, 1);
 	this.fill_color = new Color(0, 0, 0, 1);
+	this.miter_limit = 0;
 }
 
 function RectAttachment()

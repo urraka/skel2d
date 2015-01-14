@@ -15,8 +15,9 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
 #code { border-right: 1px solid #666; display: none; }
 #canvas { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
 canvas { display: block; width: 100%; height: 100%; }
-.ace_bracket {border: none!important;}
-.ace_cursor {border-left-width: 1px!important;}
+.ace-tm .ace_marker-layer .ace_bracket {border-width: 0;border-style: none;}
+.ace_hidden-cursors .ace_cursor {display: none;}
+.ace_cursor {border-left-width: 1px;}
 </style>
 </head>
 <body>
@@ -81,8 +82,8 @@ function resize()
 	var w = canvas.width = canvas.offsetWidth;
 	var h = canvas.height = canvas.offsetHeight;
 
-	gfx.viewport(0, 0, canvas.width, canvas.height);
-	gfx.projection(mat3ortho(-w/2, w/2, -h/2, h/2, mat3()));
+	gfx.viewport(0, 0, w, h);
+	gfx.projection(mat3ortho(0, w, 0, h, mat3()));
 
 	draw();
 }
@@ -92,7 +93,7 @@ function draw()
 	gfx.clear();
 
 	if (skeleton)
-		renderer.draw(skeleton, 1);
+		renderer.draw(skeleton, canvas.width / 2, canvas.height / 2, 1);
 }
 
 </script>

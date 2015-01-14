@@ -4,8 +4,9 @@ scope.SkeletonRenderer = SkeletonRenderer;
 
 var path = new Path();
 var coords = [];
-var bone_color = [0.7, 0.7, 0, 0.7];
+var bone_color = [0, 0, 0, 0];
 var matrix_pool = [sk2.mat2d()];
+var view_transform = mat3();
 var kappa90 = 0.5522847493;
 
 bone_color[0] = (bone_color[3] * bone_color[0] * 255)|0;
@@ -29,12 +30,19 @@ function SkeletonRenderer(gfx)
 	this.ibo = gfx.create_ibo(500, gfx.Stream);
 }
 
-SkeletonRenderer.prototype.draw = function(skeleton, scale)
+SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale)
 {
 	var gfx = this.gfx;
 	var vbo = this.vbo;
 	var ibo = this.ibo;
 	var skin = skeleton.skins[0];
+
+	var m = view_transform;
+	var s = scale;
+
+	m[0] = s; m[3] = 0; m[6] = x;
+	m[1] = 0; m[4] = s; m[7] = y;
+	m[2] = 0; m[5] = 0; m[8] = 1;
 
 	vbo.clear();
 	ibo.clear();
@@ -60,30 +68,72 @@ SkeletonRenderer.prototype.draw = function(skeleton, scale)
 		}
 	}
 
-	var s = 4;
+	var s = 5;
 	var nbones = skeleton.bones.length;
 
-	vbo.reserve(vbo.size + nbones * 4);
+	vbo.reserve(vbo.size + nbones * 4 * 2);
 	ibo.reserve(ibo.size + 3 * nbones * 2);
 
 	for (var i = 0, n = nbones; i < n; i++)
 	{
 		var bone = skeleton.bones[i];
+
+		if (bone.length >= 2 * s)
+		{
+			var base = vbo.size;
+			var l = bone.length;
+
+			bone_color[0] = (bone.color.r * 255)|0;
+			bone_color[1] = (bone.color.g * 255)|0;
+			bone_color[2] = (bone.color.b * 255)|0;
+			bone_color[3] = (0.7 * bone.color.a * 255)|0;
+
+			vbo.push(bone.to_worldx(-s,  0), bone.to_worldy(-s,  0), 0, 0, bone_color);
+			vbo.push(bone.to_worldx( 0,  s), bone.to_worldy( 0,  s), 0, 0, bone_color);
+			vbo.push(bone.to_worldx( l,  0), bone.to_worldy( l,  0), 0, 0, bone_color);
+			vbo.push(bone.to_worldx( 0, -s), bone.to_worldy( 0, -s), 0, 0, bone_color);
+
+			ibo.push(base + 0, base + 1, base + 2);
+			ibo.push(base + 0, base + 2, base + 3);
+		}
+	}
+
+	var count = ibo.size;
+	var lines_offset = vbo.size;
+
+	bone_color[0] = 0;
+	bone_color[1] = 0;
+	bone_color[2] = 0;
+	bone_color[3] = 255;
+
+	s = 3;
+
+	for (var i = 0, n = nbones; i < n; i++)
+	{
+		var bone = skeleton.bones[i];
 		var base = vbo.size;
+		var px = bone.to_worldx(0, 0);
+		var py = bone.to_worldy(0, 0);
+		var x = 0.5 + Math.floor(mat3mulx(m, px, py));
+		var y = 0.5 + Math.floor(mat3muly(m, px, py));
 
-		vbo.push(bone.to_worldx(0, 0), bone.to_worldy(0, 0), 0, 0, bone_color);
-		vbo.push(bone.to_worldx(s, s), bone.to_worldy(s, s), 0, 0, bone_color);
-		vbo.push(bone.to_worldx(bone.length, 0), bone.to_worldy(bone.length, 0), 0, 0, bone_color);
-		vbo.push(bone.to_worldx(s, -s), bone.to_worldy(s, -s), 0, 0, bone_color);
-
-		ibo.push(base + 0, base + 1, base + 2);
-		ibo.push(base + 0, base + 2, base + 3);
+		vbo.push(x - s, y, 0, 0, bone_color);
+		vbo.push(x + s, y, 0, 0, bone_color);
+		vbo.push(x, y - s, 0, 0, bone_color);
+		vbo.push(x, y + s, 0, 0, bone_color);
 	}
 
 	vbo.upload();
 	ibo.upload();
 
-	gfx.draw(gfx.Triangles, vbo, ibo, 0, ibo.size);
+	gfx.transform(m);
+	gfx.draw(gfx.Triangles, vbo, ibo, 0, count);
+
+	m[0] = m[4] = 1;
+	m[6] = m[7] = 0;
+
+	gfx.transform(m);
+	gfx.draw(gfx.Lines, vbo, null, lines_offset, 4 * nbones);
 }
 
 function add_rect(slot, attachment, vbo, ibo)
@@ -110,10 +160,13 @@ function add_rect(slot, attachment, vbo, ibo)
 		coords.push(rx, 0);
 		coords.push(rx * k, 0, 0, ry * k, 0, ry);
 
+		var cx = w / 2;
+		var cy = h / 2;
+
 		for (var i = 0, n = coords.length; i < n; i += 2)
 		{
-			var x = coords[i + 0];
-			var y = coords[i + 1];
+			var x = coords[i + 0] - cx;
+			var y = coords[i + 1] - cy;
 			coords[i + 0] = sk2.mat2d_mulx(m, x, y);
 			coords[i + 1] = sk2.mat2d_muly(m, x, y);
 		}
@@ -131,10 +184,13 @@ function add_rect(slot, attachment, vbo, ibo)
 	}
 	else
 	{
-		path.begin(sk2.mat2d_mulx(m, 0, 0), sk2.mat2d_muly(m, 0, 0));
-		path.line_to(sk2.mat2d_mulx(m, w, 0), sk2.mat2d_muly(m, w, 0));
-		path.line_to(sk2.mat2d_mulx(m, w, h), sk2.mat2d_muly(m, w, h));
-		path.line_to(sk2.mat2d_mulx(m, 0, h), sk2.mat2d_muly(m, 0, h));
+		var cx = w / 2;
+		var cy = h / 2;
+
+		path.begin(  sk2.mat2d_mulx(m, 0 - cx, 0 - cy), sk2.mat2d_muly(m, 0 - cx, 0 - cy));
+		path.line_to(sk2.mat2d_mulx(m, w - cx, 0 - cy), sk2.mat2d_muly(m, w - cx, 0 - cy));
+		path.line_to(sk2.mat2d_mulx(m, w - cx, h - cy), sk2.mat2d_muly(m, w - cx, h - cy));
+		path.line_to(sk2.mat2d_mulx(m, 0 - cx, h - cy), sk2.mat2d_muly(m, 0 - cx, h - cy));
 		path.close();
 	}
 
@@ -259,6 +315,7 @@ function stroke_and_fill(slot, attachment, closed, vbo, ibo)
 
 	path.stroke_width = w;
 	path.line_join = attachment.line_join;
+	path.miter_limit = attachment.miter_limit;
 
 	if (w > 0)
 	{

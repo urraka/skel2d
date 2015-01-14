@@ -497,12 +497,17 @@ function parse_attachment(attachments, bone, tokens)
 						attachment.miter_limit = parseFloat(value);
 				}
 			}
-			else if (is_circle && /^d\d+(\.\d+)?$/.test(tok))
+			else if ((is_circle || is_rect) && /^d\d+(\.\d+)?$/.test(tok))
 			{
-				var value = parseFloat(tok.substr(1));
+				var value = parseFloat(tok.substr(1)) / 2;
 
 				if (!isNaN(value))
-					attachment.radius = value / 2;
+				{
+					if (is_circle)
+						attachment.radius = value;
+					else
+						attachment.border_radius = value;
+				}
 			}
 		}
 	}
