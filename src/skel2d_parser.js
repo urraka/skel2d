@@ -40,7 +40,7 @@ function parse(source)
 			len = line.length;
 
 			if (line.charAt(len - 1) === "\r")
-				line = line.substr(0, len - 1);
+				line = line.substr(0, --len);
 		}
 
 		switch (state)

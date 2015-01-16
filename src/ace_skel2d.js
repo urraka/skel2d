@@ -14,10 +14,7 @@ function HighlightRules()
 			{
 				token: "keyword",
 				regex: /(^skeleton)(?=\s|$)/,
-				next: function(state, stack) {
-					stack.unshift("skeleton");
-					return "skeleton";
-				}
+				next: "skeleton"
 			},
 			{
 				token: "text",
@@ -27,15 +24,12 @@ function HighlightRules()
 		"skeleton": [
 			{
 				token: "text",
-				regex: /^\s+$/
+				regex: /^\s*$/
 			},
 			{
 				token: "text",
 				regex: /^(?=[^\t])/,
-				next: function(state, stack) {
-					stack.shift();
-					return "start";
-				}
+				next: "start"
 			},
 			{
 				token: ["text", "invalid"],
@@ -43,8 +37,12 @@ function HighlightRules()
 			},
 			{
 				token: ["text", "bone"],
-				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|$)/,
+				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s)/,
 				next: "bone"
+			},
+			{
+				token: ["text", "bone"],
+				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*$)/
 			},
 			{
 				token: ["text", "invalid"],
@@ -56,8 +54,12 @@ function HighlightRules()
 			},
 			{
 				token: ["text", "slot"],
-				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s|$)/,
+				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s)/,
 				next: "slot"
+			},
+			{
+				token: ["text", "slot"],
+				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?$)/
 			},
 			{
 				token: "text",
@@ -69,7 +71,7 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: "start"
+				next: "skeleton"
 			}
 		],
 		"bone": [
@@ -78,12 +80,17 @@ function HighlightRules()
 				regex: /\s+/
 			},
 			{
-				token: ["property", "value"],
-				regex: /([xyrijl])(-?\d+(?:\.\d+)?)(?=\s|$)/
+				token: "text",
+				regex: /\\$/,
+				next: "bone"
 			},
 			{
 				token: ["property", "value"],
-				regex: /(#)([\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|$)/
+				regex: /([xyrijl])(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
+			},
+			{
+				token: ["property", "value"],
+				regex: /(#)([\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|\\$|$)/
 			},
 			{
 				token: "invalid",
@@ -100,12 +107,21 @@ function HighlightRules()
 				regex: /\s+/
 			},
 			{
+				token: "text",
+				regex: /\\$/,
+				next: "slot"
+			},
+			{
 				token: ["property", "value"],
-				regex: /(#)([\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|$)/
+				regex: /(#)([\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|\\$|$)/
 			},
 			{
 				token: "attachment-type",
-				regex: /(?::)(?:sprite|rect|circle|ellipse|path)(?=\s|$)/,
+				regex: /(?::)(?:sprite|rect|circle|ellipse|path)(?=$)/
+			},
+			{
+				token: "attachment-type",
+				regex: /(?::)(?:sprite|rect|circle|ellipse|path)(?=\s|\\$)/,
 				next: "attachment"
 			},
 			{
@@ -123,16 +139,21 @@ function HighlightRules()
 				regex: /\s+/
 			},
 			{
-				token: ["property", "value"],
-				regex: /([xyrijdtwhm])(-?\d+(?:\.\d+)?)(?=\s|$)/
+				token: "text",
+				regex: /\\$/,
+				next: "attachment"
 			},
 			{
 				token: ["property", "value"],
-				regex: /([fs])(#[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|$)/
+				regex: /([xyrijdtwhm])(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
+			},
+			{
+				token: ["property", "value"],
+				regex: /([fs])(#[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|\\$|$)/
 			},
 			{
 				token: "property",
-				regex: /(?:(?:miter|bevel|round)-join|(?:butt|square|round)-cap)(?=\s|$)/
+				regex: /(?:(?:miter|bevel|round)-join|(?:butt|square|round)-cap)(?=\s|\\$|$)/
 			},
 			{
 				token: "invalid",
