@@ -84,7 +84,7 @@ function parse(source)
 					if (current_bone !== null)
 						data.bones.push(current_bone);
 				}
-				else if (/^\t\t@([a-zA-Z_\-][\w\-]*)?(\[[a-zA-Z_\-][\w\-]*\])*($|\s)/.test(line))
+				else if (/^\t\t@([a-zA-Z_\-][\w\-]*)?(\[[a-zA-Z_\-][\w\-]*\])?($|\s)/.test(line))
 				{
 					// slot/attachment
 

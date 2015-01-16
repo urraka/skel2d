@@ -38,13 +38,25 @@ function HighlightRules()
 				}
 			},
 			{
+				token: ["text", "invalid"],
+				regex: /(^\t)((?:[a-zA-Z_\-][\w\-]*\.)*skeleton(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|$)/
+			},
+			{
 				token: ["text", "bone"],
 				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|$)/,
 				next: "bone"
 			},
 			{
+				token: ["text", "invalid"],
+				regex: /(^\t\t)(@skeleton(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s|$)/
+			},
+			{
+				token: ["text", "invalid"],
+				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?\[skeleton\])(?=\s|$)/
+			},
+			{
 				token: ["text", "slot"],
-				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])*)(?=\s|$)/,
+				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s|$)/,
 				next: "slot"
 			},
 			{
