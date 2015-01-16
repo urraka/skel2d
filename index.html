@@ -3,7 +3,8 @@
 <head>
 <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 <title>Skel2D</title>
-<script type="text/javascript" src="ace/ace.js"></script>
+<script type="text/javascript" src="src/ace.js"></script>
+<script type="text/javascript" src="src/ace_skel2d.js"></script>
 <script type="text/javascript" src="src/gfx.js"></script>
 <script type="text/javascript" src="src/gfx_path.js"></script>
 <script type="text/javascript" src="src/skel2d_core.js"></script>
@@ -15,9 +16,19 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
 #code { border-right: 1px solid #666; display: none; }
 #canvas { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
 canvas { display: block; width: 100%; height: 100%; }
+
 .ace-tm .ace_marker-layer .ace_bracket {border-width: 0;border-style: none;}
 .ace_hidden-cursors .ace_cursor {display: none;}
 .ace_cursor {border-left-width: 1px;}
+
+.ace-tm { color:#999; }
+.ace-tm .ace_keyword { color:#00F; }
+.ace_bone { color: #00F; }
+.ace_slot { color: #09F; }
+.ace_property { color: #000; }
+.ace_value { color: #999; }
+.ace_attachment-type { color: #F00; }
+
 </style>
 </head>
 <body>
@@ -38,11 +49,12 @@ window.addEventListener("beforeunload", function() {
 	localStorage.setItem("testcode", editor.session.getValue());
 });
 
-editor.session.setTabSize(2);
-editor.session.setUseSoftTabs(false);
+editor.$blockScrolling = Infinity;
 editor.setOption("fixedWidthGutter", true);
 editor.setOption("displayIndentGuides", false);
-editor.$blockScrolling = Infinity;
+editor.session.setTabSize(2);
+editor.session.setUseSoftTabs(false);
+editor.session.setMode(new (require("ace/mode/skel2d").Mode)());
 
 var code = localStorage.getItem("testcode");
 

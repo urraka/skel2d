@@ -11,7 +11,7 @@ var StateAnim     = 4;
 function parse(source)
 {
 	var state = StateNone;
-	var lines = source.match(/[^\r\n]+/g);
+	var lines = source.split("\n");
 	var nlines = lines.length;
 
 	var data = {
@@ -26,12 +26,22 @@ function parse(source)
 	for (var i = 0; i < nlines; i++)
 	{
 		var line = lines[i];
+		var len = line.length;
 
 		if (/^\s*$/.test(line))
 			continue;
 
-		while (line.charAt(line.length - 1) === "\\" && i + 1 < nlines)
-			line = line.substr(0, line.length - 1) + lines[++i];
+		if (line.charAt(len - 1) === "\r")
+			line = line.substr(0, --len);
+
+		while (line.charAt(len - 1) === "\\" && i + 1 < nlines)
+		{
+			line = line.substr(0, len - 1) + " " + lines[++i];
+			len = line.length;
+
+			if (line.charAt(len - 1) === "\r")
+				line = line.substr(0, len - 1);
+		}
 
 		switch (state)
 		{

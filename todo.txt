@@ -1,6 +1,11 @@
+- parser: animations/timelines
+- parser: skins
+- parser: draw order
+- editor: syntax highlighting
 - core: add more easing functions
 - renderer: add sprite rendering
 - figure out how to import images from computer (drop a folder? maybe a zip)
+- renderer optimization: static shapes can be stroked only once, then just transform vertices
 
 x renderer: shape anchor at center
 x renderer: improve bone rendering so bones with no length are visible
