@@ -149,7 +149,7 @@ function HighlightRules()
 			},
 			{
 				token: ["property", "value"],
-				regex: /([fs])(#[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|\\$|$)/
+				regex: /([fs])(#(?:[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?)(?=\s|\\$|$)/
 			},
 			{
 				token: "property",
