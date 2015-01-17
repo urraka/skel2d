@@ -12,6 +12,14 @@ function HighlightRules()
 	this.$rules = {
 		"start": [
 			{
+				token: "text",
+				regex: /\\$/,
+				next: function(state, stack) {
+					stack.unshift("invalid-crap", "start");
+					return "invalid-crap";
+				}
+			},
+			{
 				token: "keyword",
 				regex: /^skeleton$/,
 				next: "skeleton"
@@ -23,6 +31,10 @@ function HighlightRules()
 					stack.unshift("invalid-crap", "skeleton");
 					return "invalid-crap";
 				}
+			},
+			{
+				token: "text",
+				regex: /.+(?=\\$)/
 			},
 			{
 				token: "text",
@@ -46,6 +58,7 @@ function HighlightRules()
 			{
 				regex: "",
 				next: function(state, stack) {
+					stack.shift();
 					return stack.shift();
 				}
 			}
@@ -54,27 +67,6 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /^\s*$/
-			},
-			{
-				token: "text",
-				regex: /^(?=[^\t]?.*\\$)/,
-				next: function(state, stack) {
-					stack.unshift("invalid-crap", "start");
-					return "invalid-crap";
-				}
-			},
-			{
-				token: "text",
-				regex: /^(?=[^\t])/,
-				next: "start"
-			},
-			{
-				token: "text",
-				regex: /\\$/,
-				next: function(state, stack) {
-					stack.unshift("invalid-crap", "skeleton");
-					return "invalid-crap";
-				}
 			},
 
 			// invalid bone (with 'skeleton' in name)
@@ -133,11 +125,36 @@ function HighlightRules()
 			// other
 			{
 				token: "text",
+				regex: /^(?=[^\t].*\\$|\\$)/,
+				next: function(state, stack) {
+					stack.unshift("invalid-crap", "start");
+					return "invalid-crap";
+				}
+			},
+			{
+				token: "text",
+				regex: /^(?=[^\t])/,
+				next: "start"
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: function(state, stack) {
+					stack.unshift("invalid-crap", "skeleton");
+					return "invalid-crap";
+				}
+			},
+			{
+				token: "text",
 				regex: /\s+/
 			},
 			{
-				token: "invalid",
-				regex: /\S+/
+				token: "text",
+				regex: /.+(?=\\$)/
+			},
+			{
+				token: "text",
+				regex: /.+/
 			},
 			{
 				regex: "",
@@ -150,17 +167,17 @@ function HighlightRules()
 				regex: /\s+/
 			},
 			{
-				token: "text",
-				regex: /\\$/,
-				next: "bone"
-			},
-			{
 				token: ["property", "value"],
 				regex: /([xyrijl])(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
 			},
 			{
 				token: ["property", "value"],
 				regex: /(#)([\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "bone"
 			},
 			{
 				token: "invalid",
@@ -227,7 +244,7 @@ function HighlightRules()
 			},
 			{
 				token: "invalid",
-				regex: /\S+/
+				regex: /\S+(?=\\$|\s)/
 			},
 			{
 				regex: "",

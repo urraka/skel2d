@@ -45,8 +45,6 @@ function parse(source)
 				line = line.substr(0, --len);
 		}
 
-		console.log(i + ": " + line);
-
 		switch (state)
 		{
 			case StateNone:
