@@ -1,3 +1,5 @@
+x tokenizer: ending \ on start and skeleton states
+- tokenizer: path commands
 - parser: animations/timelines
 - parser: skins
 - parser: draw order

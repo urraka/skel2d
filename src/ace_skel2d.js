@@ -13,12 +13,41 @@ function HighlightRules()
 		"start": [
 			{
 				token: "keyword",
-				regex: /(^skeleton)(?=\s|$)/,
+				regex: /^skeleton$/,
 				next: "skeleton"
+			},
+			{
+				token: "keyword",
+				regex: /(^skeleton)(?=\s|\\$)/,
+				next: function(state, stack) {
+					stack.unshift("invalid-crap", "skeleton");
+					return "invalid-crap";
+				}
 			},
 			{
 				token: "text",
 				regex: /.+/
+			}
+		],
+		"invalid-crap": [
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "invalid-crap"
+			},
+			{
+				token: "text",
+				regex: /\S+/
+			},
+			{
+				regex: "",
+				next: function(state, stack) {
+					return stack.shift();
+				}
 			}
 		],
 		"skeleton": [
@@ -28,46 +57,87 @@ function HighlightRules()
 			},
 			{
 				token: "text",
+				regex: /^(?=[^\t]?.*\\$)/,
+				next: function(state, stack) {
+					stack.unshift("invalid-crap", "start");
+					return "invalid-crap";
+				}
+			},
+			{
+				token: "text",
 				regex: /^(?=[^\t])/,
 				next: "start"
 			},
 			{
+				token: "text",
+				regex: /\\$/,
+				next: function(state, stack) {
+					stack.unshift("invalid-crap", "skeleton");
+					return "invalid-crap";
+				}
+			},
+
+			// invalid bone (with 'skeleton' in name)
+			{
 				token: ["text", "invalid"],
-				regex: /(^\t)((?:[a-zA-Z_\-][\w\-]*\.)*skeleton(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|$)/
+				regex: /(^\t)((?:[a-zA-Z_\-][\w\-]*\.)*skeleton(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$)/,
+				next: "bone"
 			},
 			{
+				token: ["text", "invalid"],
+				regex: /(^\t)((?:[a-zA-Z_\-][\w\-]*\.)*skeleton(?:\.[a-zA-Z_\-][\w\-]*)*$)/
+			},
+
+			// bone
+			{
 				token: ["text", "bone"],
-				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s)/,
+				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$)/,
 				next: "bone"
 			},
 			{
 				token: ["text", "bone"],
 				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*$)/
 			},
+
+			// invalid slot (with 'skeleton' in name)
 			{
 				token: ["text", "invalid"],
-				regex: /(^\t\t)(@skeleton(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s|$)/
+				regex: /(^\t\t)(@skeleton(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s|\\$)/,
+				next: "slot"
 			},
 			{
 				token: ["text", "invalid"],
-				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?\[skeleton\])(?=\s|$)/
+				regex: /(^\t\t)(@skeleton(?:\[[a-zA-Z_\-][\w\-]*\])?$)/
 			},
+			{
+				token: ["text", "invalid"],
+				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?\[skeleton\])(?=\s|\\$)/,
+				next: "slot"
+			},
+			{
+				token: ["text", "invalid"],
+				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?\[skeleton\]$)/
+			},
+
+			// slot
 			{
 				token: ["text", "slot"],
-				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s)/,
+				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s|\\$)/,
 				next: "slot"
 			},
 			{
 				token: ["text", "slot"],
 				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?$)/
 			},
+
+			// other
 			{
 				token: "text",
 				regex: /\s+/
 			},
 			{
 				token: "invalid",
-				regex: /.+/
+				regex: /\S+/
 			},
 			{
 				regex: "",
@@ -94,7 +164,7 @@ function HighlightRules()
 			},
 			{
 				token: "invalid",
-				regex: /\S+/
+				regex: /\S+(?=\\$|\s)/
 			},
 			{
 				regex: "",
@@ -126,7 +196,7 @@ function HighlightRules()
 			},
 			{
 				token: "invalid",
-				regex: /\S+/
+				regex: /\S+(?=\\$|\s)/
 			},
 			{
 				regex: "",

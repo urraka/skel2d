@@ -27,6 +27,7 @@ function parse(source)
 	{
 		var line = lines[i];
 		var len = line.length;
+		var merged = 0;
 
 		if (/^\s*$/.test(line))
 			continue;
@@ -36,12 +37,15 @@ function parse(source)
 
 		while (line.charAt(len - 1) === "\\" && i + 1 < nlines)
 		{
+			merged++;
 			line = line.substr(0, len - 1) + " " + lines[++i];
 			len = line.length;
 
 			if (line.charAt(len - 1) === "\r")
 				line = line.substr(0, --len);
 		}
+
+		console.log(i + ": " + line);
 
 		switch (state)
 		{
@@ -70,7 +74,7 @@ function parse(source)
 					// end of skeleton
 
 					state = StateNone;
-					i--;
+					i -= merged + 1;
 				}
 				else if (/^\t[a-zA-Z_\-][\w\-]*(\.[a-zA-Z_\-][\w\-]*)*($|\s)/.test(line))
 				{
