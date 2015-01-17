@@ -1,6 +1,5 @@
-x always check that first path command is M (added in core loader)
-x tokenizer: ending \ on start and skeleton states
-x tokenizer: path commands
+- check ace key bindings and remove useless crap (like ctrl+, for settings)
+- default bone color
 - parser: animations/timelines
 - parser: skins
 - parser: draw order
@@ -10,6 +9,9 @@ x tokenizer: path commands
 - figure out how to import images from computer (drop a folder? maybe a zip)
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
 
+x always check that first path command is M (added in core loader)
+x tokenizer: ending \ on start and skeleton states
+x tokenizer: path commands
 x renderer: shape anchor at center
 x renderer: improve bone rendering so bones with no length are visible
 x renderer/core: add bone colors

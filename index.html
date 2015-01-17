@@ -15,7 +15,7 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
 #code { position: absolute; top: 0; bottom: 0; width: 610px; }
 #code { border-right: 1px solid #666; display: none; }
 #canvas { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
-canvas { display: block; width: 100%; height: 100%; }
+canvas { display: block; width: 100%; height: 100%; user-select: none; }
 
 .ace-tm .ace_marker-layer .ace_bracket {border-width: 0;border-style: none;}
 .ace_hidden-cursors .ace_cursor {display: none;}
@@ -50,6 +50,8 @@ window.addEventListener("resize", resize);
 window.addEventListener("beforeunload", function() {
 	localStorage.setItem("testcode", editor.session.getValue());
 });
+
+canvas.addEventListener("mousedown", function(e) { e.preventDefault(); });
 
 editor.$blockScrolling = Infinity;
 editor.setOption("fixedWidthGutter", true);

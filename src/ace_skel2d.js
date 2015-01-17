@@ -157,6 +157,10 @@ function HighlightRules()
 				regex: /(#)([\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|\\$|$)/
 			},
 			{
+				token: "property",
+				regex: /(?:no-rot|no-scale|flip-x|flip-y)(?=\s|\\$|$)/
+			},
+			{
 				token: "text",
 				regex: /\\$/,
 				next: "bone"
@@ -330,7 +334,9 @@ function HighlightRules()
 			},
 			{
 				token: ["value", "text", "value", "bone"],
-				regex: /(-?\d+(?:\.\d+)?)(,)(-?\d+(?:\.\d+)?)((?::(?:[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*))?)(?=\s|\\$|$)/
+				regex: /(-?\d+(?:\.\d+)?)(,)(-?\d+(?:\.\d+)?)/.source +
+					/((?::(?:[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*))?)/.source +
+					/(?=\s|\\$|$)/.source
 			},
 			{
 				token: "text",
