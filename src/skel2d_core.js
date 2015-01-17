@@ -194,6 +194,12 @@ function load_attachment(data)
 				var ncommands = commands.length;
 				var def_bone = this.find_bone(this.slots[slot_index].bone.name);
 
+				if (ncommands > 0 && commands[0] !== "M")
+				{
+					attachment.commands.push("M");
+					attachment.points.push(new BoundPoint(def_bone, 0, 0));
+				}
+
 				var i = 0;
 
 				while (i < ncommands)

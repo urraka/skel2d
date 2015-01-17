@@ -1,5 +1,6 @@
+x always check that first path command is M (added in core loader)
 x tokenizer: ending \ on start and skeleton states
-- tokenizer: path commands
+x tokenizer: path commands
 - parser: animations/timelines
 - parser: skins
 - parser: draw order
