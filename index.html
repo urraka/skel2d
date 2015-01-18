@@ -17,9 +17,10 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
 #canvas { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
 canvas { display: block; width: 100%; height: 100%; user-select: none; }
 
-.ace-tm .ace_marker-layer .ace_bracket {border-width: 0;border-style: none;}
+.ace-tm .ace_marker-layer .ace_bracket { border-width: 0;border-style: none; }
 .ace_hidden-cursors .ace_cursor {display: none;}
-.ace_cursor {border-left-width: 1px;}
+.ace_cursor { border-left-width: 1px; }
+.ace_editor.ace_multiselect .ace_overwrite-cursors .ace_cursor { border-left-width: 0px; }
 
 .ace-tm { color:#999; }
 .ace-tm .ace_keyword { color:#00F; }
@@ -38,50 +39,96 @@ canvas { display: block; width: 100%; height: 100%; user-select: none; }
 <div id="code"></div>
 <script type="text/javascript">
 
-var editor = ace.edit("code");
+var editor = create_editor();
 var canvas = document.querySelector("canvas");
 var gfx = gfx_create_context(canvas);
 var renderer = new SkeletonRenderer(gfx);
 var skeleton = null;
-var update_timer = null;
 
 window.addEventListener("resize", resize);
-
-window.addEventListener("beforeunload", function() {
-	localStorage.setItem("testcode", editor.session.getValue());
-});
-
 canvas.addEventListener("mousedown", function(e) { e.preventDefault(); });
 
-editor.$blockScrolling = Infinity;
-editor.setOption("fixedWidthGutter", true);
-editor.setOption("displayIndentGuides", false);
-editor.session.setTabSize(2);
-editor.session.setUseSoftTabs(false);
-editor.session.setMode(new (require("ace/mode/skel2d").Mode)());
-
-var code = localStorage.getItem("testcode");
-
-if (code)
-{
-	editor.session.setValue(code);
-	editor.session.selection.clearSelection();
-}
-
-editor.session.on("change", function() {
-	if (update_timer !== null)
-		clearTimeout(update_timer);
-
-	update_timer = setTimeout(update, 1000);
-});
-
-document.querySelector("#code").style.display = "block";
-editor.focus();
-
 gfx.clear_color(1, 1, 1, 1);
-
 resize();
 update();
+editor.focus();
+
+function create_editor()
+{
+	var editor = ace.edit("code");
+	var code = localStorage.getItem("testcode") || "";
+
+	editor.$blockScrolling = Infinity;
+	editor.setOption("fixedWidthGutter", true);
+	editor.setOption("displayIndentGuides", false);
+	editor.session.setTabSize(2);
+	editor.session.setUseSoftTabs(false);
+	editor.session.setMode(new (require("ace/mode/skel2d").Mode)());
+	editor.session.setValue(code);
+	editor.session.selection.clearSelection();
+
+	editor.session.on("change", function() {
+		var timer = null;
+
+		function trigger_update() {
+			timer = null;
+			update();
+		}
+
+		return function() {
+			if (timer !== null)
+				clearTimeout(timer);
+
+			timer = setTimeout(trigger_update, 1000);
+		};
+	}());
+
+	window.addEventListener("beforeunload", function() {
+		localStorage.setItem("testcode", editor.session.getValue());
+	});
+
+	var commands_remove = [
+		"showSettingsMenu", "goToNextError", "goToPreviousError", "centerselection",
+		"gotoline", "fold", "unfold", "toggleFoldWidget", "toggleParentFoldWidget",
+		"foldall", "foldOther", "unfoldall", "findnext", "findprevious",
+		"selectOrFindNext", "selectOrFindPrevious", "find", "togglerecording",
+		"replaymacro", "jumptomatching", "selecttomatching", "expandToMatching",
+		"sortlines", "togglecomment", "toggleBlockComment", "modifyNumberUp",
+		"modifyNumberDown", "replace", "copylinesup", "copylinesdown",
+		"splitline", "transposeletters", "expandtoline", "selectMoreBefore",
+		"selectNextBefore", "selectMoreAfter"
+	];
+
+	var commands_remap = [
+		"removeline", "movelinesup", "movelinesdown", "joinlines", "splitIntoLines",
+		"findAll", "selectNextAfter"
+	];
+
+	for (var i = 0, n = commands_remove.length; i < n; i++)
+		editor.commands.removeCommand(commands_remove[i]);
+
+	for (var i = 0, n = commands_remap.length; i < n; i++)
+		editor.commands.removeCommand(commands_remap[i], true);
+
+	editor.commands.addCommand({
+		name: "selectMoreAfter",
+		exec: function(editor) { editor.selectMore(1, false, true); },
+		scrollIntoView: "cursor",
+		readonly: true
+	});
+
+	editor.commands.bindKey("ctrl+shift+k",     editor.commands.commands["removeline"]);
+	editor.commands.bindKey("ctrl+shift+up",    editor.commands.commands["movelinesup"]);
+	editor.commands.bindKey("ctrl+shift+down",  editor.commands.commands["movelinesdown"]);
+	editor.commands.bindKey("ctrl+j",           editor.commands.commands["joinlines"]);
+	editor.commands.bindKey("ctrl+shift+l",     editor.commands.commands["splitIntoLines"]);
+	editor.commands.bindKey("alt+f3",           editor.commands.commands["findAll"]);
+	editor.commands.bindKey("ctrl+d",           editor.commands.commands["selectMoreAfter"]);
+	editor.commands.bindKey("ctrl+k",           editor.commands.commands["selectNextAfter"]);
+
+	document.querySelector("#code").style.display = "block";
+	return editor;
+}
 
 function update()
 {

@@ -1,4 +1,3 @@
-- check ace key bindings and remove useless crap (like ctrl+, for settings)
 - default bone color
 - parser: animations/timelines
 - parser: skins
@@ -9,6 +8,7 @@
 - figure out how to import images from computer (drop a folder? maybe a zip)
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
 
+x check ace key bindings and remove useless crap (like ctrl+, for settings)
 x always check that first path command is M (added in core loader)
 x tokenizer: ending \ on start and skeleton states
 x tokenizer: path commands
