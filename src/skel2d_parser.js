@@ -14,11 +14,9 @@ function parse(source)
 	var lines = source.split("\n");
 	var nlines = lines.length;
 
-	var data = {
-		bones: [],
-		slots: [],
-		attachments: []
-	};
+	var bones = [];
+	var slots = [];
+	var attachments = [];
 
 	var current_bone = null;
 	var current_attachment = null;
@@ -49,17 +47,17 @@ function parse(source)
 		{
 			case StateNone:
 			{
-				if (/^skeleton($| )/.test(line))
+				if (/^skeleton(\s|$)/.test(line))
 				{
 					state = StateSkeleton;
 				}
-				else if (/^skin($| )/.test(line))
+				else if (/^skin(\s|$)/.test(line))
 				{
 				}
-				else if (/^order($| )/.test(line))
+				else if (/^order(\s|$)/.test(line))
 				{
 				}
-				else if (/^anim($| )/.test(line))
+				else if (/^anim(\s|$)/.test(line))
 				{
 				}
 			}
@@ -80,11 +78,11 @@ function parse(source)
 
 					var tokens = line.match(/\S+/g);
 
-					current_bone = parse_bone(data.bones, tokens);
+					current_bone = parse_bone(bones, tokens);
 					current_attachment = null;
 
 					if (current_bone !== null)
-						data.bones.push(current_bone);
+						bones.push(current_bone);
 				}
 				else if (/^\t\t@([a-zA-Z_\-][\w\-]*)?(\[[a-zA-Z_\-][\w\-]*\])?($|\s)/.test(line))
 				{
@@ -93,15 +91,15 @@ function parse(source)
 					if (current_bone !== null)
 					{
 						var tokens = line.match(/\S+/g);
-						var slot = parse_slot(data.slots, current_bone, tokens);
-						var attachment = parse_attachment(data.attachments, current_bone, tokens);
+						var slot = parse_slot(slots, current_bone, tokens);
+						var attachment = parse_attachment(attachments, current_bone, tokens);
 
 						if (slot !== null)
-							data.slots.push(slot);
+							slots.push(slot);
 
 						if (attachment !== null)
 						{
-							data.attachments.push(attachment);
+							attachments.push(attachment);
 
 							if (attachment.type === "path")
 							{
@@ -139,9 +137,9 @@ function parse(source)
 		}
 	}
 
-	var bones = data.bones, nbones = bones.length;
-	var slots = data.slots, nslots = slots.length;
-	var attachments = data.attachments, nattachments = attachments.length;
+	var nbones = bones.length;
+	var nslots = slots.length;
+	var nattachments = attachments.length;
 
 	var parent_bones = [];
 
@@ -236,10 +234,16 @@ function parse(source)
 		}
 	}
 
-	data.skins = {"default": attachments};
-	delete data.attachments;
-
-	return data;
+	return {
+		"skeleton": {
+			"bones": bones,
+			"slots": slots,
+			"skins": {
+				"default": attachments
+			}
+		},
+		"animations": {}
+	};
 }
 
 function find_name(list, name, def)

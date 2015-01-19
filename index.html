@@ -132,10 +132,8 @@ function create_editor()
 
 function update()
 {
-	update_timer = null;
-
 	var data = skel2d_parse(editor.session.getValue());
-	skeleton = new sk2.Skeleton(data);
+	skeleton = new sk2.Skeleton(data.skeleton);
 
 	draw();
 }
