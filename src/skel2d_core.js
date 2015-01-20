@@ -797,6 +797,8 @@ function load_timelines(skeleton, type, data)
 					}
 
 					timeline.keyframes.push(keyframe);
+
+					this.duration = Math.max(this.duration, keyframe.time);
 				}
 
 				this.timelines.push(timeline);
@@ -808,6 +810,7 @@ function load_timelines(skeleton, type, data)
 function Animation(skeleton, data)
 {
 	this.timelines = [];
+	this.duration = 0;
 
 	if (data)
 	{

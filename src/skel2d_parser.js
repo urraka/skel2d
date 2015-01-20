@@ -28,6 +28,14 @@ var easing_map = [
 	"sio", "sin_in_out"
 ];
 
+var prop_map = {
+	"x": "x",
+	"y": "y",
+	"i": "sx",
+	"j": "sy",
+	"r": "rot"
+};
+
 function parse(source)
 {
 	var state = StateNone;
@@ -878,7 +886,7 @@ function find_easing_index(name)
 function process_animation(anim, bones, slots)
 {
 	var result = {name: anim.name || ""};
-	var fps = anim.fps || 15;
+	var fps = anim.fps || 20;
 	var stack = [];
 
 	for (var i = 0, nitems = anim.items.length; i < nitems; i++)
@@ -890,12 +898,30 @@ function process_animation(anim, bones, slots)
 		if (name === null)
 			continue;
 
+		var has_color_timeline = false;
+
+		if (is_slot)
+		{
+			var props = item.timelines.map(function f(x){return x.property;}).indexOf("c");
+
+			if (props.indexOf("c") !== -1)
+				has_color_timeline = true;
+		}
+
 		var list = is_slot ? result.slots || (result.slots = {}) : result.bones || (result.bones = {});
 		var timelines = (list[name] = {});
 
 		for (var j = 0, ntimelines = item.timelines.length; j < ntimelines; j++)
 		{
-			var timeline = (timelines[item.timelines[j].property] = []);
+			var prop = item.timelines[j].property;
+
+			if (has_color_timeline && "rgba".indexOf(prop) !== -1)
+				continue;
+
+			if (!is_slot)
+				prop = prop_map[prop];
+
+			var timeline = (timelines[prop] = []);
 			var commands = item.timelines[j].commands;
 
 			var frame  = item.frame  || anim.frame  || 0;
@@ -937,7 +963,7 @@ function process_animation(anim, bones, slots)
 							var keyframe = {"time": frame / fps, "value": value};
 
 							if (easing !== 0)
-								keyframe["easing"] = easing_map[easing + 1];
+								keyframe["easing"] = easing_map[2 * easing + 1];
 
 							timeline.push(keyframe);
 							last_push = frame;
@@ -985,6 +1011,35 @@ function process_animation(anim, bones, slots)
 						}
 					}
 					break;
+				}
+			}
+		}
+
+		if (has_color_timeline)
+		{
+			var timeline = timelines["c"];
+			delete timelines["c"];
+
+			var rgba = [
+				(timelines["r"] = []),
+				(timelines["g"] = []),
+				(timelines["b"] = []),
+				(timelines["a"] = [])
+			];
+
+			for (var j = 0, n = timeline.length; j < n; j++)
+			{
+				var key = timeline[j];
+
+				if (key.easing)
+				{
+					for (var k = 0; k < 4; k++)
+						rgba[k].push({"time": key.time, "value": key.value[k], "easing": key.easing});
+				}
+				else
+				{
+					for (var k = 0; k < 4; k++)
+						rgba[k].push({"time": key.time, "value": key.value[k]});
 				}
 			}
 		}

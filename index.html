@@ -44,7 +44,13 @@ var canvas = document.querySelector("canvas");
 var gfx = gfx_create_context(canvas);
 var renderer = new SkeletonRenderer(gfx);
 var skeleton = null;
+var animation = null;
 var parsed_data = null;
+
+var t0 = 0;
+var t1 = 0;
+var time = 0;
+var frame_id = 0;
 
 window.addEventListener("resize", resize);
 canvas.addEventListener("mousedown", function(e) { e.preventDefault(); });
@@ -136,7 +142,39 @@ function update()
 	parsed_data = skel2d_parse(editor.getValue());
 	skeleton = new sk2.Skeleton(parsed_data.skeleton);
 
+	if (parsed_data.animations.length > 0)
+	{
+		animation = new sk2.Animation(skeleton, parsed_data.animations[0]);
+
+		if (frame_id === 0)
+		{
+			t0 = t1 = 0;
+			time = performance.now() / 1000;
+			frame_id = requestAnimationFrame(anim_frame);
+		}
+	}
+	else
+	{
+		draw();
+	}
+}
+
+function anim_frame()
+{
+	var t = performance.now() / 1000;
+	var dt = t - time;
+
+	time = t;
+
+	t0 = t1;
+	t1 = (t1 + dt) % animation.duration;
+
+	animation.apply(skeleton, t0, t1, 1);
+	skeleton.update_transform();
+
 	draw();
+
+	requestAnimationFrame(anim_frame);
 }
 
 function resize()
