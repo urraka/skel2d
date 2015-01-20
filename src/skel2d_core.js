@@ -862,8 +862,8 @@ Animation.prototype.apply_timeline_bone = function(tl, skeleton, t0, t1, p)
 		case PropBoneRot:    cur.rot = lerp_angle(cur.rot, def.rot + tl.val_rot(t1), p); break;
 		case PropBoneX:      cur.x   = lerp(cur.x,  def.x  + tl.val(t1), p); break;
 		case PropBoneY:      cur.y   = lerp(cur.y,  def.y  + tl.val(t1), p); break;
-		case PropBoneScaleX: cur.sx  = lerp(cur.sx, def.sx + tl.val(t1), p); break;
-		case PropBoneScaleY: cur.sy  = lerp(cur.sy, def.sy + tl.val(t1), p); break;
+		case PropBoneScaleX: cur.sx  = lerp(cur.sx, def.sx * tl.val(t1), p); break;
+		case PropBoneScaleY: cur.sy  = lerp(cur.sy, def.sy * tl.val(t1), p); break;
 		case PropBoneFlipX:  cur.flipx = tl.val_discrete(t0, t1, cur.flipx); break;
 		case PropBoneFlipY:  cur.flipy = tl.val_discrete(t0, t1, cur.flipy); break;
 	}

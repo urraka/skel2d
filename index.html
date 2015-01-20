@@ -141,6 +141,7 @@ function update()
 {
 	parsed_data = skel2d_parse(editor.getValue());
 	skeleton = new sk2.Skeleton(parsed_data.skeleton);
+	animation = null;
 
 	if (parsed_data.animations.length > 0)
 	{
@@ -185,7 +186,7 @@ function anim_frame()
 
 	draw();
 
-	requestAnimationFrame(anim_frame);
+	frame_id = requestAnimationFrame(anim_frame);
 }
 
 function resize()
