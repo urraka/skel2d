@@ -902,7 +902,7 @@ function process_animation(anim, bones, slots)
 
 		if (is_slot)
 		{
-			var props = item.timelines.map(function f(x){return x.property;}).indexOf("c");
+			var props = item.timelines.map(function f(x){return x.property;});
 
 			if (props.indexOf("c") !== -1)
 				has_color_timeline = true;
@@ -1013,6 +1013,9 @@ function process_animation(anim, bones, slots)
 					break;
 				}
 			}
+
+			if (timelines[prop].length === 0)
+				delete timelines[prop];
 		}
 
 		if (has_color_timeline)

@@ -1,4 +1,3 @@
-- parser: remove empty timelines
 - parser: easing func should be set to the previous frame
 - default bone color
 - editor: animations syntax highlighting
@@ -9,6 +8,7 @@
 - figure out how to import images from computer (drop a folder? maybe a zip)
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
 
+x parser: remove empty timelines
 x parser: convert color animations
 x parser: translate timeline property names
 x parser: animations/timelines
