@@ -28,6 +28,7 @@ function SkeletonRenderer(gfx)
 	this.gfx = gfx;
 	this.vbo = gfx.create_vbo(500, gfx.Stream);
 	this.ibo = gfx.create_ibo(500, gfx.Stream);
+	this.show_bones = true;
 }
 
 SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale)
@@ -68,6 +69,37 @@ SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale)
 		}
 	}
 
+	var count = ibo.size;
+	var lines_offset = vbo.size;
+
+	if (this.show_bones)
+	{
+		add_bones(skeleton, vbo, ibo);
+
+		count = ibo.size;
+		lines_offset = vbo.size;
+
+		add_bone_marks(skeleton, vbo, ibo);
+	}
+
+	vbo.upload();
+	ibo.upload();
+
+	gfx.transform(m);
+	gfx.draw(gfx.Triangles, vbo, ibo, 0, count);
+
+	if (this.show_bones)
+	{
+		m[0] = m[4] = 1;
+		m[6] = m[7] = 0;
+
+		gfx.transform(m);
+		gfx.draw(gfx.Lines, vbo, null, lines_offset, 4 * skeleton.bones.length);
+	}
+}
+
+function add_bones(skeleton, vbo, ibo)
+{
 	var s = 5;
 	var nbones = skeleton.bones.length;
 
@@ -97,16 +129,18 @@ SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale)
 			ibo.push(base + 0, base + 2, base + 3);
 		}
 	}
+}
 
-	var count = ibo.size;
-	var lines_offset = vbo.size;
+function add_bone_marks(skeleton, vbo, ibo)
+{
+	var nbones = skeleton.bones.length;
+	var m = view_transform;
+	var s = 3;
 
 	bone_color[0] = 0;
 	bone_color[1] = 0;
 	bone_color[2] = 0;
 	bone_color[3] = 255;
-
-	s = 3;
 
 	for (var i = 0, n = nbones; i < n; i++)
 	{
@@ -122,18 +156,6 @@ SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale)
 		vbo.push(x, y - s, 0, 0, bone_color);
 		vbo.push(x, y + s, 0, 0, bone_color);
 	}
-
-	vbo.upload();
-	ibo.upload();
-
-	gfx.transform(m);
-	gfx.draw(gfx.Triangles, vbo, ibo, 0, count);
-
-	m[0] = m[4] = 1;
-	m[6] = m[7] = 0;
-
-	gfx.transform(m);
-	gfx.draw(gfx.Lines, vbo, null, lines_offset, 4 * nbones);
 }
 
 function add_rect(slot, attachment, vbo, ibo)

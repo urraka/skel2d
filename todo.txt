@@ -1,3 +1,5 @@
+- parser: remove empty timelines
+- parser: easing func should be set to the previous frame
 - default bone color
 - editor: animations syntax highlighting
 - parser: skins
