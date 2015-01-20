@@ -93,14 +93,14 @@ animation = {
 }
 
 commands:
-	set_frame(x)
-	set_frame_inc(x)
-	set_step(x)
-	set_easing(x)
-	advance_steps(x)
-	advance_frames(x)
-	push_value(x)
-	push_value_inc(x)
-	push_value_mul(x)
-	begin_loop()
-	end_loop(x)
+
+set_frame(x)
+set_step(x)
+set_easing(x)
+advance_steps(x)
+advance_frames(x)
+push_value(x)
+push_value_inc(x)
+push_value_mul(x)
+begin_loop()
+end_loop(x)

@@ -1,13 +1,14 @@
 - default bone color
-- parser: animations/timelines
+- editor: animations syntax highlighting
 - parser: skins
 - parser: draw order
-- editor: syntax highlighting
 - core: add more easing functions
 - renderer: add sprite rendering
 - figure out how to import images from computer (drop a folder? maybe a zip)
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
 
+x parser: animations/timelines
+x editor: syntax highlighting
 x parser timeline commands: make easing a number that indexes some array
 x check ace key bindings and remove useless crap (like ctrl+, for settings)
 x always check that first path command is M (added in core loader)

@@ -21,7 +21,7 @@ var cmd = {
 	end_loop:       9
 };
 
-var easing = [
+var easing_map = [
 	"li", "lerp",
 	"si", "sin_in",
 	"so", "sin_out",
@@ -303,6 +303,9 @@ function parse(source)
 			}
 		}
 	}
+
+	for (var i = 0, n = animations.length; i < n; i++)
+		animations[i] = process_animation(animations[i], bones, slots);
 
 	return {
 		"skeleton": {
@@ -863,13 +866,131 @@ function match_animation_options(str, in_timeline)
 
 function find_easing_index(name)
 {
-	for (var i = 0, n = easing.length; i < n; i += 2)
+	for (var i = 0, n = easing_map.length; i < n; i += 2)
 	{
-		if (easing[i] === name)
+		if (easing_map[i] === name)
 			return (i / 2)|0;
 	}
 
 	return null;
+}
+
+function process_animation(anim, bones, slots)
+{
+	var result = {name: anim.name || ""};
+	var fps = anim.fps || 15;
+	var stack = [];
+
+	for (var i = 0, nitems = anim.items.length; i < nitems; i++)
+	{
+		var item = anim.items[i];
+		var is_slot = item.name.charAt(0) === "@";
+		var name = find_name(is_slot ? slots : bones, is_slot ? item.name.substr(1) : item.name, null);
+
+		if (name === null)
+			continue;
+
+		var list = is_slot ? result.slots || (result.slots = {}) : result.bones || (result.bones = {});
+		var timelines = (list[name] = {});
+
+		for (var j = 0, ntimelines = item.timelines.length; j < ntimelines; j++)
+		{
+			var timeline = (timelines[item.timelines[j].property] = []);
+			var commands = item.timelines[j].commands;
+
+			var frame  = item.frame  || anim.frame  || 0;
+			var step   = item.step   || anim.step   || 5;
+			var easing = item.easing || anim.easing || 0;
+
+			var last_push = -1;
+			var last_value = 0;
+
+			for (var k = 0, n = stack.length; k < n; k++)
+				stack.pop();
+
+			for (var k = 0, ncommands = commands.length; k < ncommands; k++)
+			{
+				var command = commands[k];
+				var value = commands[++k];
+
+				switch (command)
+				{
+					case cmd.set_frame:      value > frame && (frame = value); break;
+					case cmd.set_step:       step = value; break;
+					case cmd.set_easing:     easing = value; break;
+					case cmd.advance_steps:  frame += step * value; break;
+					case cmd.advance_frames: frame += value; break;
+
+					case cmd.push_value_inc:
+					case cmd.push_value_mul:
+					{
+						if (command === cmd.push_value_inc)
+							value = last_value + value;
+						else
+							value = last_value * value;
+					}
+
+					case cmd.push_value:
+					{
+						if (frame > last_push)
+						{
+							var keyframe = {"time": frame / fps, "value": value};
+
+							if (easing !== 0)
+								keyframe["easing"] = easing_map[easing + 1];
+
+							timeline.push(keyframe);
+							last_push = frame;
+							last_value = value;
+						}
+					}
+					break;
+
+					case cmd.begin_loop:
+						stack.push({start_command: k--, prev_timeline: timeline, count: -1});
+						timeline = [];
+						break;
+
+					case cmd.end_loop:
+					{
+						var n = stack.length;
+
+						if (n > 0)
+						{
+							var state = stack[n - 1];
+
+							if (state.count === -1)
+							{
+								if (value === 0)
+								{
+									stack.pop();
+									timeline = state.prev_timeline;
+									break;
+								}
+
+								state.count = value;
+							}
+
+							if (--state.count === 0)
+							{
+								var prev = state.prev_timeline;
+								prev.push.apply(prev, timeline);
+								timeline = prev;
+								stack.pop();
+							}
+							else
+							{
+								k = state.start_command - 1;
+							}
+						}
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	return result;
 }
 
 }(this));
