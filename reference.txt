@@ -24,3 +24,10 @@ no-rot       -> bone don't inherit rotation
 no-scale     -> bone don't inherit scale
 flip-x       -> bone flip-x
 flip-y       -> bone flip-y
+
+Easing:
+
+li  -> linear
+si  -> sin_in
+so  -> sin_out
+sio -> sin_in_out

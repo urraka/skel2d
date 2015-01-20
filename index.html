@@ -44,6 +44,7 @@ var canvas = document.querySelector("canvas");
 var gfx = gfx_create_context(canvas);
 var renderer = new SkeletonRenderer(gfx);
 var skeleton = null;
+var parsed_data = null;
 
 window.addEventListener("resize", resize);
 canvas.addEventListener("mousedown", function(e) { e.preventDefault(); });
@@ -59,13 +60,13 @@ function create_editor()
 	var code = localStorage.getItem("testcode") || "";
 
 	editor.$blockScrolling = Infinity;
-	editor.setOption("fixedWidthGutter", true);
-	editor.setOption("displayIndentGuides", false);
 	editor.session.setTabSize(2);
 	editor.session.setUseSoftTabs(false);
 	editor.session.setMode(new (require("ace/mode/skel2d").Mode)());
-	editor.session.setValue(code);
-	editor.session.selection.clearSelection();
+	editor.setOption("fixedWidthGutter", true);
+	editor.setOption("displayIndentGuides", false);
+	editor.setValue(code);
+	editor.clearSelection();
 
 	editor.session.on("change", function() {
 		var timer = null;
@@ -84,7 +85,7 @@ function create_editor()
 	}());
 
 	window.addEventListener("beforeunload", function() {
-		localStorage.setItem("testcode", editor.session.getValue());
+		localStorage.setItem("testcode", editor.getValue());
 	});
 
 	var commands_remove = [
@@ -132,8 +133,8 @@ function create_editor()
 
 function update()
 {
-	var data = skel2d_parse(editor.session.getValue());
-	skeleton = new sk2.Skeleton(data.skeleton);
+	parsed_data = skel2d_parse(editor.getValue());
+	skeleton = new sk2.Skeleton(parsed_data.skeleton);
 
 	draw();
 }

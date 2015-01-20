@@ -79,7 +79,7 @@ animation = {
 	step: 1,
 	easing: "lerp",
 	fps: 30,
-	bones/slots: [
+	items: [
 		{
 			name: "bone-name",
 			frame: 0,
@@ -94,12 +94,13 @@ animation = {
 
 commands:
 	set_frame(x)
+	set_frame_inc(x)
 	set_step(x)
-	set_step_frame(x)
 	set_easing(x)
 	advance_steps(x)
 	advance_frames(x)
 	push_value(x)
 	push_value_inc(x)
+	push_value_mul(x)
 	begin_loop()
 	end_loop(x)

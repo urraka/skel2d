@@ -8,6 +8,26 @@ var StateSkin     = 2;
 var StateOrder    = 3;
 var StateAnim     = 4;
 
+var cmd = {
+	set_frame:      0,
+	set_step:       1,
+	set_easing:     2,
+	advance_steps:  3,
+	advance_frames: 4,
+	push_value:     5,
+	push_value_inc: 6,
+	push_value_mul: 7,
+	begin_loop:     8,
+	end_loop:       9
+};
+
+var easing = [
+	"li", "lerp",
+	"si", "sin_in",
+	"so", "sin_out",
+	"sio", "sin_in_out"
+];
+
 function parse(source)
 {
 	var state = StateNone;
@@ -17,15 +37,18 @@ function parse(source)
 	var bones = [];
 	var slots = [];
 	var attachments = [];
+	var animations = [];
 
 	var current_bone = null;
 	var current_attachment = null;
+	var current_animation = null;
+	var current_animation_item = null;
 
 	for (var i = 0; i < nlines; i++)
 	{
 		var line = lines[i];
 		var len = line.length;
-		var merged = 0;
+		var prev_line = i - 1;
 
 		if (/^\s*$/.test(line))
 			continue;
@@ -35,7 +58,6 @@ function parse(source)
 
 		while (line.charAt(len - 1) === "\\" && i + 1 < nlines)
 		{
-			merged++;
 			line = line.substr(0, len - 1) + " " + lines[++i];
 			len = line.length;
 
@@ -59,18 +81,25 @@ function parse(source)
 				}
 				else if (/^anim(\s|$)/.test(line))
 				{
+					var tokens = line.match(/\S+/g);
+					current_animation = parse_animation(tokens);
+					animations.push(current_animation);
+					state = StateAnim;
 				}
 			}
 			break;
 
 			case StateSkeleton:
 			{
-				if (/^[^\t]+/.test(line))
+				if (/^[^\t]/.test(line))
 				{
 					// end of skeleton
 
 					state = StateNone;
-					i -= merged + 1;
+					i = prev_line;
+
+					current_bone = null;
+					current_attachment = null;
 				}
 				else if (/^\t[a-zA-Z_\-][\w\-]*(\.[a-zA-Z_\-][\w\-]*)*($|\s)/.test(line))
 				{
@@ -123,14 +152,55 @@ function parse(source)
 							Array.prototype.push.apply(current_attachment.commands, command);
 					}
 				}
-				else if (/^\t[^\t]+/.test(line))
+				else if (/^\t[^\t]/.test(line))
 				{
 					current_bone = null;
 					current_attachment = null;
 				}
-				else if (/^\t\t[^\t]+/.test(line))
+				else if (/^\t\t[^\t]/.test(line))
 				{
 					current_attachment = null;
+				}
+			}
+			break;
+
+			case StateAnim:
+			{
+				if (/^[^\t]/.test(line))
+				{
+					// end of animation
+
+					state = StateNone;
+					i = prev_line;
+
+					current_animation = null;
+					current_animation_item = null;
+				}
+				else if (/^\t@?[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:$|\s)/.test(line))
+				{
+					// bone/slot
+
+					var tokens = line.match(/\S+/g);
+
+					current_animation_item = parse_animation_item(tokens);
+					current_animation.items.push(current_animation_item);
+				}
+				else if (/^\t\t.\s/.test(line))
+				{
+					// timeline
+
+					if (current_animation_item !== null)
+					{
+						var tokens = line.match(/\S+/g);
+						var timeline = parse_timeline(current_animation_item, tokens);
+
+						if (timeline !== null)
+							current_animation_item.timelines.push(timeline);
+					}
+				}
+				else if (/^\t[^\t]/.test(line))
+				{
+					current_animation_item = null;
 				}
 			}
 			break;
@@ -242,7 +312,7 @@ function parse(source)
 				"default": attachments
 			}
 		},
-		"animations": {}
+		"animations": animations
 	};
 }
 
@@ -601,6 +671,205 @@ function parse_color(str)
 	result += alpha < 16 ? "0" + alpha.toString(16) : alpha.toString(16);
 
 	return result.toLowerCase();
+}
+
+function parse_color_val(str)
+{
+	var color = [0, 0, 0, 1];
+	var tokens = str.substr(1).split(",");
+
+	if (tokens[0].length === 3)
+	{
+		color[0] = parseInt(tokens[0].charAt(0), 16) / 255;
+		color[1] = parseInt(tokens[0].charAt(1), 16) / 255;
+		color[2] = parseInt(tokens[0].charAt(2), 16) / 255;
+	}
+	else
+	{
+		color[0] = parseInt(tokens[0].substr(0, 2), 16) / 255;
+		color[1] = parseInt(tokens[0].substr(2, 2), 16) / 255;
+		color[2] = parseInt(tokens[0].substr(4, 2), 16) / 255;
+	}
+
+	if (tokens.length === 2)
+	{
+		var alpha = parseFloat(tokens[1]);
+
+		if (!isNaN(alpha))
+			color[3] = alpha;
+	}
+
+	return color;
+}
+
+function parse_animation(tokens)
+{
+	var animation = {};
+	var ntokens = tokens.length;
+	var res = null;
+	var val = 0;
+
+	for (var i = 1; i < ntokens; i++)
+	{
+		var tok = tokens[i];
+
+		if (tok.charAt(0) === '"')
+		{
+			if (tok.charAt(tok.length - 1) === '"')
+				animation.name = tok.substring(1, tok.length - 1);
+		}
+		else if (/^\d+fps$/.test(tok))
+		{
+			animation.fps = parseInt(tok, 10);
+		}
+		else if (res = match_animation_options(tok, false))
+		{
+			res[0] !== null && (animation.frame  = res[0]);
+			res[1] !== null && (animation.step   = res[1]);
+			res[2] !== null && (animation.easing = res[2]);
+		}
+	}
+
+	animation.items = [];
+
+	return animation;
+}
+
+function parse_animation_item(tokens)
+{
+	var item = {name: tokens[0]};
+	var ntokens = tokens.length;
+	var res = null;
+
+	for (var i = 1; i < ntokens; i++)
+	{
+		if (res = match_animation_options(tokens[i], false))
+		{
+			res[0] !== null && (item.frame  = res[0]);
+			res[1] !== null && (item.step   = res[1]);
+			res[2] !== null && (item.easing = res[2]);
+		}
+	}
+
+	item.timelines = [];
+
+	return item;
+}
+
+function parse_timeline(item, tokens)
+{
+	var prop = tokens[0];
+	var is_slot = item.name.charAt(0) === "@";
+
+	if (is_slot && "@crgba".indexOf(prop) === -1)
+		return null;
+
+	if (!is_slot && "xyrij".indexOf(prop) === -1)
+		return null;
+
+	var timeline = {property: prop, commands: []};
+	var commands = timeline.commands;
+	var ntokens = tokens.length;
+	var x, res = null;
+
+	var re_value = null;
+
+	if (prop === "c")
+		re_value = /^#([\da-fA-F]{3}|[\da-fA-F]{6})(,\d+(\.\d+)?)?$/;
+	else if (prop === "@")
+		re_value = /^[a-zA-Z_\-]+$/;
+	else
+		re_value = /^[+*]?-?\d+(?:\.\d+)?$/;
+
+	for (var i = 1; i < ntokens; i++)
+	{
+		var tok = tokens[i];
+
+		if (tok === "{")
+		{
+			commands.push(cmd.begin_loop);
+		}
+		else if (/^\}(?:\[\d+\])?$/.test(tok))
+		{
+			commands.push(cmd.end_loop, isNaN(x = parseInt(tok.substr(2), 10)) ? 1 : x);
+		}
+		else if (/^-*>$/.test(tok))
+		{
+			(x = tok.length - 1) > 0 && commands.push(cmd.advance_steps, x);
+		}
+		else if (re_value.test(tok))
+		{
+			var ch = tok.charAt(0);
+
+			if (prop === "c")
+				commands.push(cmd.push_value, parse_color_val(tok));
+			else if (prop === "@")
+				commands.push(cmd.push_value, tok);
+			else if (ch === "+")
+				!isNaN(x = parseFloat(tok.substr(1))) && commands.push(cmd.push_value_inc, x);
+			else if (ch === "*")
+				!isNaN(x = parseFloat(tok.substr(1))) && commands.push(cmd.push_value_mul, x);
+			else
+				!isNaN(x = parseFloat(tok)) && commands.push(cmd.push_value, x);
+		}
+		else if (res = match_animation_options(tok, true))
+		{
+			res[0] !== null && !res[4] && commands.push(cmd.set_frame, res[0]);
+			res[0] !== null && res[4] && commands.push(cmd.advance_frames, res[0]);
+			res[1] !== null && commands.push(cmd.set_step, res[1]);
+			res[2] !== null && commands.push(cmd.set_easing, res[2]);
+			res[3] > 0 && commands.push(cmd.advance_steps, res[3]);
+		}
+	}
+
+	return commands.length > 0 ? timeline : null;
+}
+
+match_animation_options.re = [
+	[
+		/^(\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?$/,
+		/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)?()?$/,
+		/^()?(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)$/
+	],
+	[
+		/^(\+?\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?(-*)>$/,
+		/^(\+?\d+(?:\.\d+)?):(\d+(?:\.\d+)?)?()?(-*)>$/,
+		/^()?(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)(-*)>$/
+	]
+];
+
+function match_animation_options(str, in_timeline)
+{
+	var x, res = null;
+	var re = match_animation_options.re[in_timeline ? 1 : 0];
+
+	if ((res = re[0].exec(str)) || (res = re[1].exec(str)) || (res = re[2].exec(str)))
+	{
+		res.shift();
+
+		if (in_timeline)
+			res.push(res[0] !== undefined && res[0].charAt(0) === "+");
+
+		res[0] !== undefined && !isNaN(x = parseFloat(res[0])) && ((res[0] = x)||1) || (res[0] = null);
+		res[1] !== undefined && !isNaN(x = parseFloat(res[1])) && ((res[1] = x)||1) || (res[1] = null);
+		res[2] !== undefined && (res[2] = find_easing_index(res[2]));
+
+		if (in_timeline)
+			res[3] = res[3] !== undefined ? res[3].length : 0;
+	}
+
+	return res;
+}
+
+function find_easing_index(name)
+{
+	for (var i = 0, n = easing.length; i < n; i += 2)
+	{
+		if (easing[i] === name)
+			return (i / 2)|0;
+	}
+
+	return null;
 }
 
 }(this));
