@@ -1,6 +1,6 @@
+- core: inverse kinematics
 - parser: easing func should be set to the previous frame
 - default bone color
-- editor: animations syntax highlighting
 - parser: skins
 - parser: draw order
 - core: add more easing functions
@@ -8,6 +8,7 @@
 - figure out how to import images from computer (drop a folder? maybe a zip)
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
 
+x editor: animations syntax highlighting
 x parser: timeline attachment value regex doesn't allow numbers in name (i think)
 x parser: remove empty timelines
 x parser: convert color animations

@@ -534,7 +534,7 @@ function HighlightRules()
 			{
 				token: ["text", "property"],
 				regex: /(^\t\t)([rgba])(?=\s|\\$)/,
-				next: double_jump("anim-timeline", "anim-slot-timelines")
+				next: double_jump("anim-timeline-num", "anim-slot-timelines")
 			},
 			{
 				token: ["text", "property"],
@@ -573,53 +573,6 @@ function HighlightRules()
 				next: "anim-slot-timelines"
 			}
 		],
-		"anim-timeline": [
-			{
-				token: "value",
-				regex: /(?:-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
-			},
-			{
-				token: "slot",
-				regex: /(?:[a-zA-Z_\-][\w\-]*)(?=\s|\\$|$)/
-			},
-			{
-				token: "value",
-				regex: /(?:#(?:[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?)(?=\s|\\$|$)/
-			},
-			{
-				token: "operator",
-				regex: /(?:\{|\}(?:\[\d+\])?|-*>)(?=\s|\\$|$)/
-			},
-			{
-				token: ["anim-timing", "operator"],
-				regex: /((?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?)(-*>)(?=\s|\\$|$)/
-			},
-			{
-				token: ["anim-timing", "operator"],
-				regex: /((?:\+?\d+(?:\.\d+)?):(?:\d+(?:\.\d+)?)?)(-*>)(?=\s|\\$|$)/
-			},
-			{
-				token: ["anim-timing", "operator"],
-				regex: /((?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?))(-*>)(?=\s|\\$|$)/
-			},
-			{
-				token: "text",
-				regex: /\\$/,
-				next: "anim-timeline"
-			},
-			{
-				token: "text",
-				regex: /\s+/
-			},
-			{
-				token: "text",
-				regex: /\S+(?=\\$|\s)/
-			},
-			{
-				regex: "",
-				next: jump_to_next
-			}
-		],
 		"anim-timeline-num": [
 			{
 				token: ["operator", "value"],
@@ -631,7 +584,11 @@ function HighlightRules()
 			},
 			{
 				token: ["anim-timing", "operator"],
-				regex: /((?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?)(-*>)(?=\s|\\$|$)/
+				regex: "(" +
+					/(?:\+?\d+(?:\.\d+)?)?:/.source +
+					/(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/.source +
+					")" + /(-*>)(?=\s|\\$|$)/.source
 			},
 			{
 				token: ["anim-timing", "operator"],
@@ -644,7 +601,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "anim-timeline"
+				next: "anim-timeline-num"
 			},
 			{
 				token: "text",
@@ -670,7 +627,11 @@ function HighlightRules()
 			},
 			{
 				token: ["anim-timing", "operator"],
-				regex: /((?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?)(-*>)(?=\s|\\$|$)/
+				regex: "(" +
+					/(?:\+?\d+(?:\.\d+)?)?:/.source +
+					/(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/.source +
+					")" + /(-*>)(?=\s|\\$|$)/.source
 			},
 			{
 				token: ["anim-timing", "operator"],
@@ -683,7 +644,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "anim-timeline"
+				next: "anim-timeline-color"
 			},
 			{
 				token: "text",
@@ -709,7 +670,11 @@ function HighlightRules()
 			},
 			{
 				token: ["anim-timing", "operator"],
-				regex: /((?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?)(-*>)(?=\s|\\$|$)/
+				regex: "(" +
+					/(?:\+?\d+(?:\.\d+)?)?:/.source +
+					/(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/.source +
+					")" + /(-*>)(?=\s|\\$|$)/.source
 			},
 			{
 				token: ["anim-timing", "operator"],
@@ -722,7 +687,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "anim-timeline"
+				next: "anim-timeline-attachment"
 			},
 			{
 				token: "text",
