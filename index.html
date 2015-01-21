@@ -65,12 +65,18 @@ function create_editor()
 	var editor = ace.edit("code");
 	var code = localStorage.getItem("testcode") || "";
 
+	editor.renderer.$updateScrollBarV = function() {
+		this.scrollBarV.setScrollHeight(this.layerConfig.maxHeight + this.scrollMargin.v);
+		this.scrollBarV.setScrollTop(this.scrollTop + this.scrollMargin.top);
+	};
+
 	editor.$blockScrolling = Infinity;
 	editor.session.setTabSize(2);
 	editor.session.setUseSoftTabs(false);
 	editor.session.setMode(new (require("ace/mode/skel2d").Mode)());
 	editor.setOption("fixedWidthGutter", true);
 	editor.setOption("displayIndentGuides", false);
+	editor.setOption("scrollPastEnd", 1);
 	editor.setValue(code);
 	editor.clearSelection();
 
