@@ -688,19 +688,24 @@ function parse_color_val(str)
 {
 	var color = [0, 0, 0, 1];
 	var tokens = str.substr(1).split(",");
+	var r, g, b;
 
 	if (tokens[0].length === 3)
 	{
-		color[0] = parseInt(tokens[0].charAt(0), 16) / 255;
-		color[1] = parseInt(tokens[0].charAt(1), 16) / 255;
-		color[2] = parseInt(tokens[0].charAt(2), 16) / 255;
+		r = tokens[0].charAt(0); r += r;
+		g = tokens[0].charAt(1); g += g;
+		b = tokens[0].charAt(2); b += b;
 	}
 	else
 	{
-		color[0] = parseInt(tokens[0].substr(0, 2), 16) / 255;
-		color[1] = parseInt(tokens[0].substr(2, 2), 16) / 255;
-		color[2] = parseInt(tokens[0].substr(4, 2), 16) / 255;
+		r = tokens[0].substr(0, 2);
+		g = tokens[0].substr(2, 2);
+		b = tokens[0].substr(4, 2);
 	}
+
+	color[0] = parseInt(r, 16) / 255;
+	color[1] = parseInt(g, 16) / 255;
+	color[2] = parseInt(b, 16) / 255;
 
 	if (tokens.length === 2)
 	{
@@ -788,7 +793,7 @@ function parse_timeline(item, tokens)
 	if (prop === "c")
 		re_value = /^#([\da-fA-F]{3}|[\da-fA-F]{6})(,\d+(\.\d+)?)?$/;
 	else if (prop === "@")
-		re_value = /^[a-zA-Z_\-]+$/;
+		re_value = /^[a-zA-Z_\-][\w\-]*$/;
 	else
 		re_value = /^[+*]?-?\d+(?:\.\d+)?$/;
 

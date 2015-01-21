@@ -33,14 +33,16 @@ canvas { display: block; width: 100%; height: 100%; user-select: none; }
 .ace-tm { color:#999; }
 .ace-tm .ace_keyword { color:#00F; }
 .ace-tm .ace_invalid { background-color: transparent; color: #F00; text-decoration: line-through; }
+/*.ace-tm .ace_string { color: #A31515; }*/
+.ace-tm .ace_string { color: #008000; }
 .ace_bone { color: #00F; }
 .ace_slot { color: #09F; }
 .ace_property { color: #000; }
 .ace_value { color: #777; }
 .ace_attachment-type { color: #F00; }
+.ace_anim-timing { color: #F00; }
 .ace_command { color: #000; }
-
-
+.ace_operator { color: #000; }
 
 </style>
 </head>
@@ -74,13 +76,12 @@ function create_editor()
 {
 	var editor = ace.edit("code");
 	var code = localStorage.getItem("testcode") || "";
+	var Range = require("ace/range").Range;
 
 	editor.renderer.$updateScrollBarV = function() {
 		this.scrollBarV.setScrollHeight(this.layerConfig.maxHeight + this.scrollMargin.v);
 		this.scrollBarV.setScrollTop(this.scrollTop + this.scrollMargin.top);
 	};
-
-	var Range = require("ace/range").Range;
 
 	editor.$updateHighlightActiveLine = function() {
 		var sess = this.getSession();

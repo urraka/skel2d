@@ -5,12 +5,18 @@ var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
-function start_crap(next_state)
+function double_jump(state, next_state)
 {
-	return function(state, stack) {
-		stack.unshift("crap", next_state);
-		return "crap";
-	}
+	return function(s, stack) {
+		stack.unshift(state, next_state);
+		return state;
+	};
+}
+
+function jump_to_next(state, stack)
+{
+	stack.shift();
+	return stack.shift();
 }
 
 oop.inherits(HighlightRules, TextHighlightRules);
@@ -22,7 +28,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: start_crap("start")
+				next: double_jump("crap", "start")
 			},
 			{
 				token: "keyword",
@@ -32,7 +38,17 @@ function HighlightRules()
 			{
 				token: "keyword",
 				regex: /(^skeleton)(?=\s|\\$)/,
-				next: start_crap("skeleton")
+				next: double_jump("crap", "skeleton")
+			},
+			{
+				token: "keyword",
+				regex: /^anim$/,
+				next: "anim-body"
+			},
+			{
+				token: "keyword",
+				regex: /(^anim)(?=\s|\\$)/,
+				next: "anim-header"
 			},
 			{
 				token: "text",
@@ -59,10 +75,7 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: function(state, stack) {
-					stack.shift();
-					return stack.shift();
-				}
+				next: jump_to_next
 			}
 		],
 		"skeleton": [
@@ -132,7 +145,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: start_crap("skeleton")
+				next: double_jump("crap", "skeleton")
 			},
 			{
 				token: "text",
@@ -234,6 +247,10 @@ function HighlightRules()
 				regex: /(?:(?:miter|bevel|round)-join|(?:butt|square|round)-cap)(?=\s|\\$|$)/
 			},
 			{
+				token: "string",
+				regex: /"\S+"(?=\s|\\$|$)/
+			},
+			{
 				token: "text",
 				regex: /\\$/,
 				next: "attachment"
@@ -267,7 +284,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "attachment"
+				next: "attachment-path"
 			},
 			{
 				token: "text",
@@ -312,7 +329,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: start_crap("commands")
+				next: double_jump("crap", "commands")
 			},
 			{
 				token: "text",
@@ -350,6 +367,374 @@ function HighlightRules()
 			{
 				regex: "",
 				next: "commands"
+			}
+		],
+		"anim-header": [
+			{
+				token: "string",
+				regex: /"\S+"(?=\s|\\$|$)/
+			},
+			{
+				token: "anim-timing",
+				regex: /(\d+)(fps)(?=\s|\\$|$)/
+			},
+			{
+				token: "anim-timing",
+				regex: /(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/.source +
+					/(?=\s|\\$|$)/.source
+			},
+			{
+				token: "anim-timing",
+				regex: /(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:\d+(?:\.\d+)?|[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/.source +
+					/(?=\s|\\$|$)/.source
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "anim-header"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: "anim-body"
+			}
+		],
+		"anim-body": [
+			{
+				token: ["text", "bone"],
+				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$)/,
+				next: double_jump("anim-item", "anim-bone-timelines")
+			},
+			{
+				token: ["text", "bone"],
+				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*$)/,
+				next: "anim-bone-timelines"
+			},
+			{
+				token: ["text", "slot"],
+				regex: /(^\t)(@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$)/,
+				next: double_jump("anim-item", "anim-slot-timelines")
+			},
+			{
+				token: ["text", "slot"],
+				regex: /(^\t)(@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*$)/,
+				next: "anim-slot-timelines"
+			},
+			{
+				token: "text",
+				regex: /^\s*$/
+			},
+			{
+				token: "text",
+				regex: /^(?=[^\t])/,
+				next: "start"
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: double_jump("crap", "anim-body")
+			},
+			{
+				token: "text",
+				regex: /.+(?=\\$)/
+			},
+			{
+				token: "text",
+				regex: /.+/
+			},
+			{
+				regex: "",
+				next: "anim-body"
+			}
+		],
+		"anim-item": [
+			{
+				token: "anim-timing",
+				regex: /(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/.source +
+					/(?=\s|\\$|$)/.source
+			},
+			{
+				token: "anim-timing",
+				regex: /(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:\d+(?:\.\d+)?|[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/.source +
+					/(?=\s|\\$|$)/.source
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "anim-item"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: jump_to_next
+			}
+		],
+		"anim-bone-timelines": [
+			{
+				token: "text",
+				regex: /^\s*$/
+			},
+			{
+				token: ["text", "property"],
+				regex: /(^\t\t)([xyrij])(?=\s|\\$)/,
+				next: double_jump("anim-timeline-num", "anim-bone-timelines")
+			},
+			{
+				token: ["text", "property"],
+				regex: /(^\t\t)([xyrij]$)/
+			},
+			{
+				token: "text",
+				regex: /^(?=\t?[^\t])/,
+				next: "anim-body"
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: double_jump("crap", "anim-bone-timelines")
+			},
+			{
+				token: "text",
+				regex: /.+(?=\\$)/
+			},
+			{
+				token: "text",
+				regex: /.+/
+			},
+			{
+				regex: "",
+				next: "anim-bone-timelines"
+			}
+		],
+		"anim-slot-timelines": [
+			{
+				token: "text",
+				regex: /^\s*$/
+			},
+			{
+				token: ["text", "property"],
+				regex: /(^\t\t)([rgba])(?=\s|\\$)/,
+				next: double_jump("anim-timeline", "anim-slot-timelines")
+			},
+			{
+				token: ["text", "property"],
+				regex: /(^\t\t)(@)(?=\s|\\$)/,
+				next: double_jump("anim-timeline-attachment", "anim-slot-timelines")
+			},
+			{
+				token: ["text", "property"],
+				regex: /(^\t\t)(c)(?=\s|\\$)/,
+				next: double_jump("anim-timeline-color", "anim-slot-timelines")
+			},
+			{
+				token: ["text", "property"],
+				regex: /(^\t\t)([@rgbac]$)/
+			},
+			{
+				token: "text",
+				regex: /^(?=\t?[^\t])/,
+				next: "anim-body"
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: double_jump("crap", "anim-slot-timelines")
+			},
+			{
+				token: "text",
+				regex: /.+(?=\\$)/
+			},
+			{
+				token: "text",
+				regex: /.+/
+			},
+			{
+				regex: "",
+				next: "anim-slot-timelines"
+			}
+		],
+		"anim-timeline": [
+			{
+				token: "value",
+				regex: /(?:-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
+			},
+			{
+				token: "slot",
+				regex: /(?:[a-zA-Z_\-][\w\-]*)(?=\s|\\$|$)/
+			},
+			{
+				token: "value",
+				regex: /(?:#(?:[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?)(?=\s|\\$|$)/
+			},
+			{
+				token: "operator",
+				regex: /(?:\{|\}(?:\[\d+\])?|-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?):(?:\d+(?:\.\d+)?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?))(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "anim-timeline"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: jump_to_next
+			}
+		],
+		"anim-timeline-num": [
+			{
+				token: ["operator", "value"],
+				regex: /([+*]?)(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
+			},
+			{
+				token: "operator",
+				regex: /(?:\{|\}(?:\[\d+\])?|-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?):(?:\d+(?:\.\d+)?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?))(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "anim-timeline"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: jump_to_next
+			}
+		],
+		"anim-timeline-color": [
+			{
+				token: "value",
+				regex: /(?:#(?:[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?)(?=\s|\\$|$)/
+			},
+			{
+				token: "operator",
+				regex: /(?:\{|\}(?:\[\d+\])?|-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?):(?:\d+(?:\.\d+)?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?))(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "anim-timeline"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: jump_to_next
+			}
+		],
+		"anim-timeline-attachment": [
+			{
+				token: "slot",
+				regex: /(?:[a-zA-Z_\-][\w\-]*)(?=\s|\\$|$)/
+			},
+			{
+				token: "operator",
+				regex: /(?:\{|\}(?:\[\d+\])?|-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?):(?:\d+(?:\.\d+)?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?))(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "anim-timeline"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: jump_to_next
 			}
 		]
 	};
