@@ -21,6 +21,14 @@ canvas { display: block; width: 100%; height: 100%; user-select: none; }
 .ace_hidden-cursors .ace_cursor {display: none;}
 .ace_cursor { border-left-width: 1px; }
 .ace_editor.ace_multiselect .ace_overwrite-cursors .ace_cursor { border-left-width: 0px; }
+.ace-tm .ace_marker-layer .ace_selection { background: rgba(181, 213, 255, 0.5); }
+.ace-tm .ace_marker-layer .ace_selected-word {
+	background: rgb(250, 250, 255);
+	border: 1px solid #3F3F3F;
+	border-radius: 3px;
+	box-sizing: content-box;
+	transform: translate(-1px,-1px);
+}
 
 .ace-tm { color:#999; }
 .ace-tm .ace_keyword { color:#00F; }
@@ -31,6 +39,8 @@ canvas { display: block; width: 100%; height: 100%; user-select: none; }
 .ace_value { color: #777; }
 .ace_attachment-type { color: #F00; }
 .ace_command { color: #000; }
+
+
 
 </style>
 </head>
@@ -70,6 +80,34 @@ function create_editor()
 		this.scrollBarV.setScrollTop(this.scrollTop + this.scrollMargin.top);
 	};
 
+	var Range = require("ace/range").Range;
+
+	editor.$updateHighlightActiveLine = function() {
+		var sess = this.getSession();
+		var highlight;
+
+		if (this.$highlightActiveLine) {
+			if ((this.$selectionStyle != "line" || this.selection.isEmpty()))
+				highlight = this.getCursorPosition();
+			if (this.renderer.$maxLines && sess.getLength() === 1 && !(this.renderer.$minLines > 1))
+				highlight = false;
+		}
+
+		if (sess.$highlightLineMarker && !highlight) {
+			sess.removeMarker(sess.$highlightLineMarker.id);
+			sess.$highlightLineMarker = null;
+		} else if (!sess.$highlightLineMarker && highlight) {
+			var range = new Range(highlight.row, highlight.column, highlight.row, Infinity);
+			range.id = sess.addMarker(range, "ace_active-line", "screenLine");
+			sess.$highlightLineMarker = range;
+		} else if (highlight) {
+			sess.$highlightLineMarker.start.row = highlight.row;
+			sess.$highlightLineMarker.end.row = highlight.row;
+			sess.$highlightLineMarker.start.column = highlight.column;
+			sess._signal("changeBackMarker");
+		}
+	};
+
 	editor.$blockScrolling = Infinity;
 	editor.session.setTabSize(2);
 	editor.session.setUseSoftTabs(false);
@@ -77,6 +115,7 @@ function create_editor()
 	editor.setOption("fixedWidthGutter", true);
 	editor.setOption("displayIndentGuides", false);
 	editor.setOption("scrollPastEnd", 1);
+	editor.setOption("dragEnabled", false);
 	editor.setValue(code);
 	editor.clearSelection();
 
