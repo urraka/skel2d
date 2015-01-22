@@ -935,6 +935,7 @@ function process_animation(anim, bones, slots)
 
 			var last_push = -1;
 			var last_value = 0;
+			var last_keyframe = null;
 
 			for (var k = 0, n = stack.length; k < n; k++)
 				stack.pop();
@@ -948,9 +949,22 @@ function process_animation(anim, bones, slots)
 				{
 					case cmd.set_frame:      value > frame && (frame = value); break;
 					case cmd.set_step:       step = value; break;
-					case cmd.set_easing:     easing = value; break;
 					case cmd.advance_steps:  frame += step * value; break;
 					case cmd.advance_frames: frame += value; break;
+
+					case cmd.set_easing:
+					{
+						easing = value;
+
+						if (last_keyframe !== null)
+						{
+							if (easing !== 0)
+								last_keyframe["easing"] = easing_map[2 * easing + 1];
+							else
+								delete last_keyframe["easing"];
+						}
+					}
+					break;
 
 					case cmd.push_value_inc:
 					case cmd.push_value_mul:
@@ -963,17 +977,26 @@ function process_animation(anim, bones, slots)
 
 					case cmd.push_value:
 					{
-						if (frame > last_push)
+						var keyframe = null;
+
+						if (frame === last_push)
 						{
-							var keyframe = {"time": frame / fps, "value": value};
-
-							if (easing !== 0)
-								keyframe["easing"] = easing_map[2 * easing + 1];
-
-							timeline.push(keyframe);
-							last_push = frame;
-							last_value = value;
+							keyframe = last_keyframe;
+							keyframe.value = value;
+							delete keyframe["easing"];
 						}
+						else if (frame > last_push)
+						{
+							keyframe = {"time": frame / fps, "value": value};
+							timeline.push(keyframe);
+						}
+
+						if (easing !== 0)
+							keyframe["easing"] = easing_map[2 * easing + 1];
+
+						last_push = frame;
+						last_value = value;
+						last_keyframe = keyframe;
 					}
 					break;
 

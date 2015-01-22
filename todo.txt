@@ -1,4 +1,3 @@
-- parser: easing func should be set to the previous frame
 - core: inverse kinematics
 - default bone color
 - parser: skins
@@ -8,6 +7,7 @@
 - figure out how to import images from computer (drop a folder? maybe a zip)
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
 
+x parser: easing func should be set to the previous frame
 x editor: animations syntax highlighting
 x parser: timeline attachment value regex doesn't allow numbers in name (i think)
 x parser: remove empty timelines
