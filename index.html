@@ -273,8 +273,6 @@ function load_gist(id, filename, on_load)
 		delete window["gist_callback"];
 		script.parentNode.removeChild(script);
 
-		console.log(data);
-
 		if (filename in data.data.files)
 			on_load(data.data.files[filename].content);
 	};
