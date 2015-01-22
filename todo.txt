@@ -1,5 +1,5 @@
-- core: inverse kinematics
 - parser: easing func should be set to the previous frame
+- core: inverse kinematics
 - default bone color
 - parser: skins
 - parser: draw order

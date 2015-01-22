@@ -712,6 +712,8 @@ function Mode()
 	this.HighlightRules = HighlightRules;
 }
 
+Mode.prototype.$id = "ace/mode/skel2d";
+
 exports.Mode = Mode;
 
 });
