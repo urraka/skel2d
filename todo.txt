@@ -2,13 +2,15 @@
 - what to do when opening the app in multiple tabs?
 - figure out a way for saving, loading and sharing using local storage, file api and gists api
 - where to save images?
-- core: inverse kinematics
-- default bone color
-- parser: skins
-- core: add more easing functions
-- renderer: add sprite rendering
 - figure out how to import images from computer (drop a folder? maybe a zip)
+- parser: default bone color
+- parser: skins
+- core: inverse kinematics
+- core: add more easing functions
+- core: draw order animations
+- renderer: add sprite rendering
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
+- renderer: support for arbitrary closed paths when they are static (check libtess2)
 
 x parser: draw order
 x parser: easing func should be set to the previous frame

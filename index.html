@@ -11,15 +11,22 @@
 <script type="text/javascript" src="src/skel2d_render.js"></script>
 <script type="text/javascript" src="src/skel2d_parser.js"></script>
 <style type="text/css">
+
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
 a { text-decoration: none; }
 a:hover { text-decoration: underline; }
-#top { position: absolute; top: 0; height: 20px; left: 0; width: 610px; }
-#top { border-bottom: 1px solid #666; border-right: 1px solid #666; }
-#code { position: absolute; top: 21px; bottom: 0; width: 610px; }
-#code { border-right: 1px solid #666; display: none; }
-#canvas { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
-canvas { display: block; width: 100%; height: 100%; user-select: none; }
+
+#side-panel { position: absolute; top: 0; bottom: 0; left: 0; width: 610px; }
+#side-panel { border-right: 1px solid #666; }
+#canvas-panel { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
+
+#code { position: absolute; top: 21px; bottom: 0; left: 0; right: 0; }
+#canvas { display: block; width: 100%; height: 100%; user-select: none; }
+#top { position: absolute; top: 0; height: 20px; left: 0; right: 0; border-bottom: 1px solid #666; }
+#top { font: 12px/20px 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace; }
+#top > div { display: inline-block; height: 20px; color: #000; cursor: default; }
+
+.title { float: left; padding-left: 5px; }
 
 .menu { font: 12px/20px 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace; }
 .menu { display: inline-block; height: 20px; color: #000; cursor: default; }
@@ -51,18 +58,22 @@ canvas { display: block; width: 100%; height: 100%; user-select: none; }
 .ace_anim-timing { color: #F00; }
 .ace_command { color: #000; }
 .ace_operator { color: #000; }
+
 </style>
 </head>
 <body>
-<div id="top">
-	<div class="menu">
-		<div class="menu-item">File</div>
-		<div class="menu-item">Options</div>
-		<div class="menu-item">Help</div>
+
+<div id="side-panel">
+	<div id="top">
+		<div class="title">untitled*</div>
 	</div>
+	<div id="code"></div>
 </div>
-<div id="canvas"><canvas></canvas></div>
-<div id="code"></div>
+<div id="canvas-panel">
+	<canvas id="canvas"></canvas>
+</div>
+
+
 <script type="text/javascript">
 
 var editor = create_editor();
@@ -88,8 +99,6 @@ editor.focus();
 
 function create_editor()
 {
-	// width: r.characterWidth * 80 + r.$padding + r.gutterWidth + r.scrollBarV.width
-
 	var editor = ace.edit("code");
 	var code = localStorage.getItem("testcode") || "";
 	var Range = require("ace/range").Range;
@@ -129,11 +138,21 @@ function create_editor()
 	editor.session.setTabSize(2);
 	editor.session.setUseSoftTabs(false);
 	editor.session.setMode(new (require("ace/mode/skel2d").Mode)());
+	editor.setOption("showPrintMargin", false);
 	editor.setOption("fixedWidthGutter", true);
 	editor.setOption("displayIndentGuides", false);
 	editor.setOption("scrollPastEnd", 1);
 	editor.setOption("dragEnabled", false);
-	editor.setOption("vScrollBarAlwaysVisible", true)
+	editor.setOption("vScrollBarAlwaysVisible", true);
+
+	editor.renderer.updateFull(true);
+
+	var r = editor.renderer;
+	var w = Math.round(r.characterWidth * 82 + r.$padding + r.gutterWidth + r.scrollBarV.width);
+
+	document.querySelector("#side-panel").style.width = w + "px";
+	document.querySelector("#canvas-panel").style.left = (w + 1) + "px";
+	editor.resize();
 
 	if (window.location.hash)
 	{
@@ -208,7 +227,6 @@ function create_editor()
 	editor.commands.bindKey("ctrl+d",           editor.commands.commands["selectMoreAfter"]);
 	editor.commands.bindKey("ctrl+k",           editor.commands.commands["selectNextAfter"]);
 
-	document.querySelector("#code").style.display = "block";
 	return editor;
 }
 
