@@ -157,10 +157,16 @@ function create_editor()
 	if (window.location.hash)
 	{
 		var info = window.location.hash.substr(1).split(",");
-		load_gist(info[0], info[1], function(code) {
-			editor.setValue(code);
-			editor.clearSelection();
-		});
+
+		if (info.length === 2)
+		{
+			location.hash = "";
+
+			load_gist(info[0], info[1], function(code) {
+				editor.setValue(code);
+				editor.clearSelection();
+			});
+		}
 	}
 	else
 	{
