@@ -51,6 +51,16 @@ function HighlightRules()
 				next: "anim-header"
 			},
 			{
+				token: "keyword",
+				regex: /^order$/,
+				next: "order"
+			},
+			{
+				token: "keyword",
+				regex: /(^order)(?=\s|\\$)/,
+				next: double_jump("crap", "order")
+			},
+			{
 				token: "text",
 				regex: /.+(?=\\$)/
 			},
@@ -700,6 +710,38 @@ function HighlightRules()
 			{
 				regex: "",
 				next: jump_to_next
+			}
+		],
+		"order": [
+			{
+				token: ["text", "slot"],
+				regex: /(^\t)(@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /^\s*$/
+			},
+			{
+				token: "text",
+				regex: /^(?=[^\t])/,
+				next: "start"
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: double_jump("crap", "order")
+			},
+			{
+				token: "text",
+				regex: /.+(?=\\$)/
+			},
+			{
+				token: "text",
+				regex: /.+/
+			},
+			{
+				regex: "",
+				next: "order"
 			}
 		]
 	};
