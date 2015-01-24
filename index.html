@@ -12,10 +12,19 @@
 <script type="text/javascript" src="src/skel2d_parser.js"></script>
 <style type="text/css">
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
-#code { position: absolute; top: 0; bottom: 0; width: 610px; }
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }
+#top { position: absolute; top: 0; height: 20px; left: 0; width: 610px; }
+#top { border-bottom: 1px solid #666; border-right: 1px solid #666; }
+#code { position: absolute; top: 21px; bottom: 0; width: 610px; }
 #code { border-right: 1px solid #666; display: none; }
 #canvas { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
 canvas { display: block; width: 100%; height: 100%; user-select: none; }
+
+.menu { font: 12px/20px 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace; }
+.menu { display: inline-block; height: 20px; color: #000; cursor: default; }
+.menu-item { float: left; height: 20px; padding: 0 5px; cursor: pointer; }
+.menu-item:hover { text-decoration: underline; }
 
 .ace-tm .ace_marker-layer .ace_bracket { border-width: 0;border-style: none; }
 .ace_hidden-cursors .ace_cursor {display: none;}
@@ -45,6 +54,13 @@ canvas { display: block; width: 100%; height: 100%; user-select: none; }
 </style>
 </head>
 <body>
+<div id="top">
+	<div class="menu">
+		<div class="menu-item">File</div>
+		<div class="menu-item">Options</div>
+		<div class="menu-item">Help</div>
+	</div>
+</div>
 <div id="canvas"><canvas></canvas></div>
 <div id="code"></div>
 <script type="text/javascript">
@@ -72,6 +88,8 @@ editor.focus();
 
 function create_editor()
 {
+	// width: r.characterWidth * 80 + r.$padding + r.gutterWidth + r.scrollBarV.width
+
 	var editor = ace.edit("code");
 	var code = localStorage.getItem("testcode") || "";
 	var Range = require("ace/range").Range;
@@ -115,6 +133,7 @@ function create_editor()
 	editor.setOption("displayIndentGuides", false);
 	editor.setOption("scrollPastEnd", 1);
 	editor.setOption("dragEnabled", false);
+	editor.setOption("vScrollBarAlwaysVisible", true)
 
 	if (window.location.hash)
 	{
@@ -262,6 +281,8 @@ function draw()
 
 	if (skeleton)
 		renderer.draw(skeleton, canvas.width / 2, canvas.height / 2, 1);
+
+	gfx.gl.finish();
 }
 
 function load_gist(id, filename, on_load)

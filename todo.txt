@@ -1,12 +1,16 @@
+- ui design
+- what to do when opening the app in multiple tabs?
+- figure out a way for saving, loading and sharing using local storage, file api and gists api
+- where to save images?
 - core: inverse kinematics
 - default bone color
 - parser: skins
-- parser: draw order
 - core: add more easing functions
 - renderer: add sprite rendering
 - figure out how to import images from computer (drop a folder? maybe a zip)
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
 
+x parser: draw order
 x parser: easing func should be set to the previous frame
 x editor: animations syntax highlighting
 x parser: timeline attachment value regex doesn't allow numbers in name (i think)

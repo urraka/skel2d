@@ -46,6 +46,7 @@ function parse(source)
 	var slots = [];
 	var attachments = [];
 	var animations = [];
+	var draw_order = [];
 
 	var current_bone = null;
 	var current_attachment = null;
@@ -86,6 +87,7 @@ function parse(source)
 				}
 				else if (/^order(\s|$)/.test(line))
 				{
+					state = StateOrder;
 				}
 				else if (/^anim(\s|$)/.test(line))
 				{
@@ -212,12 +214,33 @@ function parse(source)
 				}
 			}
 			break;
+
+			case StateOrder:
+			{
+				if (/^[^\t]/.test(line))
+				{
+					// end of order
+
+					state = StateNone;
+					i = prev_line;
+				}
+				else if (/^\t@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:$|\s)/.test(line))
+				{
+					var end = line.indexOf(" ");
+
+					if (end !== -1)
+						draw_order.push(line.substring(2, end));
+					else
+						draw_order.push(line.substring(2));
+				}
+			}
+			break;
 		}
 	}
 
 	var nbones = bones.length;
-	var nslots = slots.length;
-	var nattachments = attachments.length;
+
+	// add missing parent bones
 
 	var parent_bones = [];
 
@@ -243,6 +266,10 @@ function parse(source)
 		bones.push(parent_bones[i]);
 		nbones++;
 	}
+
+	// process path attachments commands
+
+	var nattachments = attachments.length;
 
 	for (var i = 0; i < nattachments; i++)
 	{
@@ -294,6 +321,10 @@ function parse(source)
 		}
 	}
 
+	// set default attachment of each slot
+
+	var nslots = slots.length;
+
 	for (var i = 0; i < nslots; i++)
 	{
 		var sname = slots[i].name;
@@ -304,13 +335,38 @@ function parse(source)
 			var aname = attachments[j].name;
 			var alen = aname.length;
 
-			if (aname.lastIndexOf(sname, alen - slen) !== -1)
+			if (alen > slen && aname.charAt(slen) === "." && aname.lastIndexOf(sname, 0) === 0 &&
+				aname.indexOf(".", slen + 1) === -1)
 			{
-				slots[i].attachment = aname.substr(aname.lastIndexOf(".") + 1);
+				slots[i].attachment = aname.substr(slen + 1);
 				break;
 			}
 		}
 	}
+
+	// process draw order
+
+	draw_order = draw_order.map(function(x) { return find_name(slots, x, null); });
+	draw_order = draw_order.filter(function(x) { return x !== null; });
+
+	var n = draw_order.length;
+
+	for (var i = 0; i < nslots; i++)
+	{
+		var index = draw_order.indexOf(slots[i].name);
+
+		if (index === -1)
+			index = n + i;
+
+		slots[i].index = index;
+	}
+
+	slots.sort(function(a, b) { return a.index - b.index; });
+
+	for (var i = 0; i < nslots; i++)
+		delete slots[i].index;
+
+	// process animations
 
 	for (var i = 0, n = animations.length; i < n; i++)
 		animations[i] = process_animation(animations[i], bones, slots);
