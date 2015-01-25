@@ -28,17 +28,17 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: double_jump("crap", "start")
+				next: double_jump("invalid", "start")
 			},
 			{
 				token: "keyword",
 				regex: /^skeleton$/,
-				next: "skeleton"
+				next: "skel-body"
 			},
 			{
 				token: "keyword",
 				regex: /(^skeleton)(?=\s|\\$)/,
-				next: double_jump("crap", "skeleton")
+				next: double_jump("invalid", "skel-body")
 			},
 			{
 				token: "keyword",
@@ -58,7 +58,7 @@ function HighlightRules()
 			{
 				token: "keyword",
 				regex: /(^order)(?=\s|\\$)/,
-				next: double_jump("crap", "order")
+				next: double_jump("invalid", "order")
 			},
 			{
 				token: "text",
@@ -69,11 +69,11 @@ function HighlightRules()
 				regex: /.+/
 			}
 		],
-		"crap": [
+		"invalid": [
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "crap"
+				next: "invalid"
 			},
 			{
 				token: "text",
@@ -88,12 +88,12 @@ function HighlightRules()
 				next: jump_to_next
 			}
 		],
-		"skeleton": [
+		"skel-body": [
 			// invalid bone (with 'skeleton' in name)
 			{
 				token: ["text", "text"],
 				regex: /(^\t)((?:[a-zA-Z_\-][\w\-]*\.)*skeleton(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$)/,
-				next: "bone"
+				next: "skel-bone"
 			},
 			{
 				token: ["text", "text"],
@@ -104,7 +104,7 @@ function HighlightRules()
 			{
 				token: ["text", "bone"],
 				regex: /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$)/,
-				next: "bone"
+				next: "skel-bone"
 			},
 			{
 				token: ["text", "bone"],
@@ -115,7 +115,7 @@ function HighlightRules()
 			{
 				token: ["text", "text"],
 				regex: /(^\t\t)(@skeleton(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s|\\$)/,
-				next: "slot"
+				next: "skel-slot"
 			},
 			{
 				token: ["text", "text"],
@@ -124,7 +124,7 @@ function HighlightRules()
 			{
 				token: ["text", "text"],
 				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?\[skeleton\])(?=\s|\\$)/,
-				next: "slot"
+				next: "skel-slot"
 			},
 			{
 				token: ["text", "text"],
@@ -135,7 +135,7 @@ function HighlightRules()
 			{
 				token: ["text", "slot"],
 				regex: /(^\t\t)(@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?)(?=\s|\\$)/,
-				next: "slot"
+				next: "skel-slot"
 			},
 			{
 				token: ["text", "slot"],
@@ -155,7 +155,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: double_jump("crap", "skeleton")
+				next: double_jump("invalid", "skel-body")
 			},
 			{
 				token: "text",
@@ -167,10 +167,10 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: "skeleton"
+				next: "skel-body"
 			}
 		],
-		"bone": [
+		"skel-bone": [
 			{
 				token: ["property", "value"],
 				regex: /([xyrijl])(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
@@ -186,7 +186,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "bone"
+				next: "skel-bone"
 			},
 			{
 				token: "text",
@@ -198,10 +198,10 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: "skeleton"
+				next: "skel-body"
 			}
 		],
-		"slot": [
+		"skel-slot": [
 			{
 				token: ["property", "value"],
 				regex: /(#)([\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|\\$|$)/
@@ -213,22 +213,22 @@ function HighlightRules()
 			{
 				token: "attachment-type",
 				regex: /(?::)(?:sprite|rect|circle|ellipse)(?=\s|\\$)/,
-				next: "attachment"
+				next: "skel-attachment"
 			},
 			{
 				token: "attachment-type",
 				regex: /:path$/,
-				next: "commands"
+				next: "skel-path-commands"
 			},
 			{
 				token: "attachment-type",
 				regex: /:path(?=\s|\\$)/,
-				next: "attachment-path"
+				next: "skel-attachment-path"
 			},
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "slot"
+				next: "skel-slot"
 			},
 			{
 				token: "text",
@@ -240,10 +240,10 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: "skeleton"
+				next: "skel-body"
 			}
 		],
-		"attachment": [
+		"skel-attachment": [
 			{
 				token: ["property", "value"],
 				regex: /([xyrijdtwhm])(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
@@ -263,7 +263,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "attachment"
+				next: "skel-attachment"
 			},
 			{
 				token: "text",
@@ -275,10 +275,10 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: "skeleton"
+				next: "skel-body"
 			}
 		],
-		"attachment-path": [
+		"skel-attachment-path": [
 			{
 				token: ["property", "value"],
 				regex: /([xyrijtm])(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
@@ -294,7 +294,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "attachment-path"
+				next: "skel-attachment-path"
 			},
 			{
 				token: "text",
@@ -306,10 +306,10 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: "commands"
+				next: "skel-path-commands"
 			}
 		],
-		"commands": [
+		"skel-path-commands": [
 			{
 				token: "text",
 				regex: /^\s*$/
@@ -325,7 +325,7 @@ function HighlightRules()
 			{
 				token: ["text", "command"],
 				regex: /(^\t\t\t)(M|L|Q|B|C)(?=\s|\\$)/,
-				next: "command"
+				next: "skel-path-command"
 			},
 			{
 				token: ["text", "command"],
@@ -334,12 +334,12 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /^(?=\t{0,2}[^\t])/,
-				next: "skeleton"
+				next: "skel-body"
 			},
 			{
 				token: "text",
 				regex: /\\$/,
-				next: double_jump("crap", "commands")
+				next: double_jump("invalid", "skel-path-commands")
 			},
 			{
 				token: "text",
@@ -351,10 +351,10 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: "commands"
+				next: "skel-path-commands"
 			}
 		],
-		"command": [
+		"skel-path-command": [
 			{
 				token: "text",
 				regex: /\s+/
@@ -368,7 +368,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: "command"
+				next: "skel-path-command"
 			},
 			{
 				token: "text",
@@ -376,7 +376,7 @@ function HighlightRules()
 			},
 			{
 				regex: "",
-				next: "commands"
+				next: "skel-path-commands"
 			}
 		],
 		"anim-header": [
@@ -452,7 +452,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: double_jump("crap", "anim-body")
+				next: double_jump("invalid", "anim-body")
 			},
 			{
 				token: "text",
@@ -521,7 +521,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: double_jump("crap", "anim-bone-timelines")
+				next: double_jump("invalid", "anim-bone-timelines")
 			},
 			{
 				token: "text",
@@ -568,7 +568,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: double_jump("crap", "anim-slot-timelines")
+				next: double_jump("invalid", "anim-slot-timelines")
 			},
 			{
 				token: "text",
@@ -729,7 +729,7 @@ function HighlightRules()
 			{
 				token: "text",
 				regex: /\\$/,
-				next: double_jump("crap", "order")
+				next: double_jump("invalid", "order")
 			},
 			{
 				token: "text",
