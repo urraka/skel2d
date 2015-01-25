@@ -42,6 +42,7 @@ function parse(source)
 	var lines = source.split("\n");
 	var nlines = lines.length;
 
+	var skeleton = {};
 	var bones = [];
 	var slots = [];
 	var attachments = [];
@@ -80,6 +81,16 @@ function parse(source)
 			{
 				if (/^skeleton(\s|$)/.test(line))
 				{
+					var tokens = line.match(/\S+/g);
+
+					for (var j = 1, n = tokens.length; j < n; j++)
+					{
+						var tok = tokens[j];
+
+						if (/^#([\da-fA-F]{3}|[\da-fA-F]{6})(,\d+(\.\d+)?)?$/.test(tok))
+							skeleton.color = parse_color(tok);
+					}
+
 					state = StateSkeleton;
 				}
 				else if (/^skin(\s|$)/.test(line))
@@ -265,6 +276,17 @@ function parse(source)
 	{
 		bones.push(parent_bones[i]);
 		nbones++;
+	}
+
+	// set default bone color
+
+	if ("color" in skeleton)
+	{
+		for (var i = 0; i < nbones; i++)
+		{
+			if (!("color" in bones[i]))
+				bones[i].color = skeleton.color;
+		}
 	}
 
 	// process path attachments commands

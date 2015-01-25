@@ -38,7 +38,7 @@ function HighlightRules()
 			{
 				token: "keyword",
 				regex: /(^skeleton)(?=\s|\\$)/,
-				next: double_jump("invalid", "skel-body")
+				next: "skel-header"
 			},
 			{
 				token: "keyword",
@@ -86,6 +86,29 @@ function HighlightRules()
 			{
 				regex: "",
 				next: jump_to_next
+			}
+		],
+		"skel-header": [
+			{
+				token: ["property", "value"],
+				regex: /(#)([\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "skel-header"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: "skel-body"
 			}
 		],
 		"skel-body": [

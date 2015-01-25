@@ -452,7 +452,7 @@ function Bone()
 	this.skeleton = null;
 	this.parent = null;
 	this.length = 0;
-	this.color = new Color(0.6, 0.6, 0, 1);
+	this.color = new Color(1, 0.8, 0, 1);
 	this.inherit_rotation = true;
 	this.inherit_scale = true;
 	this.initial_state = new BoneState();

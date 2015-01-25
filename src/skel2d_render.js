@@ -114,11 +114,12 @@ function add_bones(skeleton, vbo, ibo)
 		{
 			var base = vbo.size;
 			var l = bone.length;
+			var alpha = 0.7 * bone.color.a;
 
-			bone_color[0] = (bone.color.r * 255)|0;
-			bone_color[1] = (bone.color.g * 255)|0;
-			bone_color[2] = (bone.color.b * 255)|0;
-			bone_color[3] = (0.7 * bone.color.a * 255)|0;
+			bone_color[0] = (alpha * bone.color.r * 255)|0;
+			bone_color[1] = (alpha * bone.color.g * 255)|0;
+			bone_color[2] = (alpha * bone.color.b * 255)|0;
+			bone_color[3] = (alpha * 255)|0;
 
 			vbo.push(bone.to_worldx(-s,  0), bone.to_worldy(-s,  0), 0, 0, bone_color);
 			vbo.push(bone.to_worldx( 0,  s), bone.to_worldy( 0,  s), 0, 0, bone_color);
