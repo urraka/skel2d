@@ -48,11 +48,13 @@ function parse(source)
 	var attachments = [];
 	var animations = [];
 	var draw_order = [];
+	var skins = [];
 
 	var current_bone = null;
 	var current_attachment = null;
 	var current_animation = null;
 	var current_animation_item = null;
+	var current_skin = null;
 
 	for (var i = 0; i < nlines; i++)
 	{
@@ -95,6 +97,22 @@ function parse(source)
 				}
 				else if (/^skin(\s|$)/.test(line))
 				{
+					var skin = {};
+					var tokens = line.match(/\S+/g);
+
+					for (var j = 1, n = tokens.length; j < n; j++)
+					{
+						var tok = tokens[j];
+						var len = tok.len;
+
+						if (tok.charAt(0) === '"' && tok.charAt(len - 1) === '"')
+							skin.name = tok.substring(1, len - 1);
+					}
+
+					skin.attachments = [];
+					skins.push(skin);
+					current_skin = skin;
+					state = StateSkin;
 				}
 				else if (/^order(\s|$)/.test(line))
 				{
@@ -114,8 +132,6 @@ function parse(source)
 			{
 				if (/^[^\t]/.test(line))
 				{
-					// end of skeleton
-
 					state = StateNone;
 					i = prev_line;
 
@@ -137,6 +153,8 @@ function parse(source)
 				else if (/^\t\t@([a-zA-Z_\-][\w\-]*)?(\[[a-zA-Z_\-][\w\-]*\])?($|\s)/.test(line))
 				{
 					// slot/attachment
+
+					current_attachment = null;
 
 					if (current_bone !== null)
 					{
@@ -189,8 +207,6 @@ function parse(source)
 			{
 				if (/^[^\t]/.test(line))
 				{
-					// end of animation
-
 					state = StateNone;
 					i = prev_line;
 
@@ -230,8 +246,6 @@ function parse(source)
 			{
 				if (/^[^\t]/.test(line))
 				{
-					// end of order
-
 					state = StateNone;
 					i = prev_line;
 				}
@@ -243,6 +257,50 @@ function parse(source)
 						draw_order.push(line.substring(2, end));
 					else
 						draw_order.push(line.substring(2));
+				}
+			}
+			break;
+
+			case StateSkin:
+			{
+				if (/^[^\t]/.test(line))
+				{
+					state = StateNone;
+					i = prev_line;
+
+					current_skin = null;
+					current_attachment = null;
+				}
+				else if (/^\t@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:\[[a-zA-Z_\-][\w\-]*\])?(?:$|\s)/.test(line))
+				{
+					var tokens = line.match(/\S+/g);
+					var attachment = parse_attachment(null, null, tokens);
+
+					current_skin.attachments.push(attachment);
+					current_attachment = null;
+
+					if (attachment.type === "path")
+					{
+						current_attachment = attachment;
+						current_attachment.commands = [];
+					}
+				}
+				else if (/^\t\t((M|Q|:|B|L)\s+|C($|\s+))/.test(line))
+				{
+					// path command
+
+					if (current_attachment !== null && current_attachment.type === "path")
+					{
+						var tokens = line.match(/\S+/g);
+						var command = parse_path_command(tokens);
+
+						if (command !== null)
+							Array.prototype.push.apply(current_attachment.commands, command);
+					}
+				}
+				else if (/^\t[^\t]/.test(line))
+				{
+					current_attachment = null;
 				}
 			}
 			break;
@@ -288,6 +346,9 @@ function parse(source)
 				bones[i].color = skeleton.color;
 		}
 	}
+
+	// TODO: process skin attachment names
+	// TODO: make a list of path_attachments and use that in the next loop so it includes skins too
 
 	// process path attachments commands
 
@@ -531,37 +592,41 @@ function parse_slot(slots, bone, tokens)
 function parse_attachment(attachments, bone, tokens)
 {
 	var name = tokens[0];
-	var i = name.indexOf("[");
 
-	var slot_name;
-	var atth_name;
-
-	if (i >= 0)
+	if (attachments !== null && bone !== null)
 	{
-		slot_name = name.substring(1, i);
-		atth_name = name.substring(i + 1, name.length - 1);
-	}
-	else
-	{
-		slot_name = name.substr(1);
-		atth_name = slot_name;
-	}
+		var i = name.indexOf("[");
 
-	if (slot_name === "skeleton" || atth_name === "skeleton")
-		return null;
+		var slot_name;
+		var atth_name;
 
-	if (slot_name.length === 0)
-		slot_name = bone.name.split(".").pop();
+		if (i >= 0)
+		{
+			slot_name = name.substring(1, i);
+			atth_name = name.substring(i + 1, name.length - 1);
+		}
+		else
+		{
+			slot_name = name.substr(1);
+			atth_name = slot_name;
+		}
 
-	if (atth_name.length === 0)
-		atth_name = slot_name;
-
-	name = bone.name + "." + slot_name + "." + atth_name;
-
-	for (var i = 0, n = attachments.length; i < n; i++)
-	{
-		if (attachments[i].name === name)
+		if (slot_name === "skeleton" || atth_name === "skeleton")
 			return null;
+
+		if (slot_name.length === 0)
+			slot_name = bone.name.split(".").pop();
+
+		if (atth_name.length === 0)
+			atth_name = slot_name;
+
+		name = bone.name + "." + slot_name + "." + atth_name;
+
+		for (var i = 0, n = attachments.length; i < n; i++)
+		{
+			if (attachments[i].name === name)
+				return null;
+		}
 	}
 
 	var attachment = {name: name, type: "none"};

@@ -61,6 +61,16 @@ function HighlightRules()
 				next: double_jump("invalid", "order")
 			},
 			{
+				token: "keyword",
+				regex: /^skin$/,
+				next: "skin-body"
+			},
+			{
+				token: "keyword",
+				regex: /(^skin)(?=\s|\\$)/,
+				next: "skin-header"
+			},
+			{
 				token: "text",
 				regex: /.+(?=\\$)/
 			},
@@ -765,6 +775,240 @@ function HighlightRules()
 			{
 				regex: "",
 				next: "order"
+			}
+		],
+		"skin-header": [
+			{
+				token: "string",
+				regex: /"\S+"(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "skin-header"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: "skin-body"
+			}
+		],
+		"skin-body": [
+			{
+				token: ["text", "slot"],
+				regex: /(^\t)(@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*$)/
+			},
+			{
+				token: ["text", "slot"],
+				regex: /(^\t)(@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$)/,
+				next: "skin-item"
+			},
+			{
+				token: "text",
+				regex: /^\s*$/
+			},
+			{
+				token: "text",
+				regex: /^(?=[^\t])/,
+				next: "start"
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: double_jump("invalid", "skin-body")
+			},
+			{
+				token: "text",
+				regex: /.+(?=\\$)/
+			},
+			{
+				token: "text",
+				regex: /.+/
+			},
+			{
+				regex: "",
+				next: "skin-body"
+			}
+		],
+		"skin-item": [
+			{
+				token: "attachment-type",
+				regex: /(?::)(?:sprite|rect|circle|ellipse)(?=$)/
+			},
+			{
+				token: "attachment-type",
+				regex: /(?::)(?:sprite|rect|circle|ellipse)(?=\s|\\$)/,
+				next: "skin-attachment"
+			},
+			{
+				token: "attachment-type",
+				regex: /:path$/,
+				next: "skin-path-commands"
+			},
+			{
+				token: "attachment-type",
+				regex: /:path(?=\s|\\$)/,
+				next: "skin-attachment-path"
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "skin-item"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: "skin-body"
+			}
+		],
+		"skin-attachment": [
+			{
+				token: ["property", "value"],
+				regex: /([xyrijdtwhm])(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
+			},
+			{
+				token: ["property", "value"],
+				regex: /([fs])(#(?:[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?)(?=\s|\\$|$)/
+			},
+			{
+				token: "property",
+				regex: /(?:(?:miter|bevel|round)-join|(?:butt|square|round)-cap)(?=\s|\\$|$)/
+			},
+			{
+				token: "string",
+				regex: /"\S+"(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "skin-attachment"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: "skin-body"
+			}
+		],
+		"skin-attachment-path": [
+			{
+				token: ["property", "value"],
+				regex: /([xyrijtm])(-?\d+(?:\.\d+)?)(?=\s|\\$|$)/
+			},
+			{
+				token: ["property", "value"],
+				regex: /([fs])(#(?:[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?)(?=\s|\\$|$)/
+			},
+			{
+				token: "property",
+				regex: /(?:(?:miter|bevel|round)-join|(?:butt|square|round)-cap)(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "skin-attachment-path"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: "skin-path-commands"
+			}
+		],
+		"skin-path-commands": [
+			{
+				token: "text",
+				regex: /^\s*$/
+			},
+			{
+				token: ["text", "command", "text", "bone"],
+				regex: /(^\t\t)(:)(\s+)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$|$)/
+			},
+			{
+				token: ["text", "command", "text"],
+				regex: /(^\t\t)(:)(\s+.+)(?=\s|\\$|$)/
+			},
+			{
+				token: ["text", "command"],
+				regex: /(^\t\t)(M|L|Q|B|C)(?=\s|\\$)/,
+				next: "skin-path-command"
+			},
+			{
+				token: ["text", "command"],
+				regex: /(^\t\t)(M|L|Q|B|C$)/
+			},
+			{
+				token: "text",
+				regex: /^(?=\t?[^\t])/,
+				next: "skin-body"
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: double_jump("invalid", "skin-path-commands")
+			},
+			{
+				token: "text",
+				regex: /.+(?=\\$)/
+			},
+			{
+				token: "text",
+				regex: /.+/
+			},
+			{
+				regex: "",
+				next: "skin-path-commands"
+			}
+		],
+		"skin-path-command": [
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: ["value", "text", "value", "bone"],
+				regex: /(-?\d+(?:\.\d+)?)(,)(-?\d+(?:\.\d+)?)/.source +
+					/((?::(?:[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*))?)/.source +
+					/(?=\s|\\$|$)/.source
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "skin-path-command"
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: "skin-path-commands"
 			}
 		]
 	};
