@@ -317,7 +317,7 @@ function load_skins(skins)
 
 			skin.name = skin_name;
 
-			for (var i = 0, n = default_skin.length; i < n; i++)
+			for (var i = 0, n = default_skin.attachments.length; i < n; i++)
 				skin.attachments.push(default_skin.attachments[i]);
 
 			for (var i = 0, n = data.length; i < n; i++)
@@ -332,6 +332,8 @@ function load_skins(skins)
 						skin.attachments[index] = attachment;
 				}
 			}
+
+			this.skins.push(skin);
 		}
 	}
 }

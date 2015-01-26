@@ -100,7 +100,14 @@ var re = {
 	]
 };
 
-function split_line(line) { return line.match(re.split); }
+function split_line(line) {
+	return line.match(re.split);
+}
+
+function last_split(str, sep) {
+	var i = str.lastIndexOf(sep);
+	return i >= 0 ? str.substr(i + sep.length) : str;
+}
 
 function parse(source)
 {
@@ -163,22 +170,25 @@ function parse(source)
 				}
 				else if (re.skin.test(line))
 				{
-					var skin = {};
 					var tokens = split_line(line);
+					var name = null;
 
 					for (var j = 1, n = tokens.length; j < n; j++)
 					{
 						var tok = tokens[j];
-						var len = tok.len;
+						var len = tok.length;
 
 						if (tok.charAt(0) === '"' && tok.charAt(len - 1) === '"')
-							skin.name = tok.substring(1, len - 1);
+							name = tok.substring(1, len - 1);
 					}
 
-					skin.attachments = [];
-					skins.push(skin);
-					current_skin = skin;
-					state = StateSkin;
+					if (name !== null && name !== "default")
+					{
+						current_skin = {name: name};
+						current_skin.attachments = [];
+						skins.push(current_skin);
+						state = StateSkin;
+					}
 				}
 				else if (re.order.test(line))
 				{
@@ -400,58 +410,103 @@ function parse(source)
 		}
 	}
 
-	// TODO: process skin attachment names
-	// TODO: make a list of path_attachments and use that in the next loop so it includes skins too
+	// process skin attachment names
+
+	var nskins = skins.length;
+
+	for (var i = 0; i < nskins; i++)
+	{
+		var skin_attachments = skins[i].attachments;
+		var nattachments = skin_attachments.length;
+
+		for (var j = 0; j < nattachments; j++)
+		{
+			var name = split_slot_name(skin_attachments[j].name);
+			var slot_name = find_name(slots, name[0], null);
+			var valid = false;
+
+			if (slot_name !== null)
+			{
+				name = slot_name + "." + name[1];
+
+				for (var k = 0, n = attachments.length; k < n; k++)
+				{
+					if (attachments[k].name === name)
+					{
+						valid = true;
+						break;
+					}
+				}
+			}
+
+			if (valid)
+				skin_attachments[j].name = name;
+			else
+				skin_attachments.splice(j--, 1), --nattachments;
+		}
+	}
 
 	// process path attachments commands
 
+	var paths = [];
 	var nattachments = attachments.length;
 
 	for (var i = 0; i < nattachments; i++)
+		if (attachments[i].type === "path")
+			paths.push(attachments[i]);
+
+	for (var i = 0; i < nskins; i++)
 	{
-		var attachment = attachments[i];
+		var skin_attachments = skins[i].attachments;
 
-		if (attachment.type === "path")
+		for (var j = 0, n = skin_attachments.length; j < n; j++)
+			if (skin_attachments[j].type === "path")
+				paths.push(skin_attachments[j]);
+	}
+
+	var npaths = paths.length;
+
+	for (var i = 0; i < npaths; i++)
+	{
+		var path = paths[i];
+		var src_commands = path.commands;
+		var dst_commands = path.commands = [];
+
+		var name = path.name;
+		var def = name.substring(0, name.lastIndexOf(".", name.lastIndexOf(".") - 1));
+
+		for (var j = 0, n = src_commands.length; j < n; j++)
 		{
-			var src_commands = attachment.commands;
-			var dst_commands = attachment.commands = [];
+			var cmd = src_commands[j];
 
-			var name = attachment.name;
-			var def = name.substring(0, name.lastIndexOf(".", name.lastIndexOf(".") - 1));
-
-			for (var j = 0, n = src_commands.length; j < n; j++)
+			if (cmd === ":")
 			{
-				var cmd = src_commands[j];
+				def = find_name(bones, src_commands[++j], def);
+			}
+			else
+			{
+				var count = 0;
 
-				if (cmd === ":")
+				switch (cmd)
 				{
-					def = find_name(bones, src_commands[++j], def);
+					case "C": count = 0; break;
+					case "M": count = 1; break;
+					case "L": count = 1; break;
+					case "Q": count = 2; break;
+					case "B": count = 3; break;
 				}
-				else
+
+				dst_commands.push(cmd);
+
+				for (var k = 0; k < count; k++)
 				{
-					var count = 0;
+					var x = src_commands[++j];
+					var y = src_commands[++j];
+					var b = src_commands[++j];
 
-					switch (cmd)
-					{
-						case "C": count = 0; break;
-						case "M": count = 1; break;
-						case "L": count = 1; break;
-						case "Q": count = 2; break;
-						case "B": count = 3; break;
-					}
-
-					dst_commands.push(cmd);
-
-					for (var k = 0; k < count; k++)
-					{
-						var x = src_commands[++j];
-						var y = src_commands[++j];
-						var b = src_commands[++j];
-
-						dst_commands.push(isNaN(x) ? 0 : x);
-						dst_commands.push(isNaN(y) ? 0 : y);
-						dst_commands.push(b ? find_name(bones, b, def) : def);
-					}
+					dst_commands.push(isNaN(x) ? 0 : x);
+					dst_commands.push(isNaN(y) ? 0 : y);
+					dst_commands.push(b ? find_name(bones, b, def) : def);
 				}
 			}
 		}
@@ -511,12 +566,23 @@ function parse(source)
 		"skeleton": {
 			"bones": bones,
 			"slots": slots,
-			"skins": {
-				"default": attachments
-			}
+			"skins": merge_skins(attachments, skins)
 		},
 		"animations": animations
 	};
+}
+
+function merge_skins(attachments, skins)
+{
+	var result = {"default": attachments};
+
+	for (var i = 0, n = skins.length; i < n; i++)
+	{
+		var skin = result[skins[i].name] || (result[skins[i].name] = []);
+		skin.push.apply(skin, skins[i].attachments);
+	}
+
+	return result;
 }
 
 function find_name(list, name, def)
@@ -597,20 +663,42 @@ function parse_bone(bones, tokens)
 	return bone;
 }
 
+var _ssnr = ["", ""];
+
+function split_slot_name(name)
+{
+	_ssnr.pop(), _ssnr.pop();
+
+	var result = _ssnr;
+	var len = name.length;
+
+	if (name.charAt(len - 1) === "]")
+	{
+		var idx = name.indexOf("[");
+
+		result.push(name.substring(1, idx));
+		result.push(name.substring(idx + 1, len - 1));
+	}
+	else
+	{
+		result.push(name.substr(1));
+		result.push(last_split(result[0], "."));
+	}
+
+	return result;
+}
+
 function parse_slot(slots, bone, tokens)
 {
-	var name = tokens[0];
+	var name = split_slot_name(tokens[0])[0];
 
-	if (name.charAt(name.length - 1) === "]")
-		name = name.substr(0, name.indexOf("["));
-
-	if (name === "@skeleton")
+	if (name === "skeleton")
 		return null;
 
-	if (name === "@")
-		name = "@" + bone.name.split(".").pop();
+	if (name === "")
+		name = last_split(bone.name, ".");
 
-	name = bone.name + "." + name.substr(1);
+	name = bone.name + "." + name;
 
 	var slot = null;
 
@@ -648,27 +736,16 @@ function parse_attachment(attachments, bone, tokens)
 
 	if (attachments !== null && bone !== null)
 	{
-		var i = name.indexOf("[");
+		name = split_slot_name(name);
 
-		var slot_name;
-		var atth_name;
-
-		if (i >= 0)
-		{
-			slot_name = name.substring(1, i);
-			atth_name = name.substring(i + 1, name.length - 1);
-		}
-		else
-		{
-			slot_name = name.substr(1);
-			atth_name = slot_name;
-		}
+		var slot_name = name[0];
+		var atth_name = name[1];
 
 		if (slot_name === "skeleton" || atth_name === "skeleton")
 			return null;
 
 		if (slot_name.length === 0)
-			slot_name = bone.name.split(".").pop();
+			slot_name = last_split(bone.name, ".");
 
 		if (atth_name.length === 0)
 			atth_name = slot_name;

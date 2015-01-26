@@ -807,7 +807,10 @@ function HighlightRules()
 			},
 			{
 				token: ["text", "slot"],
-				regex: /(^\t)(@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)(?=\s|\\$)/,
+				regex: "(^\\t)(" +
+					/@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*/.source +
+					/(?:\[[a-zA-Z_\-][\w\-]*\])?/.source + ")" +
+					/(?=\s|\\$)/.source,
 				next: "skin-item"
 			},
 			{

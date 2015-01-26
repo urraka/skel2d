@@ -31,12 +31,12 @@ function SkeletonRenderer(gfx)
 	this.show_bones = true;
 }
 
-SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale)
+SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale, skin_index)
 {
 	var gfx = this.gfx;
 	var vbo = this.vbo;
 	var ibo = this.ibo;
-	var skin = skeleton.skins[0];
+	var skin = skeleton.skins[skin_index];
 
 	var m = view_transform;
 	var s = scale;
