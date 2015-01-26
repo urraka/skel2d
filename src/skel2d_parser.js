@@ -36,6 +36,72 @@ var prop_map = {
 	"r": "rot"
 };
 
+var re = {
+	split: /\S+/g,
+	empty_line: /^\s*$/,
+
+	skel: /^skeleton(?:\s|$)/,
+	skin: /^skin(?:\s|$)/,
+	anim: /^anim(?:\s|$)/,
+	order: /^order(?:\s|$)/,
+	state_end: /^[^\t]/,
+
+	skel_bone: /^\t[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:\s|$)/,
+	skel_slot: /^\t\t@(?:[a-zA-Z_\-][\w\-]*)?(?:\[[a-zA-Z_\-][\w\-]*\])?(?:\s|$)/,
+	skel_cmd: /^\t\t\t(?:(?:M|Q|:|B|L)\s+|C(?:\s+|$))/,
+	skel_bone_end: /^\t[^\t]/,
+	skel_slot_end: /^\t\t[^\t]/,
+
+	anim_item: /^\t@?[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:\s|$)/,
+	anim_timeline: /^\t\t.\s/,
+	anim_item_end: /^\t[^\t]/,
+
+	order_slot: /^\t@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:\s|$)/,
+
+	skin_item: /^\t@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:\[[a-zA-Z_\-][\w\-]*\])?(?:\s|$)/,
+	skin_cmd: /^\t\t(?:(?:M|Q|:|B|L)\s+|C(?:\s+|$))/,
+	skin_item_end: /^\t[^\t]/,
+
+	invalid_bone_name: /(?:^|\.)skeleton(?:\.|$)/,
+	token_color: /^#(?:[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?$/,
+	token_prop_bone: /^[xyrijl]-?\d+(?:\.\d+)?$/,
+	token_prop_wh: /^[wh]-?\d+(?:\.\d+)?$/,
+	token_prop_transform: /^[xyrij]-?\d+(?:\.\d+)?$/,
+	token_prop_join: /^(?:miter|bevel|round)-join$/,
+	token_prop_cap: /^(?:square|butt|round)-cap$/,
+	token_prop_fs: /^[fs]#(?:[\da-fA-F]{3}|[\da-fA-F]{6})(?:,\d+(?:\.\d+)?)?$/,
+	token_prop_tm: /^[tm]\d+(?:\.\d+)?$/,
+	token_prop_d: /^d\d+(?:\.\d+)?$/,
+	token_bone: /^[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*$/,
+	token_fps: /^\d+fps$/,
+	token_attachment: /^[a-zA-Z_\-][\w\-]*$/,
+	token_timeline_value: /^[+*]?-?\d+(?:\.\d+)?$/,
+	token_timeline_end_loop: /^\}(?:\[\d+\])?$/,
+	token_timeline_step: /^-*>$/,
+
+	token_coord: new RegExp(
+		"^" +
+		/(-?\d+(?:\.\d+)?)/.source + "," +
+		/(-?\d+(?:\.\d+)?)/.source +
+		/(?::([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*))?/.source + "$"
+	),
+
+	token_anim_options: [
+		[
+			/^(\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?$/,
+			/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)?()?$/,
+			/^()?(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)$/
+		],
+		[
+			/^(\+?\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?(-*)>$/,
+			/^(\+?\d+(?:\.\d+)?):(\d+(?:\.\d+)?)?()?(-*)>$/,
+			/^()?(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)(-*)>$/
+		]
+	]
+};
+
+function split_line(line) { return line.match(re.split); }
+
 function parse(source)
 {
 	var state = StateNone;
@@ -62,7 +128,7 @@ function parse(source)
 		var len = line.length;
 		var prev_line = i - 1;
 
-		if (/^\s*$/.test(line))
+		if (re.empty_line.test(line))
 			continue;
 
 		if (line.charAt(len - 1) === "\r")
@@ -81,24 +147,24 @@ function parse(source)
 		{
 			case StateNone:
 			{
-				if (/^skeleton(\s|$)/.test(line))
+				if (re.skel.test(line))
 				{
-					var tokens = line.match(/\S+/g);
+					var tokens = split_line(line);
 
 					for (var j = 1, n = tokens.length; j < n; j++)
 					{
 						var tok = tokens[j];
 
-						if (/^#([\da-fA-F]{3}|[\da-fA-F]{6})(,\d+(\.\d+)?)?$/.test(tok))
+						if (re.token_color.test(tok))
 							skeleton.color = parse_color(tok);
 					}
 
 					state = StateSkeleton;
 				}
-				else if (/^skin(\s|$)/.test(line))
+				else if (re.skin.test(line))
 				{
 					var skin = {};
-					var tokens = line.match(/\S+/g);
+					var tokens = split_line(line);
 
 					for (var j = 1, n = tokens.length; j < n; j++)
 					{
@@ -114,13 +180,13 @@ function parse(source)
 					current_skin = skin;
 					state = StateSkin;
 				}
-				else if (/^order(\s|$)/.test(line))
+				else if (re.order.test(line))
 				{
 					state = StateOrder;
 				}
-				else if (/^anim(\s|$)/.test(line))
+				else if (re.anim.test(line))
 				{
-					var tokens = line.match(/\S+/g);
+					var tokens = split_line(line);
 					current_animation = parse_animation(tokens);
 					animations.push(current_animation);
 					state = StateAnim;
@@ -130,7 +196,7 @@ function parse(source)
 
 			case StateSkeleton:
 			{
-				if (/^[^\t]/.test(line))
+				if (re.state_end.test(line))
 				{
 					state = StateNone;
 					i = prev_line;
@@ -138,11 +204,9 @@ function parse(source)
 					current_bone = null;
 					current_attachment = null;
 				}
-				else if (/^\t[a-zA-Z_\-][\w\-]*(\.[a-zA-Z_\-][\w\-]*)*($|\s)/.test(line))
+				else if (re.skel_bone.test(line))
 				{
-					// bone
-
-					var tokens = line.match(/\S+/g);
+					var tokens = split_line(line);
 
 					current_bone = parse_bone(bones, tokens);
 					current_attachment = null;
@@ -150,15 +214,13 @@ function parse(source)
 					if (current_bone !== null)
 						bones.push(current_bone);
 				}
-				else if (/^\t\t@([a-zA-Z_\-][\w\-]*)?(\[[a-zA-Z_\-][\w\-]*\])?($|\s)/.test(line))
+				else if (re.skel_slot.test(line))
 				{
-					// slot/attachment
-
 					current_attachment = null;
 
 					if (current_bone !== null)
 					{
-						var tokens = line.match(/\S+/g);
+						var tokens = split_line(line);
 						var slot = parse_slot(slots, current_bone, tokens);
 						var attachment = parse_attachment(attachments, current_bone, tokens);
 
@@ -178,25 +240,23 @@ function parse(source)
 
 					}
 				}
-				else if (/^\t\t\t((M|Q|:|B|L)\s+|C($|\s+))/.test(line))
+				else if (re.skel_cmd.test(line))
 				{
-					// path command
-
 					if (current_attachment !== null && current_attachment.type === "path")
 					{
-						var tokens = line.match(/\S+/g);
+						var tokens = split_line(line);
 						var command = parse_path_command(tokens);
 
 						if (command !== null)
 							Array.prototype.push.apply(current_attachment.commands, command);
 					}
 				}
-				else if (/^\t[^\t]/.test(line))
+				else if (re.skel_bone_end.test(line))
 				{
 					current_bone = null;
 					current_attachment = null;
 				}
-				else if (/^\t\t[^\t]/.test(line))
+				else if (re.skel_slot_end.test(line))
 				{
 					current_attachment = null;
 				}
@@ -205,7 +265,7 @@ function parse(source)
 
 			case StateAnim:
 			{
-				if (/^[^\t]/.test(line))
+				if (re.state_end.test(line))
 				{
 					state = StateNone;
 					i = prev_line;
@@ -213,29 +273,25 @@ function parse(source)
 					current_animation = null;
 					current_animation_item = null;
 				}
-				else if (/^\t@?[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:$|\s)/.test(line))
+				else if (re.anim_item.test(line))
 				{
-					// bone/slot
-
-					var tokens = line.match(/\S+/g);
+					var tokens = split_line(line);
 
 					current_animation_item = parse_animation_item(tokens);
 					current_animation.items.push(current_animation_item);
 				}
-				else if (/^\t\t.\s/.test(line))
+				else if (re.anim_timeline.test(line))
 				{
-					// timeline
-
 					if (current_animation_item !== null)
 					{
-						var tokens = line.match(/\S+/g);
+						var tokens = split_line(line);
 						var timeline = parse_timeline(current_animation_item, tokens);
 
 						if (timeline !== null)
 							current_animation_item.timelines.push(timeline);
 					}
 				}
-				else if (/^\t[^\t]/.test(line))
+				else if (re.anim_item_end.test(line))
 				{
 					current_animation_item = null;
 				}
@@ -244,12 +300,12 @@ function parse(source)
 
 			case StateOrder:
 			{
-				if (/^[^\t]/.test(line))
+				if (re.state_end.test(line))
 				{
 					state = StateNone;
 					i = prev_line;
 				}
-				else if (/^\t@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:$|\s)/.test(line))
+				else if (re.order_slot.test(line))
 				{
 					var end = line.indexOf(" ");
 
@@ -263,7 +319,7 @@ function parse(source)
 
 			case StateSkin:
 			{
-				if (/^[^\t]/.test(line))
+				if (re.state_end.test(line))
 				{
 					state = StateNone;
 					i = prev_line;
@@ -271,9 +327,9 @@ function parse(source)
 					current_skin = null;
 					current_attachment = null;
 				}
-				else if (/^\t@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*(?:\[[a-zA-Z_\-][\w\-]*\])?(?:$|\s)/.test(line))
+				else if (re.skin_item.test(line))
 				{
-					var tokens = line.match(/\S+/g);
+					var tokens = split_line(line);
 					var attachment = parse_attachment(null, null, tokens);
 
 					current_skin.attachments.push(attachment);
@@ -285,20 +341,18 @@ function parse(source)
 						current_attachment.commands = [];
 					}
 				}
-				else if (/^\t\t((M|Q|:|B|L)\s+|C($|\s+))/.test(line))
+				else if (re.skin_cmd.test(line))
 				{
-					// path command
-
 					if (current_attachment !== null && current_attachment.type === "path")
 					{
-						var tokens = line.match(/\S+/g);
+						var tokens = split_line(line);
 						var command = parse_path_command(tokens);
 
 						if (command !== null)
 							Array.prototype.push.apply(current_attachment.commands, command);
 					}
 				}
-				else if (/^\t[^\t]/.test(line))
+				else if (re.skin_item_end.test(line))
 				{
 					current_attachment = null;
 				}
@@ -307,10 +361,9 @@ function parse(source)
 		}
 	}
 
-	var nbones = bones.length;
-
 	// add missing parent bones
 
+	var nbones = bones.length;
 	var parent_bones = [];
 
 	for (var i = 0; i < nbones; i++)
@@ -491,7 +544,7 @@ function parse_bone(bones, tokens)
 {
 	var name = tokens[0];
 
-	if (/(?:^|\.)skeleton(?:$|\.)/.test(name))
+	if (re.invalid_bone_name.test(name))
 		return null;
 
 	for (var i = 0, n = bones.length; i < n; i++)
@@ -515,7 +568,7 @@ function parse_bone(bones, tokens)
 
 			default:
 			{
-				if (/^[xyrijl]-?\d+($|\.\d+$)/.test(tok))
+				if (re.token_prop_bone.test(tok))
 				{
 					var value = parseFloat(tok.substr(1));
 
@@ -534,7 +587,7 @@ function parse_bone(bones, tokens)
 						}
 					}
 				}
-				else if (/^#([\da-fA-F]{3}|[\da-fA-F]{6})(,\d+(\.\d+)?)?$/.test(tok))
+				else if (re.token_color.test(tok))
 					bone.color = parse_color(tok);
 			}
 			break;
@@ -582,7 +635,7 @@ function parse_slot(slots, bone, tokens)
 		if (tok.charAt(0) === ":")
 			break;
 
-		if (/^#([\da-fA-F]{3}|[\da-fA-F]{6})(,\d+(\.\d+)?)?$/.test(tok))
+		if (re.token_color.test(tok))
 			slot.color = parse_color(tok);
 	}
 
@@ -663,7 +716,7 @@ function parse_attachment(attachments, bone, tokens)
 			if (is_sprite && tok.charAt(tok.length - 1) === '"')
 				attachment.image = tok.substring(1, tok.length - 1);
 		}
-		else if (/^[wh]-?\d+(\.\d+)?$/.test(tok))
+		else if (re.token_prop_wh.test(tok))
 		{
 			if (is_rect || is_ellipse)
 			{
@@ -692,7 +745,7 @@ function parse_attachment(attachments, bone, tokens)
 				}
 			}
 		}
-		else if (/^[xyrij]-?\d+(\.\d+)?$/.test(tok))
+		else if (re.token_prop_transform.test(tok))
 		{
 			var value = parseFloat(tok.substr(1));
 
@@ -710,22 +763,22 @@ function parse_attachment(attachments, bone, tokens)
 		}
 		else if (is_shape)
 		{
-			if (/^(miter|bevel|round)-join$/.test(tok))
+			if (re.token_prop_join.test(tok))
 			{
 				attachment.line_join = tok.split("-")[0];
 			}
-			else if (/^(square|butt|round)-cap$/.test(tok))
+			else if (re.token_prop_cap.test(tok))
 			{
 				attachment.line_cap = tok.split("-")[0];
 			}
-			else if (/^[fs]#([\da-fA-F]{3}|[\da-fA-F]{6})(,\d+(\.\d+)?)?$/.test(tok))
+			else if (re.token_prop_fs.test(tok))
 			{
 				if (ch === "f")
 					attachment.fill_color = parse_color(tok.substr(1));
 				else
 					attachment.line_color = parse_color(tok.substr(1));
 			}
-			else if (/^[tm]\d+(\.\d+)?$/.test(tok))
+			else if (re.token_prop_tm.test(tok))
 			{
 				var value = parseFloat(tok.substr(1));
 
@@ -737,7 +790,7 @@ function parse_attachment(attachments, bone, tokens)
 						attachment.miter_limit = parseFloat(value);
 				}
 			}
-			else if ((is_circle || is_rect) && /^d\d+(\.\d+)?$/.test(tok))
+			else if ((is_circle || is_rect) && re.token_prop_d.test(tok))
 			{
 				var value = parseFloat(tok.substr(1)) / 2;
 
@@ -758,7 +811,7 @@ function parse_attachment(attachments, bone, tokens)
 function parse_path_command(tokens)
 {
 	var ch = tokens[0].charAt(0);
-	var re = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?::([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*))?$/;
+	var r = re.token_coord;
 
 	var m1 = null;
 	var m2 = null;
@@ -771,14 +824,14 @@ function parse_path_command(tokens)
 	{
 		case "M":
 		case "L":
-			if (n >= 2 && (m1 = tk[1].match(re)))
+			if (n >= 2 && (m1 = tk[1].match(r)))
 				return [ch,
 					m1[1], m1[2], m1[3] || null
 				];
 			break;
 
 		case "Q":
-			if (n >= 3 && (m1 = tk[1].match(re)) && (m2 = tk[2].match(re)))
+			if (n >= 3 && (m1 = tk[1].match(r)) && (m2 = tk[2].match(r)))
 				return [ch,
 					m1[1], m1[2], m1[3] || null,
 					m2[1], m2[2], m2[3] || null
@@ -786,7 +839,7 @@ function parse_path_command(tokens)
 			break;
 
 		case "B":
-			if (n >= 3 && (m1 = tk[1].match(re)) && (m2 = tk[2].match(re)) && (m3 = tk[3].match(re)))
+			if (n >= 3 && (m1 = tk[1].match(r)) && (m2 = tk[2].match(r)) && (m3 = tk[3].match(r)))
 				return [ch,
 					m1[1], m1[2], m1[3] || null,
 					m2[1], m2[2], m2[3] || null,
@@ -798,7 +851,7 @@ function parse_path_command(tokens)
 			return [ch];
 
 		case ":":
-			if (n >= 2 && /^[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*$/.test(tk[1]))
+			if (n >= 2 && re.token_bone.test(tk[1]))
 				return [ch, tk[1]];
 	}
 
@@ -877,7 +930,7 @@ function parse_animation(tokens)
 			if (tok.charAt(tok.length - 1) === '"')
 				animation.name = tok.substring(1, tok.length - 1);
 		}
-		else if (/^\d+fps$/.test(tok))
+		else if (re.token_fps.test(tok))
 		{
 			animation.fps = parseInt(tok, 10);
 		}
@@ -934,11 +987,11 @@ function parse_timeline(item, tokens)
 	var re_value = null;
 
 	if (prop === "c")
-		re_value = /^#([\da-fA-F]{3}|[\da-fA-F]{6})(,\d+(\.\d+)?)?$/;
+		re_value = re.token_color;
 	else if (prop === "@")
-		re_value = /^[a-zA-Z_\-][\w\-]*$/;
+		re_value = re.token_attachment;
 	else
-		re_value = /^[+*]?-?\d+(?:\.\d+)?$/;
+		re_value = re.token_timeline_value;
 
 	for (var i = 1; i < ntokens; i++)
 	{
@@ -948,11 +1001,11 @@ function parse_timeline(item, tokens)
 		{
 			commands.push(cmd.begin_loop);
 		}
-		else if (/^\}(?:\[\d+\])?$/.test(tok))
+		else if (re.token_timeline_end_loop.test(tok))
 		{
 			commands.push(cmd.end_loop, isNaN(x = parseInt(tok.substr(2), 10)) ? 1 : x);
 		}
-		else if (/^-*>$/.test(tok))
+		else if (re.token_timeline_step.test(tok))
 		{
 			(x = tok.length - 1) > 0 && commands.push(cmd.advance_steps, x);
 		}
@@ -984,25 +1037,12 @@ function parse_timeline(item, tokens)
 	return commands.length > 0 ? timeline : null;
 }
 
-match_animation_options.re = [
-	[
-		/^(\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?$/,
-		/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)?()?$/,
-		/^()?(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)$/
-	],
-	[
-		/^(\+?\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?(-*)>$/,
-		/^(\+?\d+(?:\.\d+)?):(\d+(?:\.\d+)?)?()?(-*)>$/,
-		/^()?(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)(-*)>$/
-	]
-];
-
 function match_animation_options(str, in_timeline)
 {
 	var x, res = null;
-	var re = match_animation_options.re[in_timeline ? 1 : 0];
+	var r = re.token_anim_options[in_timeline ? 1 : 0];
 
-	if ((res = re[0].exec(str)) || (res = re[1].exec(str)) || (res = re[2].exec(str)))
+	if ((res = r[0].exec(str)) || (res = r[1].exec(str)) || (res = r[2].exec(str)))
 	{
 		res.shift();
 
