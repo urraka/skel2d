@@ -33,7 +33,9 @@ var prop_map = {
 	"y": "y",
 	"i": "sx",
 	"j": "sy",
-	"r": "rot"
+	"r": "rot",
+	"s": "flipx",
+	"t": "flipy"
 };
 
 var re = {
@@ -75,6 +77,7 @@ var re = {
 	token_bone: /^[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*$/,
 	token_fps: /^\d+fps$/,
 	token_attachment: /^[a-zA-Z_\-][\w\-]*$/,
+	token_bool: /^(?:true|false)$/,
 	token_timeline_value: /^[+*]?-?\d+(?:\.\d+)?$/,
 	token_timeline_end_loop: /^\}(?:\[\d+\])?$/,
 	token_timeline_step: /^-*>$/,
@@ -1053,7 +1056,7 @@ function parse_timeline(item, tokens)
 	if (is_slot && "@crgba".indexOf(prop) === -1)
 		return null;
 
-	if (!is_slot && "xyrij".indexOf(prop) === -1)
+	if (!is_slot && "xyrijst".indexOf(prop) === -1)
 		return null;
 
 	var timeline = {property: prop, commands: []};
@@ -1067,6 +1070,8 @@ function parse_timeline(item, tokens)
 		re_value = re.token_color;
 	else if (prop === "@")
 		re_value = re.token_attachment;
+	else if (prop === "s" || prop === "t")
+		re_value = re.token_bool;
 	else
 		re_value = re.token_timeline_value;
 
@@ -1094,6 +1099,8 @@ function parse_timeline(item, tokens)
 				commands.push(cmd.push_value, parse_color_val(tok));
 			else if (prop === "@")
 				commands.push(cmd.push_value, tok);
+			else if (prop === "s" || prop === "t")
+				commands.push(cmd.push_value, tok === "true" ? true : false);
 			else if (ch === "+")
 				!isNaN(x = parseFloat(tok.substr(1))) && commands.push(cmd.push_value_inc, x);
 			else if (ch === "*")

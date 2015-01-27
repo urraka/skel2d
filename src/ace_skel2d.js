@@ -544,7 +544,12 @@ function HighlightRules()
 			},
 			{
 				token: ["text", "property"],
-				regex: /(^\t\t)([xyrij]$)/
+				regex: /(^\t\t)([st])(?=\s|\\$)/,
+				next: double_jump("anim-timeline-flip", "anim-bone-timelines")
+			},
+			{
+				token: ["text", "property"],
+				regex: /(^\t\t)([xyrijst]$)/
 			},
 			{
 				token: "text",
@@ -731,6 +736,49 @@ function HighlightRules()
 				token: "text",
 				regex: /\\$/,
 				next: "anim-timeline-attachment"
+			},
+			{
+				token: "text",
+				regex: /\s+/
+			},
+			{
+				token: "text",
+				regex: /\S+(?=\\$|\s)/
+			},
+			{
+				regex: "",
+				next: jump_to_next
+			}
+		],
+		"anim-timeline-flip": [
+			{
+				token: "keyword",
+				regex: /(?:true|false)(?=\s|\\$|$)/
+			},
+			{
+				token: "operator",
+				regex: /(?:\{|\}(?:\[\d+\])?|-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: "(" +
+					/(?:\+?\d+(?:\.\d+)?)?:/.source +
+					/(?:\d+(?:\.\d+)?)?:/.source +
+					/(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/.source +
+					")" + /(-*>)(?=\s|\\$|$)/.source
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\+?\d+(?:\.\d+)?):(?:\d+(?:\.\d+)?)?)(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: ["anim-timing", "operator"],
+				regex: /((?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?))(-*>)(?=\s|\\$|$)/
+			},
+			{
+				token: "text",
+				regex: /\\$/,
+				next: "anim-timeline-flip"
 			},
 			{
 				token: "text",
