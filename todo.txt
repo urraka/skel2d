@@ -1,4 +1,3 @@
-- refactor ace syntax mode (everything repeats)
 - ui design
 - what to do when opening the app in multiple tabs?
 - figure out a way for saving, loading and sharing using local storage, file api and gists api
@@ -13,6 +12,7 @@
 - renderer: support for arbitrary closed paths when they are static (check libtess2)
 - ability to flatten easing functions (convert to a list of lerps)
 
+x refactor ace syntax mode (everything repeats)
 x parser: flip-x flip-x timelines are missing (s,t)
 x parser: skins
 x parser: default bone color
