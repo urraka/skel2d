@@ -240,7 +240,7 @@ function parse(source)
 					current_bone = parse_bone(bones, tokens);
 					current_attachment = null;
 
-					if (current_bone !== null)
+					if (current_bone !== null && bones.indexOf(current_bone) === -1)
 						bones.push(current_bone);
 				}
 				else if (re.skel_slot.test(line))
@@ -258,12 +258,15 @@ function parse(source)
 
 						if (attachment !== null)
 						{
-							attachments.push(attachment);
+							if (attachments.indexOf(attachment) === -1)
+								attachments.push(attachment);
 
 							if (attachment.type === "path")
 							{
 								current_attachment = attachment;
-								current_attachment.commands = [];
+
+								if (!current_attachment.commands)
+									current_attachment.commands = [];
 							}
 						}
 
@@ -400,15 +403,12 @@ function parse(source)
 		var name = bones[i].name;
 		var index = -1;
 
-		next: while (-1 !== (index = name.indexOf(".", index + 1)))
+		while (-1 !== (index = name.indexOf(".", index + 1)))
 		{
 			var parent_name = name.substring(0, index);
 
-			for (var j = 0; j < nbones; j++)
-				if (bones[j].name === parent_name)
-					continue next;
-
-			parent_bones.push({name: parent_name});
+			if (find(bones, parent_name) === -1)
+				parent_bones.push({name: parent_name});
 		}
 	}
 
@@ -442,23 +442,8 @@ function parse(source)
 		{
 			var name = split_slot_name(skin_attachments[j].name);
 			var slot_name = find_name(slots, name[0], null);
-			var valid = false;
 
-			if (slot_name !== null)
-			{
-				name = slot_name + "." + name[1];
-
-				for (var k = 0, n = attachments.length; k < n; k++)
-				{
-					if (attachments[k].name === name)
-					{
-						valid = true;
-						break;
-					}
-				}
-			}
-
-			if (valid)
+			if (slot_name !== null && find(attachments, name = slot_name + "." + name[1]) !== -1)
 				skin_attachments[j].name = name;
 			else
 				skin_attachments.splice(j--, 1), --nattachments;
@@ -641,13 +626,8 @@ function parse_bone(bones, tokens)
 	if (re.invalid_bone_name.test(name))
 		return null;
 
-	for (var i = 0, n = bones.length; i < n; i++)
-	{
-		if (bones[i].name === name)
-			return null;
-	}
-
-	var bone = { name: name };
+	var index = find(bones, name);
+	var bone = index === -1 ? {name: name} : bones[index];
 
 	for (var i = 1, n = tokens.length; i < n; i++)
 	{
@@ -728,21 +708,9 @@ function parse_slot(slots, bone, tokens)
 
 	name = bone.name + "." + name;
 
-	var slot = null;
-
-	for (var i = 0, n = slots.length; i < n; i++)
-	{
-		if (slots[i].name === name)
-		{
-			slot = slots[i];
-			break;
-		}
-	}
-
-	var result = null;
-
-	if (slot === null)
-		slot = result = {name: name};
+	var index = find(slots, name);
+	var slot = index !== -1 ? slots[index] : null;
+	var result = slot !== null ? null : (slot = {name: name});
 
 	for (var i = 1, n = tokens.length; i < n; i++)
 	{
@@ -761,6 +729,7 @@ function parse_slot(slots, bone, tokens)
 function parse_attachment(attachments, bone, tokens)
 {
 	var name = tokens[0];
+	var attachment = null;
 
 	if (attachments !== null && bone !== null)
 	{
@@ -780,25 +749,37 @@ function parse_attachment(attachments, bone, tokens)
 
 		name = bone.name + "." + slot_name + "." + atth_name;
 
-		for (var i = 0, n = attachments.length; i < n; i++)
-		{
-			if (attachments[i].name === name)
-				return null;
-		}
+		var index = find(attachments, name);
+
+		if (index !== -1)
+			attachment = attachments[index];
 	}
 
-	var attachment = {name: name, type: "none"};
 	var ntokens = tokens.length;
 	var start = -1;
+	var type = "none";
 
 	for (var i = 1; i < ntokens; i++)
 	{
 		if (tokens[i].charAt(0) === ":")
 		{
 			start = i + 1;
-			attachment.type = tokens[i].substr(1);
+			type = tokens[i].substr(1);
 			break;
 		}
+	}
+
+	if (attachment === null)
+	{
+		attachment = {name: name, type: type};
+	}
+	else if (attachment.type !== type && start !== -1)
+	{
+		for (var key in attachment)
+			delete attachment[key];
+
+		attachment.name = name;
+		attachment.type = type;
 	}
 
 	if (start < 0 || start === ntokens)
