@@ -187,9 +187,13 @@ function parse(source)
 
 					if (name !== null && name !== "default")
 					{
-						current_skin = {name: name};
-						current_skin.attachments = [];
-						skins.push(current_skin);
+						var index = find(skins, name);
+
+						if (index !== -1)
+							current_skin = skins[index];
+						else
+							skins.push(current_skin = {name: name}), current_skin.attachments = [];
+
 						state = StateSkin;
 					}
 				}
@@ -200,8 +204,20 @@ function parse(source)
 				else if (re.anim.test(line))
 				{
 					var tokens = split_line(line);
-					current_animation = parse_animation(tokens);
-					animations.push(current_animation);
+					var anim = parse_animation(tokens);
+					var index = find(animations, anim.name);
+
+					if (index !== -1)
+					{
+						current_animation = animations[index];
+						delete anim.items;
+
+						for (var key in anim)
+							current_animation[key] = anim[key];
+					}
+					else
+						animations.push(current_animation = anim);
+
 					state = StateAnim;
 				}
 			}
@@ -586,6 +602,15 @@ function merge_skins(attachments, skins)
 	}
 
 	return result;
+}
+
+function find(list, name)
+{
+	for (var i = 0, n = list.length; i < n; i++)
+		if (list[i].name === name)
+			return i;
+
+	return -1;
 }
 
 function find_name(list, name, def)
@@ -996,7 +1021,7 @@ function parse_color_val(str)
 
 function parse_animation(tokens)
 {
-	var animation = {};
+	var animation = {name: ""};
 	var ntokens = tokens.length;
 	var res = null;
 	var val = 0;
@@ -1157,7 +1182,7 @@ function find_easing_index(name)
 
 function process_animation(anim, bones, slots)
 {
-	var result = {name: anim.name || ""};
+	var result = {name: anim.name};
 	var fps = anim.fps || 20;
 	var stack = [];
 
@@ -1170,25 +1195,12 @@ function process_animation(anim, bones, slots)
 		if (name === null)
 			continue;
 
-		var has_color_timeline = false;
-
-		if (is_slot)
-		{
-			var props = item.timelines.map(function f(x){return x.property;});
-
-			if (props.indexOf("c") !== -1)
-				has_color_timeline = true;
-		}
-
 		var list = is_slot ? result.slots || (result.slots = {}) : result.bones || (result.bones = {});
-		var timelines = (list[name] = {});
+		var timelines = list[name] || (list[name] = {});
 
 		for (var j = 0, ntimelines = item.timelines.length; j < ntimelines; j++)
 		{
 			var prop = item.timelines[j].property;
-
-			if (has_color_timeline && "rgba".indexOf(prop) !== -1)
-				continue;
 
 			if (!is_slot)
 				prop = prop_map[prop];
@@ -1312,33 +1324,39 @@ function process_animation(anim, bones, slots)
 			if (timelines[prop].length === 0)
 				delete timelines[prop];
 		}
+	}
 
-		if (has_color_timeline)
+	// replace slot color timelines with rgba
+
+	if (!result.slots)
+		return result;
+
+	for (var name in result.slots)
+	{
+		var slot = result.slots[name];
+
+		if ("c" in slot)
 		{
-			var timeline = timelines["c"];
-			delete timelines["c"];
+			var timeline = slot["c"];
+			delete slot["c"];
 
 			var rgba = [
-				(timelines["r"] = []),
-				(timelines["g"] = []),
-				(timelines["b"] = []),
-				(timelines["a"] = [])
+				(slot["r"] = []),
+				(slot["g"] = []),
+				(slot["b"] = []),
+				(slot["a"] = [])
 			];
 
-			for (var j = 0, n = timeline.length; j < n; j++)
+			for (var i = 0, n = timeline.length; i < n; i++)
 			{
-				var key = timeline[j];
+				var key = timeline[i];
 
 				if (key.easing)
-				{
-					for (var k = 0; k < 4; k++)
-						rgba[k].push({"time": key.time, "value": key.value[k], "easing": key.easing});
-				}
+					for (var j = 0; j < 4; j++)
+						rgba[j].push({"time": key.time, "value": key.value[j], "easing": key.easing});
 				else
-				{
-					for (var k = 0; k < 4; k++)
-						rgba[k].push({"time": key.time, "value": key.value[k]});
-				}
+					for (var j = 0; j < 4; j++)
+						rgba[j].push({"time": key.time, "value": key.value[j]});
 			}
 		}
 	}
