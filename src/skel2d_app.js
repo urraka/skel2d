@@ -106,6 +106,25 @@ Application.prototype.create_dom = function(root)
 
 Application.prototype.load = function()
 {
+	if (window.location.hash.length > 1)
+	{
+		this.load_gist();
+	}
+	else
+	{
+		var code = localStorage.getItem("testcode") || "";
+
+		if (code.length > 0)
+		{
+			this.editor.setValue(code);
+			this.editor.clearSelection();
+			this.on_load();
+		}
+	}
+}
+
+Application.prototype.load_gist = function()
+{
 	var hash = window.location.hash;
 
 	if (hash.length > 1)
@@ -127,17 +146,6 @@ Application.prototype.load = function()
 
 		location.hash = "";
 	}
-	else
-	{
-		var code = localStorage.getItem("testcode") || "";
-
-		if (code.length > 0)
-		{
-			this.editor.setValue(code);
-			this.editor.clearSelection();
-			this.on_load();
-		}
-	}
 }
 
 Application.prototype.on_load = function()
@@ -152,6 +160,13 @@ Application.prototype.on_load = function()
 
 	var animations = this.skeleton_data.animations;
 	var viewports = this.viewports;
+
+	for (var i = 0, n = viewports.length; i < n; i++)
+	{
+		viewports[i].set_skin("default");
+		viewports[i].set_animation(null);
+	}
+
 	var n = Math.min(animations.length, viewports.length - 1);
 
 	for (var i = 0; i < n; i++)
@@ -265,6 +280,7 @@ Application.prototype.bind_events = function()
 
 	window.addEventListener("resize", this.on_resize.bind(this));
 	window.addEventListener("beforeunload", this.on_beforeunload.bind(this));
+	window.addEventListener("hashchange", this.load_gist.bind(this));
 	editor.addEventListener("change", this.on_editor_change.bind(this));
 	editor.renderer.addEventListener("resize", this.on_editor_resize.bind(this));
 }
