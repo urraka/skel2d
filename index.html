@@ -10,322 +10,55 @@
 <script type="text/javascript" src="src/skel2d_core.js"></script>
 <script type="text/javascript" src="src/skel2d_render.js"></script>
 <script type="text/javascript" src="src/skel2d_parser.js"></script>
+<script type="text/javascript" src="src/skel2d_app.js"></script>
 <style type="text/css">
 
-html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
-a { text-decoration: none; }
-a:hover { text-decoration: underline; }
+/* layout */
+html,body {margin:0;padding:0;width:100%;height:100%;}
+.sk2-app {display:flex;height:100%;}
+.sk2-left-panel {width:600px;display:flex;flex-direction:column;}
+.sk2-view-panel {position:relative;flex:1;}
+.sk2-canvas {display:block;position:absolute;left:0;top:0;width:100%;height:100%;}
+.sk2-overlay {position:absolute;width:100%;height:100%;display:flex;flex-direction:column;}
+.sk2-view-row {flex:1;display:flex;}
+.sk2-viewport {flex:1;}
+.sk2-topbar {height:20px;}
+.sk2-ace {flex:1;}
 
-#side-panel { position: absolute; top: 0; bottom: 0; left: 0; width: 610px; }
-#side-panel { border-right: 1px solid #666; }
-#canvas-panel { position: absolute; top: 0; bottom: 0; left: 611px; right: 0; }
+/* borders */
+.sk2-topbar {border-bottom:1px solid #000;}
+.sk2-viewport {border-left:1px solid #000;border-bottom:1px solid #000;}
+.sk2-view-row:last-child .sk2-viewport {border-bottom:0 none;}
 
-#code { position: absolute; top: 21px; bottom: 0; left: 0; right: 0; }
-#canvas { display: block; width: 100%; height: 100%; user-select: none; }
-#top { position: absolute; top: 0; height: 20px; left: 0; right: 0; border-bottom: 1px solid #666; }
-#top { font: 12px/20px 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace; }
-#top > div { display: inline-block; height: 20px; color: #000; cursor: default; }
+/* ace */
+.ace-tm .ace_marker-layer .ace_bracket {border-width:0;border-style:none;}
+.ace_hidden-cursors .ace_cursor {display:none;}
+.ace_cursor {border-left-width:1px;}
+.ace_editor.ace_multiselect .ace_overwrite-cursors .ace_cursor {border-left-width:0px;}
+.ace-tm .ace_marker-layer .ace_selection {background:rgba(181,213,255,0.5);}
+.ace-tm .ace_marker-layer .ace_selected-word {border:1px solid #3F3F3F;border-radius:3px;}
+.ace-tm .ace_marker-layer .ace_selected-word {box-sizing:content-box;transform:translate(-1px,-1px);}
 
-.title { float: left; padding-left: 5px; }
-
-.menu { font: 12px/20px 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace; }
-.menu { display: inline-block; height: 20px; color: #000; cursor: default; }
-.menu-item { float: left; height: 20px; padding: 0 5px; cursor: pointer; }
-.menu-item:hover { text-decoration: underline; }
-
-.ace-tm .ace_marker-layer .ace_bracket { border-width: 0;border-style: none; }
-.ace_hidden-cursors .ace_cursor {display: none;}
-.ace_cursor { border-left-width: 1px; }
-.ace_editor.ace_multiselect .ace_overwrite-cursors .ace_cursor { border-left-width: 0px; }
-.ace-tm .ace_marker-layer .ace_selection { background: rgba(181, 213, 255, 0.5); }
-.ace-tm .ace_marker-layer .ace_selected-word {
-	background: rgb(250, 250, 255);
-	border: 1px solid #3F3F3F;
-	border-radius: 3px;
-	box-sizing: content-box;
-	transform: translate(-1px,-1px);
-}
-
-.ace-tm { color:#999; }
-.ace-tm .ace_keyword { color:#00F; }
-.ace-tm .ace_invalid { background-color: transparent; color: #F00; text-decoration: line-through; }
-.ace-tm .ace_string { color: #008000; }
-.ace_bone { color: #00F; }
-.ace_slot { color: #09F; }
-.ace_property { color: #000; }
-.ace_value { color: #777; }
-.ace_attachment-type { color: #F00; }
-.ace_anim-timing { color: #F00; }
-.ace_command { color: #000; }
-.ace_operator { color: #000; }
+/* ace syntax */
+.ace-tm              {color:#999;}
+.ace-tm .ace_keyword {color:#00F;}
+.ace-tm .ace_string  {color:#008000;}
+.ace_bone            {color:#00F;}
+.ace_slot            {color:#09F;}
+.ace_property        {color:#000;}
+.ace_value           {color:#777;}
+.ace_attachment-type {color:#F00;}
+.ace_anim-timing     {color:#F00;}
+.ace_command         {color:#000;}
+.ace_operator        {color:#000;}
+.ace-tm .ace_invalid {color:#F00;background-color:transparent;text-decoration:line-through;}
 
 </style>
 </head>
 <body>
-
-<div id="side-panel">
-	<div id="top">
-		<div class="title">untitled*</div>
-	</div>
-	<div id="code"></div>
-</div>
-<div id="canvas-panel">
-	<canvas id="canvas"></canvas>
-</div>
-
-
-<script type="text/javascript">
-
-var editor = create_editor();
-var canvas = document.querySelector("canvas");
-var gfx = gfx_create_context(canvas);
-var renderer = new SkeletonRenderer(gfx);
-var skeleton = null;
-var animation = null;
-var parsed_data = null;
-
-var t0 = 0;
-var t1 = 0;
-var time = 0;
-var frame_id = 0;
-
-window.addEventListener("resize", resize);
-canvas.addEventListener("mousedown", function(e) { e.preventDefault(); });
-
-gfx.clear_color(1, 1, 1, 1);
-resize();
-update();
-editor.focus();
-
-function create_editor()
-{
-	var editor = ace.edit("code");
-	var code = localStorage.getItem("testcode") || "";
-	var Range = require("ace/range").Range;
-
-	editor.renderer.$updateScrollBarV = function() {
-		this.scrollBarV.setScrollHeight(this.layerConfig.maxHeight + this.scrollMargin.v);
-		this.scrollBarV.setScrollTop(this.scrollTop + this.scrollMargin.top);
-	};
-
-	editor.$updateHighlightActiveLine = function() {
-		var sess = this.getSession();
-		var highlight;
-
-		if (this.$highlightActiveLine) {
-			if ((this.$selectionStyle != "line" || this.selection.isEmpty()))
-				highlight = this.getCursorPosition();
-			if (this.renderer.$maxLines && sess.getLength() === 1 && !(this.renderer.$minLines > 1))
-				highlight = false;
-		}
-
-		if (sess.$highlightLineMarker && !highlight) {
-			sess.removeMarker(sess.$highlightLineMarker.id);
-			sess.$highlightLineMarker = null;
-		} else if (!sess.$highlightLineMarker && highlight) {
-			var range = new Range(highlight.row, highlight.column, highlight.row, Infinity);
-			range.id = sess.addMarker(range, "ace_active-line", "screenLine");
-			sess.$highlightLineMarker = range;
-		} else if (highlight) {
-			sess.$highlightLineMarker.start.row = highlight.row;
-			sess.$highlightLineMarker.end.row = highlight.row;
-			sess.$highlightLineMarker.start.column = highlight.column;
-			sess._signal("changeBackMarker");
-		}
-	};
-
-	editor.$blockScrolling = Infinity;
-	editor.session.setTabSize(2);
-	editor.session.setUseSoftTabs(false);
-	editor.session.setMode(new (require("ace/mode/skel2d").Mode)());
-	editor.setOption("showPrintMargin", false);
-	editor.setOption("fixedWidthGutter", true);
-	editor.setOption("displayIndentGuides", false);
-	editor.setOption("scrollPastEnd", 1);
-	editor.setOption("dragEnabled", false);
-	editor.setOption("vScrollBarAlwaysVisible", true);
-
-	editor.renderer.updateFull(true);
-
-	var r = editor.renderer;
-	var w = Math.round(r.characterWidth * 82 + r.$padding + r.gutterWidth + r.scrollBarV.width);
-
-	document.querySelector("#side-panel").style.width = w + "px";
-	document.querySelector("#canvas-panel").style.left = (w + 1) + "px";
-	editor.resize();
-
-	if (window.location.hash)
-	{
-		var info = window.location.hash.substr(1).split(",");
-
-		if (info.length === 2)
-		{
-			location.hash = "";
-
-			load_gist(info[0], info[1], function(code) {
-				editor.setValue(code);
-				editor.clearSelection();
-			});
-		}
-	}
-	else
-	{
-		editor.setValue(code);
-		editor.clearSelection();
-	}
-
-	editor.session.on("change", function() {
-		var timer = null;
-
-		function trigger_update() {
-			timer = null;
-			update();
-		}
-
-		return function() {
-			if (timer !== null)
-				clearTimeout(timer);
-
-			timer = setTimeout(trigger_update, 1000);
-		};
-	}());
-
-	window.addEventListener("beforeunload", function() {
-		localStorage.setItem("testcode", editor.getValue());
-	});
-
-	var commands_remove = [
-		"showSettingsMenu", "goToNextError", "goToPreviousError", "centerselection",
-		"gotoline", "fold", "unfold", "toggleFoldWidget", "toggleParentFoldWidget",
-		"foldall", "foldOther", "unfoldall", "findnext", "findprevious",
-		"selectOrFindNext", "selectOrFindPrevious", "find", "togglerecording",
-		"replaymacro", "jumptomatching", "selecttomatching", "expandToMatching",
-		"sortlines", "togglecomment", "toggleBlockComment", "modifyNumberUp",
-		"modifyNumberDown", "replace", "copylinesup", "copylinesdown",
-		"splitline", "transposeletters", "expandtoline", "selectMoreBefore",
-		"selectNextBefore", "selectMoreAfter"
-	];
-
-	var commands_remap = [
-		"removeline", "movelinesup", "movelinesdown", "joinlines", "splitIntoLines",
-		"findAll", "selectNextAfter"
-	];
-
-	for (var i = 0, n = commands_remove.length; i < n; i++)
-		editor.commands.removeCommand(commands_remove[i]);
-
-	for (var i = 0, n = commands_remap.length; i < n; i++)
-		editor.commands.removeCommand(commands_remap[i], true);
-
-	editor.commands.addCommand({
-		name: "selectMoreAfter",
-		exec: function(editor) { editor.selectMore(1, false, true); },
-		scrollIntoView: "cursor",
-		readonly: true
-	});
-
-	editor.commands.bindKey("ctrl+shift+k",     editor.commands.commands["removeline"]);
-	editor.commands.bindKey("ctrl+shift+up",    editor.commands.commands["movelinesup"]);
-	editor.commands.bindKey("ctrl+shift+down",  editor.commands.commands["movelinesdown"]);
-	editor.commands.bindKey("ctrl+j",           editor.commands.commands["joinlines"]);
-	editor.commands.bindKey("ctrl+shift+l",     editor.commands.commands["splitIntoLines"]);
-	editor.commands.bindKey("alt+f3",           editor.commands.commands["findAll"]);
-	editor.commands.bindKey("ctrl+d",           editor.commands.commands["selectMoreAfter"]);
-	editor.commands.bindKey("ctrl+k",           editor.commands.commands["selectNextAfter"]);
-
-	return editor;
-}
-
-function update()
-{
-	parsed_data = skel2d_parse(editor.getValue());
-	skeleton = new sk2.Skeleton(parsed_data.skeleton);
-	animation = null;
-
-	if (parsed_data.animations.length > 0)
-	{
-		animation = new sk2.Animation(skeleton, parsed_data.animations[0]);
-
-		if (frame_id !== 0 && animation.duration === 0)
-		{
-			cancelAnimationFrame(frame_id);
-			frame_id = 0;
-		}
-		else if (frame_id === 0 && animation.duration > 0)
-		{
-			t0 = t1 = 0;
-			time = performance.now() / 1000;
-			frame_id = requestAnimationFrame(anim_frame);
-		}
-	}
-	else
-	{
-		if (frame_id !== 0)
-		{
-			cancelAnimationFrame(frame_id);
-			frame_id = 0;
-		}
-
-		draw();
-	}
-}
-
-function anim_frame()
-{
-	var t = performance.now() / 1000;
-	var dt = t - time;
-
-	time = t;
-
-	t0 = t1;
-	t1 = (t1 + dt) % animation.duration;
-
-	animation.apply(skeleton, t0, t1, 1);
-	skeleton.update_transform();
-
-	draw();
-
-	frame_id = requestAnimationFrame(anim_frame);
-}
-
-function resize()
-{
-	var w = canvas.width = canvas.offsetWidth;
-	var h = canvas.height = canvas.offsetHeight;
-
-	gfx.viewport(0, 0, w, h);
-	gfx.projection(mat3ortho(0, w, 0, h, mat3()));
-
-	draw();
-}
-
-function draw()
-{
-	gfx.clear();
-
-	if (skeleton)
-		renderer.draw(skeleton, canvas.width / 2, canvas.height / 2, 1, 0);
-
-	gfx.gl.finish();
-}
-
-function load_gist(id, filename, on_load)
-{
-	var script = document.createElement("script");
-
-	window["gist_callback"] = function(data)
-	{
-		delete window["gist_callback"];
-		script.parentNode.removeChild(script);
-
-		if (filename in data.data.files)
-			on_load(data.data.files[filename].content);
-	};
-
-	script.setAttribute("src", "//api.github.com/gists/" + id + "?callback=gist_callback");
-	document.body.appendChild(script);
-}
-
+<div></div>
+<script>
+app = new Skel2dApp(document.querySelector("div"));
 </script>
 </body>
 </html>

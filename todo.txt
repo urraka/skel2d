@@ -1,3 +1,12 @@
+- preview features
+  - multiple viewports
+  - translate/zoom
+  - select animation (or setup pose)
+  - select skin
+  - animation controls (play, pause, seekbar)
+  - show keyframes
+  - tooltip information for the keyframes
+  - show/hide bones
 - ui design
 - what to do when opening the app in multiple tabs?
 - figure out a way for saving, loading and sharing using local storage, file api and gists api
