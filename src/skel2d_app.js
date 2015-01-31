@@ -106,7 +106,6 @@ Application.prototype.create_dom = function(root)
 
 Application.prototype.load = function()
 {
-	var editor = this.editor;
 	var hash = window.location.hash;
 
 	if (hash.length > 1)
@@ -119,11 +118,11 @@ Application.prototype.load = function()
 			{
 				if (code.length > 0)
 				{
-					editor.setValue(code);
-					editor.clearSelection();
+					this.editor.setValue(code);
+					this.editor.clearSelection();
 					this.on_load();
 				}
-			});
+			}.bind(this));
 		}
 
 		location.hash = "";
@@ -134,8 +133,8 @@ Application.prototype.load = function()
 
 		if (code.length > 0)
 		{
-			editor.setValue(code);
-			editor.clearSelection();
+			this.editor.setValue(code);
+			this.editor.clearSelection();
 			this.on_load();
 		}
 	}
