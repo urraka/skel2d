@@ -1,6 +1,7 @@
+- handle context lost?
 - preview features
-  - multiple viewports
-  - translate/zoom
+  x multiple viewports
+  x translate/zoom
   - select animation (or setup pose)
   - select skin
   - animation controls (play, pause, seekbar)

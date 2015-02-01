@@ -4,6 +4,11 @@ exports.Skel2dApp = Application;
 
 var matrix = mat3();
 
+function prevent_default(event)
+{
+	event.preventDefault();
+}
+
 function find(list, name)
 {
 	for (var i = 0, n = list.length; i < n; i++)
@@ -422,6 +427,13 @@ function Viewport(app, element)
 {
 	this.app = app;
 	this.dom = element;
+	this.zoom_slider = Slider();
+	this.zoom_slider.classList.add("sk2-zoom");
+	this.dom.appendChild(this.zoom_slider);
+
+	this.dom.addEventListener("mousedown", this.on_mousedown.bind(this));
+	this.dom.addEventListener("dblclick", this.on_double_click.bind(this));
+	this.zoom_slider.addEventListener("change", this.on_zoom_change.bind(this));
 
 	this.x = 0;
 	this.y = 0;
@@ -437,6 +449,69 @@ function Viewport(app, element)
 	this.scale = 1;
 	this.translation_x = 0;
 	this.translation_y = 0;
+	this.bones_visible = true;
+}
+
+Viewport.prototype.on_mousedown = function(event)
+{
+	if (event.button !== 0)
+		return;
+
+	var self = this;
+	var x = event.clientX;
+	var y = event.clientY;
+
+	function on_mousemove(event)
+	{
+		var dx = (event.clientX - x);
+		var dy = (y - event.clientY);
+
+		x = event.clientX;
+		y = event.clientY;
+
+		self.translation_x += dx;
+		self.translation_y += dy;
+	}
+
+	function on_mouseup()
+	{
+		window.removeEventListener("mouseup", on_mouseup);
+		window.removeEventListener("mousemove", on_mousemove);
+	}
+
+	window.addEventListener("mouseup", on_mouseup);
+	window.addEventListener("mousemove", on_mousemove);
+
+	event.preventDefault();
+}
+
+Viewport.prototype.on_double_click = function(event)
+{
+	event.preventDefault();
+	event.stopPropagation();
+
+	if (this.scale !== 1)
+		this.zoom_slider.value = 0.5;
+	else
+		this.translation_x = this.translation_y = 0;
+
+	this.app.invalidate();
+}
+
+Viewport.prototype.on_zoom_change = function()
+{
+	var zoom = this.zoom_slider.value;
+
+	zoom = zoom >= 0.5 ? 6 * (zoom - 0.5) + 1 : 1 / (6 * (0.5 - zoom) + 1);
+
+	this.scale = zoom;
+	this.app.invalidate();
+}
+
+Viewport.prototype.show_bones = function(visible)
+{
+	this.bones_visible = visible;
+	this.app.invalidate();
 }
 
 Viewport.prototype.set_skin = function(name)
@@ -512,8 +587,93 @@ Viewport.prototype.draw = function(dt)
 		}
 
 		skeleton.update_transform();
+
+		renderer.show_bones = this.bones_visible;
 		renderer.draw(skeleton, w / 2 + dx, h / 2 + dy, this.scale, this.skin);
 	}
+}
+
+// --- Slider ---
+
+function Slider()
+{
+	var slider = document.createElement("div");
+	var handle = document.createElement("div");
+	var offset = 0;
+
+	function calc_offset(e)
+	{
+		if (e.target === slider)
+			return 0;
+
+		var bounds = handle.getBoundingClientRect();
+		return e.clientY - Math.floor(bounds.top + (bounds.bottom - bounds.top) * 0.5);
+	}
+
+	function on_change()
+	{
+		slider.dispatchEvent(new Event("change"));
+	}
+
+	function update(mousey)
+	{
+		var val = handle.style.top;
+		var bounds = slider.getBoundingClientRect();
+		var y = Math.max(bounds.top, Math.min(bounds.bottom, mousey - offset));
+
+		handle.style.top = 100 * (y - bounds.top) / (bounds.bottom - bounds.top) + "%";
+
+		if (handle.style.top !== val)
+			on_change();
+	}
+
+	function on_mousemove(e)
+	{
+		update(e.clientY);
+	}
+
+	function on_mouseup()
+	{
+		slider.classList.remove("active");
+		window.removeEventListener("mouseup", on_mouseup);
+		window.removeEventListener("mousemove", on_mousemove);
+	}
+
+	function on_mousedown(e)
+	{
+		if (e.button !== 0)
+			return;
+
+		slider.classList.add("active");
+
+		window.addEventListener("mouseup", on_mouseup);
+		window.addEventListener("mousemove", on_mousemove);
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		offset = calc_offset(e);
+		update(e.clientY);
+	}
+
+	slider.classList.add("ui-slider");
+	slider.appendChild(handle);
+	slider.addEventListener("mousedown", on_mousedown);
+
+	Object.defineProperty(slider, 'value', {
+		get: function() {
+			return 1 - parseFloat(handle.style.top) / 100;
+		},
+		set: function(x) {
+			var val = handle.style.top;
+			handle.style.top = 100 * (1 - x) + "%";
+
+			if (handle.style.top !== val)
+				on_change();
+		}
+	});
+
+	return slider;
 }
 
 }(this));

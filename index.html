@@ -13,6 +13,15 @@
 <script type="text/javascript" src="src/skel2d_app.js"></script>
 <style type="text/css">
 
+/* slider */
+.ui-slider {position:relative;width:18px;}
+.ui-slider::before {content:"";display:block;margin:auto;width:4px;height:100%;background:#E3DDD8;}
+.ui-slider::before {border:1px solid #9D968E;border-radius:4px;}
+.ui-slider > div {position:absolute;width:100%;height:0px;top:50%;}
+.ui-slider > div::before {content:"";position:absolute;width:100%;height:4px;left:0;top:-3px;}
+.ui-slider > div::before {background:#F4F2EF;border:1px solid #9D968E;border-radius:4px;}
+.ui-slider > div:hover::before, .ui-slider.active > div::before {background:#FFF;}
+
 /* layout */
 html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-app {display:flex;height:100%;}
@@ -21,14 +30,19 @@ html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-canvas {display:block;position:absolute;left:0;top:0;width:100%;height:100%;}
 .sk2-overlay {position:absolute;width:100%;height:100%;display:flex;flex-direction:column;}
 .sk2-view-row {flex:1;display:flex;}
-.sk2-viewport {flex:1;}
+.sk2-viewport {position:relative;flex:1;}
 .sk2-topbar {height:20px;}
 .sk2-ace {flex:1;}
 
-/* borders */
+/* layout borders */
 .sk2-topbar {border-bottom:1px solid #000;}
 .sk2-viewport {border-left:1px solid #000;border-bottom:1px solid #000;}
 .sk2-view-row:last-child .sk2-viewport {border-bottom:0 none;}
+
+/* viewport slider */
+.sk2-zoom {position:absolute;opacity:0;top:20px;bottom:20px;right:18px;transition:opacity 0.25s;}
+.sk2-viewport:hover .sk2-zoom {opacity: 0.5;}
+.sk2-viewport .sk2-zoom.active, .sk2-viewport .sk2-zoom:hover {opacity: 1;}
 
 /* ace */
 .ace-tm .ace_marker-layer .ace_bracket {border-width:0;border-style:none;}
