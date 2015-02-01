@@ -2,6 +2,7 @@
 - preview features
   x multiple viewports
   x translate/zoom
+  - zoom to fit
   - select animation (or setup pose)
   - select skin
   - animation controls (play, pause, seekbar)

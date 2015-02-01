@@ -41,7 +41,7 @@ function Application(root)
 {
 	this.dom = this.create_dom(root);
 	this.editor = this.create_editor();
-	this.viewports = this.create_viewports();
+	this.viewports = [];
 	this.gfx = gfx_create_context(this.dom.canvas);
 	this.renderer = new SkeletonRenderer(this.gfx);
 	this.skeleton_data = null;
@@ -56,6 +56,7 @@ function Application(root)
 	this.update_timer = null;
 	this.update_trigger = this.update.bind(this);
 
+	this.set_viewports(2, 2);
 	this.bind_events();
 
 	this.gfx.clear_color(1, 1, 1, 1);
@@ -69,23 +70,13 @@ function Application(root)
 Application.prototype.create_dom = function(root)
 {
 	var x, elements = {
-		root:  root,
+		root: root,
 		left_panel: ((x = document.createElement("div")),    x.classList.add("sk2-left-panel"), x),
 		topbar:     ((x = document.createElement("div")),    x.classList.add("sk2-topbar"),     x),
 		ace:        ((x = document.createElement("div")),    x.classList.add("sk2-ace"),        x),
 		view_panel: ((x = document.createElement("div")),    x.classList.add("sk2-view-panel"), x),
 		overlay:    ((x = document.createElement("div")),    x.classList.add("sk2-overlay"),    x),
-		canvas:     ((x = document.createElement("canvas")), x.classList.add("sk2-canvas"),     x),
-		rows: [
-			((x = document.createElement("div")), x.classList.add("sk2-view-row"), x),
-			((x = document.createElement("div")), x.classList.add("sk2-view-row"), x)
-		],
-		viewports: [
-			((x = document.createElement("div")), x.classList.add("sk2-viewport"), x),
-			((x = document.createElement("div")), x.classList.add("sk2-viewport"), x),
-			((x = document.createElement("div")), x.classList.add("sk2-viewport"), x),
-			((x = document.createElement("div")), x.classList.add("sk2-viewport"), x)
-		]
+		canvas:     ((x = document.createElement("canvas")), x.classList.add("sk2-canvas"),     x)
 	};
 
 	root.classList.add("sk2-app");
@@ -97,14 +88,6 @@ Application.prototype.create_dom = function(root)
 
 	elements.view_panel.appendChild(elements.canvas);
 	elements.view_panel.appendChild(elements.overlay);
-
-	elements.overlay.appendChild(elements.rows[0]);
-	elements.overlay.appendChild(elements.rows[1]);
-
-	elements.rows[0].appendChild(elements.viewports[0]);
-	elements.rows[0].appendChild(elements.viewports[1]);
-	elements.rows[1].appendChild(elements.viewports[2]);
-	elements.rows[1].appendChild(elements.viewports[3]);
 
 	return elements;
 }
@@ -269,14 +252,33 @@ Application.prototype.create_editor = function()
 	return editor;
 }
 
-Application.prototype.create_viewports = function()
+Application.prototype.set_viewports = function(cols, rows)
 {
-	var viewports = [];
+	var n = cols * rows;
+	var overlay = this.dom.overlay;
+	var viewports = this.viewports;
 
-	for (var i = 0, n = this.dom.viewports.length; i < n; i++)
-		viewports.push(new Viewport(this, this.dom.viewports[i]));
+	while (viewports.length > n)
+		viewports.pop();
 
-	return viewports;
+	while (viewports.length < n)
+		viewports.push(new Viewport(this));
+
+	while (overlay.firstChild)
+		overlay.removeChild(overlay.firstChild);
+
+	for (var i = 0; i < rows; i++)
+	{
+		var row = document.createElement("div");
+		row.classList.add("sk2-view-row");
+
+		for (var j = 0; j < cols; j++)
+			row.appendChild(viewports[i * cols + j].dom);
+
+		overlay.appendChild(row);
+	}
+
+	this.on_resize();
 }
 
 Application.prototype.bind_events = function()
@@ -423,10 +425,11 @@ Application.prototype.draw = function()
 
 // --- Viewport ---
 
-function Viewport(app, element)
+function Viewport(app)
 {
 	this.app = app;
-	this.dom = element;
+	this.dom = document.createElement("div");
+	this.dom.classList.add("sk2-viewport");
 	this.zoom_slider = Slider();
 	this.zoom_slider.classList.add("sk2-zoom");
 	this.dom.appendChild(this.zoom_slider);
@@ -487,6 +490,9 @@ Viewport.prototype.on_mousedown = function(event)
 
 Viewport.prototype.on_double_click = function(event)
 {
+	if (event.target !== this.dom)
+		return;
+
 	event.preventDefault();
 	event.stopPropagation();
 
