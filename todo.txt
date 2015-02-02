@@ -3,12 +3,12 @@
   x multiple viewports
   x translate/zoom
   - zoom to fit
-  - select animation (or setup pose)
-  - select skin
+  x select animation (or setup pose)
+  x select skin
   - animation controls (play, pause, seekbar)
   - show keyframes
   - tooltip information for the keyframes
-  - show/hide bones
+  x show/hide bones
 - ui design
 - what to do when opening the app in multiple tabs?
 - figure out a way for saving, loading and sharing using local storage, file api and gists api

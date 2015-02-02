@@ -273,7 +273,7 @@ Application.prototype.set_viewports = function(cols, rows)
 		row.classList.add("sk2-view-row");
 
 		for (var j = 0; j < cols; j++)
-			row.appendChild(viewports[i * cols + j].dom);
+			row.appendChild(viewports[i * cols + j].dom.root);
 
 		overlay.appendChild(row);
 	}
@@ -389,6 +389,7 @@ Application.prototype.update = function()
 
 		viewport.set_animation(viewport.animation_name);
 		viewport.set_skin(viewport.skin_name);
+		viewport.on_skeleton_update();
 	}
 
 	this.invalidate();
@@ -428,15 +429,7 @@ Application.prototype.draw = function()
 function Viewport(app)
 {
 	this.app = app;
-	this.dom = document.createElement("div");
-	this.dom.classList.add("sk2-viewport");
-	this.zoom_slider = Slider();
-	this.zoom_slider.classList.add("sk2-zoom");
-	this.dom.appendChild(this.zoom_slider);
-
-	this.dom.addEventListener("mousedown", this.on_mousedown.bind(this));
-	this.dom.addEventListener("dblclick", this.on_double_click.bind(this));
-	this.zoom_slider.addEventListener("change", this.on_zoom_change.bind(this));
+	this.dom = this.create_dom();
 
 	this.x = 0;
 	this.y = 0;
@@ -453,10 +446,159 @@ function Viewport(app)
 	this.translation_x = 0;
 	this.translation_y = 0;
 	this.bones_visible = true;
+
+	this.bind_events();
+	this.show_bones(true);
+}
+
+Viewport.prototype.create_dom = function()
+{
+	var elements = {
+		root: document.createElement("div"),
+		options: document.createElement("div"),
+		anim_option: document.createElement("div"),
+		skin_option: document.createElement("div"),
+		view_option: document.createElement("div"),
+		anim_menu: document.createElement("div"),
+		skin_menu: document.createElement("div"),
+		view_menu: document.createElement("div"),
+		bones: document.createElement("div"),
+		zoom_slider: Slider()
+	};
+
+	elements.root.classList.add("sk2-viewport");
+	elements.options.classList.add("sk2-options");
+	elements.anim_option.classList.add("sk2-option");
+	elements.skin_option.classList.add("sk2-option");
+	elements.view_option.classList.add("sk2-option");
+	elements.anim_menu.classList.add("sk2-option-menu");
+	elements.skin_menu.classList.add("sk2-option-menu");
+	elements.view_menu.classList.add("sk2-option-menu");
+	elements.zoom_slider.classList.add("sk2-zoom");
+
+	elements.root.appendChild(elements.zoom_slider);
+	elements.root.appendChild(elements.options);
+
+	elements.options.appendChild(elements.anim_option);
+	elements.options.appendChild(document.createTextNode(" "));
+	elements.options.appendChild(elements.skin_option);
+	elements.options.appendChild(document.createTextNode(" "));
+	elements.options.appendChild(elements.view_option);
+
+	elements.anim_option.appendChild(elements.anim_menu);
+	elements.anim_option.appendChild(document.createTextNode("animation"));
+	elements.skin_option.appendChild(elements.skin_menu);
+	elements.skin_option.appendChild(document.createTextNode("skin"));
+	elements.view_option.appendChild(elements.view_menu);
+	elements.view_option.appendChild(document.createTextNode("view"));
+
+	elements.view_menu.appendChild(elements.bones);
+
+	return elements;
+}
+
+Viewport.prototype.bind_events = function()
+{
+	this.dom.root.addEventListener("mousedown", this.on_mousedown.bind(this));
+	this.dom.root.addEventListener("dblclick", this.on_double_click.bind(this));
+	this.dom.zoom_slider.addEventListener("change", this.on_zoom_change.bind(this));
+	this.dom.options.addEventListener("mousedown", this.on_options_mousedown.bind(this));
+}
+
+Viewport.prototype.on_skeleton_update = function()
+{
+	var anim_menu = this.dom.anim_menu;
+	var skin_menu = this.dom.skin_menu;
+	var skins = this.app.skeleton.skins;
+	var animations = this.app.skeleton_data.animations;
+
+	while (anim_menu.firstChild)
+		anim_menu.removeChild(anim_menu.firstChild);
+
+	while (skin_menu.firstChild)
+		skin_menu.removeChild(skin_menu.firstChild);
+
+	anim_menu.appendChild(document.createElement("div"));
+	skin_menu.appendChild(document.createElement("div"));
+
+	anim_menu.firstChild.textContent = "none";
+	skin_menu.firstChild.textContent = "default";
+
+	for (var i = 0, n = animations.length; i < n; i++)
+	{
+		anim_menu.appendChild(document.createElement("div"));
+		anim_menu.lastChild.textContent = animations[i].name;
+	}
+
+	for (var i = 1, n = skins.length; i < n; i++)
+	{
+		skin_menu.appendChild(document.createElement("div"));
+		skin_menu.lastChild.textContent = skins[i].name;
+	}
+}
+
+Viewport.prototype.on_options_mousedown = function(event)
+{
+	var options = this.dom.options;
+	var option = event.target;
+
+	if (option.parentNode.classList.contains("sk2-option-menu"))
+	{
+		var menu = option.parentNode;
+
+		switch (menu)
+		{
+			case this.dom.anim_menu:
+				this.set_animation(option === menu.firstChild ? null : option.textContent);
+				break;
+
+			case this.dom.skin_menu:
+				this.set_skin(option.textContent);
+				break;
+
+			case this.dom.view_menu:
+				option === this.dom.bones && this.show_bones(!this.bones_visible);
+				break;
+		}
+
+		return;
+	}
+
+	if (!option.classList.contains("sk2-option"))
+		return;
+
+	event.preventDefault();
+	event.stopPropagation();
+
+	function on_mousedown(event)
+	{
+		if (event.target !== option)
+		{
+			options.classList.remove("active");
+			option.classList.remove("active");
+		}
+
+		window.removeEventListener("mousedown", on_mousedown, true);
+	}
+
+	if (option.classList.contains("active"))
+	{
+		options.classList.remove("active");
+		option.classList.remove("active");
+	}
+	else if (option.firstChild.classList.contains("sk2-option-menu") &&
+		option.firstChild.childNodes.length > 0)
+	{
+		options.classList.add("active");
+		option.classList.add("active");
+		window.addEventListener("mousedown", on_mousedown, true);
+	}
 }
 
 Viewport.prototype.on_mousedown = function(event)
 {
+	event.preventDefault();
+
 	if (event.button !== 0)
 		return;
 
@@ -484,20 +626,18 @@ Viewport.prototype.on_mousedown = function(event)
 
 	window.addEventListener("mouseup", on_mouseup);
 	window.addEventListener("mousemove", on_mousemove);
-
-	event.preventDefault();
 }
 
 Viewport.prototype.on_double_click = function(event)
 {
-	if (event.target !== this.dom)
+	if (event.target !== this.dom.root)
 		return;
 
 	event.preventDefault();
 	event.stopPropagation();
 
 	if (this.scale !== 1)
-		this.zoom_slider.value = 0.5;
+		this.dom.zoom_slider.value = 0.5;
 	else
 		this.translation_x = this.translation_y = 0;
 
@@ -506,7 +646,7 @@ Viewport.prototype.on_double_click = function(event)
 
 Viewport.prototype.on_zoom_change = function()
 {
-	var zoom = this.zoom_slider.value;
+	var zoom = this.dom.zoom_slider.value;
 
 	zoom = zoom >= 0.5 ? 6 * (zoom - 0.5) + 1 : 1 / (6 * (0.5 - zoom) + 1);
 
@@ -517,6 +657,7 @@ Viewport.prototype.on_zoom_change = function()
 Viewport.prototype.show_bones = function(visible)
 {
 	this.bones_visible = visible;
+	this.dom.bones.textContent = visible ? "hide bones" : "show bones";
 	this.app.invalidate();
 }
 
@@ -551,10 +692,12 @@ Viewport.prototype.set_animation = function(name)
 
 Viewport.prototype.on_resize = function()
 {
-	this.width = this.dom.offsetWidth;
-	this.height = this.dom.offsetHeight;
-	this.x = this.dom.offsetLeft;
-	this.y = this.app.dom.canvas.offsetHeight - (this.dom.offsetTop + this.height);
+	var root = this.dom.root;
+
+	this.width = root.offsetWidth;
+	this.height = root.offsetHeight;
+	this.x = root.offsetLeft;
+	this.y = this.app.dom.canvas.offsetHeight - (root.offsetTop + this.height);
 }
 
 Viewport.prototype.draw = function(dt)

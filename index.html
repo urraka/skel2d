@@ -13,6 +13,8 @@
 <script type="text/javascript" src="src/skel2d_app.js"></script>
 <style type="text/css">
 
+body {font:12px/normal 'Monaco','Menlo','Ubuntu Mono','Consolas','source-code-pro',monospace;}
+
 /* slider */
 .ui-slider {position:relative;width:18px;}
 .ui-slider::before {content:"";display:block;margin:auto;width:4px;height:100%;background:#E3DDD8;}
@@ -25,7 +27,7 @@
 /* layout */
 html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-app {display:flex;height:100%;}
-.sk2-left-panel {width:600px;display:flex;flex-direction:column;}
+.sk2-left-panel {width:100px;display:flex;flex-direction:column;}
 .sk2-view-panel {position:relative;flex:1;}
 .sk2-canvas {display:block;position:absolute;left:0;top:0;width:100%;height:100%;}
 .sk2-overlay {position:absolute;width:100%;height:100%;display:flex;flex-direction:column;}
@@ -39,10 +41,34 @@ html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-viewport {border-left:1px solid #000;border-bottom:1px solid #000;}
 .sk2-view-row:last-child .sk2-viewport {border-bottom:0 none;}
 
+/* viewport controls */
+.sk2-viewport > div {position:absolute;opacity:0;transition:opacity 0.25s;}
+.sk2-viewport:hover > div {opacity:1;}
+.sk2-viewport > div.active, .sk2-viewport > div:hover {opacity:1;}
+
 /* viewport slider */
-.sk2-zoom {position:absolute;opacity:0;top:20px;bottom:20px;right:18px;transition:opacity 0.25s;}
-.sk2-viewport:hover .sk2-zoom {opacity: 0.5;}
-.sk2-viewport .sk2-zoom.active, .sk2-viewport .sk2-zoom:hover {opacity: 1;}
+.sk2-zoom {top:10px;bottom:10px;right:8px;}
+
+/* viewport options */
+.sk2-options {cursor:default;color:#000;z-index:1;padding:10px 0 0 10px;top:0;left:0;right:36px;}
+.sk2-option {position:relative;display:inline-block;}
+.sk2-option {white-space:nowrap;padding:3px;}
+.sk2-option::after {content:"";display:inline-block;margin-left:3px;}
+.sk2-option::after {border:4px solid transparent;border-top:6px solid #000;border-bottom:0 none;}
+.sk2-option:hover {color:#FFF;background:#000;border-radius:3px;}
+.sk2-option:hover::after {border-top-color:#FFF;}
+.sk2-option.active::after {border-top-color:#000;}
+.sk2-option.active {color:#000;background:#FFF;border:1px solid #000;border-bottom:0 none;padding:2px;}
+.sk2-option.active {border-radius:3px;border-bottom-left-radius:0;border-bottom-right-radius:0;}
+.sk2-option.active .sk2-option-menu {display:block;}
+
+/* viewport options menu */
+.sk2-option-menu {position:absolute;display:none;z-index:-1;}
+.sk2-option-menu {left:-1px;top:100%;margin-top:-1px;min-width:100%;min-height:10px;}
+.sk2-option-menu {border:1px solid #000;background:#FFF;}
+.sk2-option-menu {border-bottom-left-radius:3px;border-bottom-right-radius:3px;}
+.sk2-option-menu > div {padding:0px 2px; line-height:1.5em;}
+.sk2-option-menu > div:hover {background:#000;color:#FFF;}
 
 /* ace */
 .ace-tm .ace_marker-layer .ace_bracket {border-width:0;border-style:none;}
