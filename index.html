@@ -32,7 +32,7 @@ html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-canvas {display:block;position:absolute;left:0;top:0;width:100%;height:100%;}
 .sk2-overlay {position:absolute;width:100%;height:100%;display:flex;flex-direction:column;}
 .sk2-view-row {flex:1;display:flex;}
-.sk2-viewport {position:relative;flex:1;}
+.sk2-viewport {position:relative;flex:1;cursor:default;}
 .sk2-topbar {height:20px;}
 .sk2-ace {flex:1;}
 
@@ -42,9 +42,15 @@ html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-view-row:last-child .sk2-viewport {border-bottom:0 none;}
 
 /* viewport controls */
-.sk2-viewport > div {position:absolute;opacity:0;transition:opacity 0.25s;}
-.sk2-viewport:hover > div {opacity:1;}
-.sk2-viewport > div.active, .sk2-viewport > div:hover {opacity:1;}
+.sk2-viewport > div {position:absolute;display:none;}
+.sk2-viewport:hover > div, .sk2-viewport > div.active {display:block;}
+
+/* viewport label */
+.sk2-viewport > .sk2-label {display:block;}
+.sk2-viewport.no-labels > .sk2-label {display:none;}
+.sk2-label {display:inline-block;white-space:nowrap;padding:3px;bottom:10px;left:10px;min-width:40px;}
+.sk2-label {opacity:0.5;text-align:center;color:#666;background:#EEE;}
+.sk2-label {border:1px solid #666;border-radius:3px;}
 
 /* viewport slider */
 .sk2-zoom {top:10px;bottom:10px;right:8px;}

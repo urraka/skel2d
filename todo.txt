@@ -1,13 +1,14 @@
 - handle context lost?
 - preview features
-  x multiple viewports
-  x translate/zoom
-  - zoom to fit
-  x select animation (or setup pose)
-  x select skin
   - animation controls (play, pause, seekbar)
   - show keyframes
   - tooltip information for the keyframes
+  - zoom to fit
+  x show/hide labels
+  x multiple viewports
+  x translate/zoom
+  x select animation (or setup pose)
+  x select skin
   x show/hide bones
 - ui design
 - what to do when opening the app in multiple tabs?

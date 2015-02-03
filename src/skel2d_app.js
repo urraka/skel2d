@@ -446,9 +446,12 @@ function Viewport(app)
 	this.translation_x = 0;
 	this.translation_y = 0;
 	this.bones_visible = true;
+	this.label_visible = true;
 
 	this.bind_events();
 	this.show_bones(true);
+	this.show_label(true);
+	this.set_animation(null);
 }
 
 Viewport.prototype.create_dom = function()
@@ -462,7 +465,9 @@ Viewport.prototype.create_dom = function()
 		anim_menu: document.createElement("div"),
 		skin_menu: document.createElement("div"),
 		view_menu: document.createElement("div"),
-		bones: document.createElement("div"),
+		show_bones_option: document.createElement("div"),
+		show_label_option: document.createElement("div"),
+		label: document.createElement("div"),
 		zoom_slider: Slider()
 	};
 
@@ -475,9 +480,11 @@ Viewport.prototype.create_dom = function()
 	elements.skin_menu.classList.add("sk2-option-menu");
 	elements.view_menu.classList.add("sk2-option-menu");
 	elements.zoom_slider.classList.add("sk2-zoom");
+	elements.label.classList.add("sk2-label");
 
 	elements.root.appendChild(elements.zoom_slider);
 	elements.root.appendChild(elements.options);
+	elements.root.appendChild(elements.label);
 
 	elements.options.appendChild(elements.anim_option);
 	elements.options.appendChild(document.createTextNode(" "));
@@ -492,7 +499,8 @@ Viewport.prototype.create_dom = function()
 	elements.view_option.appendChild(elements.view_menu);
 	elements.view_option.appendChild(document.createTextNode("view"));
 
-	elements.view_menu.appendChild(elements.bones);
+	elements.view_menu.appendChild(elements.show_bones_option);
+	elements.view_menu.appendChild(elements.show_label_option);
 
 	return elements;
 }
@@ -559,9 +567,13 @@ Viewport.prototype.on_options_mousedown = function(event)
 				break;
 
 			case this.dom.view_menu:
-				option === this.dom.bones && this.show_bones(!this.bones_visible);
+				option === this.dom.show_bones_option && this.show_bones(!this.bones_visible);
+				option === this.dom.show_label_option && this.show_label(!this.label_visible);
 				break;
 		}
+
+		event.preventDefault();
+		event.stopPropagation();
 
 		return;
 	}
@@ -674,8 +686,15 @@ Viewport.prototype.on_zoom_change = function()
 Viewport.prototype.show_bones = function(visible)
 {
 	this.bones_visible = visible;
-	this.dom.bones.textContent = visible ? "hide bones" : "show bones";
+	this.dom.show_bones_option.textContent = visible ? "hide bones" : "show bones";
 	this.app.invalidate();
+}
+
+Viewport.prototype.show_label = function(visible)
+{
+	this.label_visible = visible;
+	this.dom.root.classList[visible ? "remove" : "add"]("no-labels");
+	this.dom.show_label_option.textContent = visible ? "hide label" : "show label";
 }
 
 Viewport.prototype.set_skin = function(name)
@@ -705,6 +724,8 @@ Viewport.prototype.set_animation = function(name)
 	this.animation = animation;
 	this.animation_name = name;
 	this.app.invalidate();
+
+	this.dom.label.textContent = name !== null ? name : "skeleton setup";
 }
 
 Viewport.prototype.on_resize = function()
