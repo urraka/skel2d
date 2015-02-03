@@ -542,6 +542,8 @@ Viewport.prototype.on_options_mousedown = function(event)
 	var options = this.dom.options;
 	var option = event.target;
 
+	// click on an expanded menu option
+
 	if (option.parentNode.classList.contains("sk2-option-menu"))
 	{
 		var menu = option.parentNode;
@@ -567,6 +569,8 @@ Viewport.prototype.on_options_mousedown = function(event)
 	if (!option.classList.contains("sk2-option"))
 		return;
 
+	// click on a viewport option
+
 	event.preventDefault();
 	event.stopPropagation();
 
@@ -579,19 +583,32 @@ Viewport.prototype.on_options_mousedown = function(event)
 		}
 
 		window.removeEventListener("mousedown", on_mousedown, true);
+		options.removeEventListener("mouseover", on_mouseover);
 	}
+
+	function on_mouseover(event)
+	{
+		if (event.target !== option && event.target.classList.contains("sk2-option"))
+		{
+			option.classList.remove("active");
+			option = event.target;
+			option.classList.add("active");
+		}
+	}
+
+	var menu = option.firstChild;
 
 	if (option.classList.contains("active"))
 	{
 		options.classList.remove("active");
 		option.classList.remove("active");
 	}
-	else if (option.firstChild.classList.contains("sk2-option-menu") &&
-		option.firstChild.childNodes.length > 0)
+	else if (menu && menu.classList.contains("sk2-option-menu") && menu.childNodes.length > 0)
 	{
 		options.classList.add("active");
 		option.classList.add("active");
 		window.addEventListener("mousedown", on_mousedown, true);
+		options.addEventListener("mouseover", on_mouseover);
 	}
 }
 
