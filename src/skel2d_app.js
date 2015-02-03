@@ -697,9 +697,9 @@ Viewport.prototype.set_animation = function(name)
 	if (name !== this.animation_name)
 		this.time = 0;
 
-	if (animation && !this.animation && animation.duration > 0)
+	if (animation && !this.animation)
 		this.app.on_animation_start();
-	else if (this.animation && (!animation || animation.duration === 0))
+	else if (this.animation && !animation)
 		this.app.on_animation_stop();
 
 	this.animation = animation;
@@ -744,12 +744,17 @@ Viewport.prototype.draw = function(dt)
 
 		if (animation)
 		{
-			var t0 = this.time;
-			var t1 = (t0 + dt) % animation.duration;
+			if (animation.duration > 0)
+			{
+				var t0 = this.time;
+				var t1 = (t0 + dt) % animation.duration;
 
-			animation.apply(skeleton, 0, t1, 1);
+				animation.apply(skeleton, 0, t1, 1);
 
-			this.time = t1;
+				this.time = t1;
+			}
+			else
+				animation.apply(skeleton, 0, 0, 1);
 		}
 
 		skeleton.update_transform();
