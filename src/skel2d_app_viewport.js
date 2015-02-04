@@ -66,9 +66,7 @@ Viewport.prototype.create_dom = function()
 	elements.root.appendChild(elements.label);
 
 	elements.options.appendChild(elements.anim_option);
-	elements.options.appendChild(document.createTextNode(" "));
 	elements.options.appendChild(elements.skin_option);
-	elements.options.appendChild(document.createTextNode(" "));
 	elements.options.appendChild(elements.view_option);
 
 	elements.anim_option.appendChild(elements.anim_menu);
@@ -90,6 +88,24 @@ Viewport.prototype.bind_events = function()
 	this.dom.root.addEventListener("dblclick", this.on_double_click.bind(this));
 	this.dom.zoom_slider.addEventListener("change", this.on_zoom_change.bind(this));
 	this.dom.options.addEventListener("mousedown", this.on_options_mousedown.bind(this));
+}
+
+Viewport.prototype.on_attached = function()
+{
+	// this shit is done because menu border gets bugged on certain non-integer positions
+
+	var options = this.dom.options;
+	var option = options.firstChild;
+
+	options.classList.add("active");
+
+	while (option)
+	{
+		option.style.width = Math.ceil(option.offsetWidth) + "px";
+		option = option.nextSibling;
+	}
+
+	options.classList.remove("active");
 }
 
 Viewport.prototype.on_skeleton_update = function()
@@ -247,12 +263,7 @@ Viewport.prototype.on_double_click = function(event)
 	event.preventDefault();
 	event.stopPropagation();
 
-	if (this.scale !== 1)
-		this.dom.zoom_slider.value = 0.5;
-	else
-		this.translation_x = this.translation_y = 0;
-
-	this.app.invalidate();
+	this.zoom_to_fit();
 }
 
 Viewport.prototype.on_zoom_change = function()
@@ -313,6 +324,66 @@ Viewport.prototype.on_resize = function()
 	this.height = root.offsetHeight;
 	this.x = root.offsetLeft;
 	this.y = this.app.dom.canvas.offsetHeight - (root.offsetTop + this.height);
+}
+
+Viewport.prototype.zoom_to_fit = function()
+{
+	var renderer = this.app.renderer;
+	var skeleton = this.app.skeleton;
+
+	skeleton.reset();
+	skeleton.update_transform();
+
+	renderer.show_bones = true;
+	renderer.dont_draw = true;
+	renderer.draw(skeleton, 0, 0, 1, this.skin);
+	renderer.dont_draw = false;
+
+	this.dom.zoom_slider.value = 0.5;
+	this.translation_x = 0;
+	this.translation_y = 0;
+	this.app.invalidate();
+
+	if (renderer.vbo.size === 0)
+		return;
+
+	var vbo = renderer.vbo;
+	var buffer = vbo.f32;
+	var stride = vbo.vertex_size / buffer.BYTES_PER_ELEMENT;
+
+	var x0 = buffer[0]; var y0 = buffer[1];
+	var x1 = buffer[0]; var y1 = buffer[1];
+
+	for (var i = stride, n = vbo.size * stride; i < n; i += stride)
+	{
+		var x = buffer[i + 0];
+		var y = buffer[i + 1];
+
+		x0 = Math.min(x0, x);
+		y0 = Math.min(y0, y);
+		x1 = Math.max(x1, x);
+		y1 = Math.max(y1, y);
+	}
+
+	if (x0 === x1 || y0 === y1)
+		return;
+
+	var w = x1 - x0;
+	var h = y1 - y0;
+	var W = this.width;
+	var H = this.height;
+	var zoom = 1;
+
+	if (w / h > W / H)
+		zoom = 0.8 * (W / w);
+	else
+		zoom = 0.8 * (H / h);
+
+	zoom = zoom >= 1 ? 0.5 + (zoom - 1) / 6 : 0.5 - ((1 / zoom) - 1) / 6;
+
+	this.dom.zoom_slider.value = Math.max(0, Math.min(1, zoom));
+	this.translation_x = -(x0 + 0.5 * w) * this.scale;
+	this.translation_y = -(y0 + 0.5 * h) * this.scale;
 }
 
 Viewport.prototype.draw = function(dt)

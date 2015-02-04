@@ -29,6 +29,7 @@ function SkeletonRenderer(gfx)
 	this.vbo = gfx.create_vbo(500, gfx.Stream);
 	this.ibo = gfx.create_ibo(500, gfx.Stream);
 	this.show_bones = true;
+	this.dont_draw = false;
 }
 
 SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale, skin_index)
@@ -81,6 +82,9 @@ SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale, skin_index)
 
 		add_bone_marks(skeleton, vbo, ibo);
 	}
+
+	if (this.dont_draw)
+		return;
 
 	vbo.upload();
 	ibo.upload();

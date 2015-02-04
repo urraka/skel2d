@@ -510,6 +510,8 @@ VertexBuffer.prototype.upload = function(offset, count)
 	gl.bufferSubData(gl.ARRAY_BUFFER, beg, this.u8.subarray(beg, end));
 }
 
+VertexBuffer.prototype.vertex_size = vertex_size;
+
 // -----------------------------------------------------------------------------
 // IndexBuffer
 // -----------------------------------------------------------------------------

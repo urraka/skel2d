@@ -3,14 +3,6 @@
   - animation controls (play, pause, seekbar)
   - show keyframes
   - tooltip information for the keyframes
-  - zoom to fit
-  x some kind of scrollbar for the menus
-  x show/hide labels
-  x multiple viewports
-  x translate/zoom
-  x select animation (or setup pose)
-  x select skin
-  x show/hide bones
 - ui design
 - what to do when opening the app in multiple tabs?
 - figure out a way for saving, loading and sharing using local storage, file api and gists api
@@ -25,6 +17,14 @@
 - renderer: support for arbitrary closed paths when they are static (check libtess2)
 - ability to flatten easing functions (convert to a list of lerps)
 
+x zoom to fit
+x some kind of scrollbar for the menus
+x show/hide labels
+x multiple viewports
+x translate/zoom
+x select animation (or setup pose)
+x select skin
+x show/hide bones
 x parser: different blocks of the same type/name should be merged together (i.e. two anims with same name)
 x refactor ace syntax mode (everything repeats)
 x parser: flip-x flip-x timelines are missing (s,t)

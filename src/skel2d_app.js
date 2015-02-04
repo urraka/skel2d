@@ -149,6 +149,7 @@ Application.prototype.on_load = function()
 	{
 		viewports[i].set_skin("default");
 		viewports[i].set_animation(null);
+		viewports[i].zoom_to_fit();
 	}
 
 	var n = Math.min(animations.length, viewports.length - 1);
@@ -266,12 +267,23 @@ Application.prototype.set_viewports = function(cols, rows)
 	for (var i = 0; i < rows; i++)
 	{
 		var row = document.createElement("div");
+
 		row.classList.add("sk2-view-row");
+		overlay.appendChild(row);
 
 		for (var j = 0; j < cols; j++)
-			row.appendChild(viewports[i * cols + j].dom.root);
+		{
+			var index = i * cols + j;
 
-		overlay.appendChild(row);
+			row.appendChild(viewports[index].dom.root);
+			viewports[index].on_attached();
+		}
+	}
+
+	if (this.skeleton && this.skeleton_data)
+	{
+		for (var i = 0; i < n; i++)
+			viewports[i].on_skeleton_update();
 	}
 
 	this.on_resize();
