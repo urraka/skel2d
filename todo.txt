@@ -4,6 +4,7 @@
   - show keyframes
   - tooltip information for the keyframes
   - zoom to fit
+  x some kind of scrollbar for the menus
   x show/hide labels
   x multiple viewports
   x translate/zoom

@@ -588,6 +588,9 @@ Viewport.prototype.on_options_mousedown = function(event)
 
 	function on_mousedown(event)
 	{
+		if (event.target === option.firstChild)
+			return;
+
 		if (event.target !== option)
 		{
 			options.classList.remove("active");
