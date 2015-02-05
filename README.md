@@ -13,14 +13,14 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
 
 **Defining a skeleton**
 
-Skeleton with 2 child bones called "bone1" and "bone2":
+Skeleton with 2 child bones called `bone1` and `bone2`:
 ```
 skeleton
 	bone1
 	bone2
 ```
 
-Skeleton with a child bone called "bone1", which has a child bone called "bone2":
+Skeleton with a child bone called `bone1`, which has a child bone called `bone2`:
 ```
 skeleton
 	bone1
@@ -41,25 +41,25 @@ skeleton
 
 Notes:
   - Indentation must be with tabs.
-  - Only alphanumeric characters plus '-' and '_' are allowed for bone names.
+  - Only alphanumeric characters plus `-` and `_` are allowed for bone names.
   - A bone name can't start with a number.
-  - A bone name can't be "skeleton".
+  - A bone name can't be `skeleton`.
 
 **Bone properties**
 
-  - **l**: length
-  - **r**: rotation
-  - **x**: position-x
-  - **y**: position-y
-  - **i**: scale-x
-  - **j**: scale-y
+  - `l`: length
+  - `r`: rotation
+  - `x`: position-x
+  - `y`: position-y
+  - `i`: scale-x
+  - `j`: scale-y
 
 **Bone flags**
 
-  - **flip-x**: flip on x axis
-  - **flip-y**: flip on y axis
-  - **no-rot**: don't inherit rotation from parents
-  - **no-scale**: don't inherit scale from parents
+  - `flip-x`: flip on x axis
+  - `flip-y`: flip on y axis
+  - `no-rot`: don't inherit rotation from parents
+  - `no-scale`: don't inherit scale from parents
 
 **Setting bone properties/flags**
 
@@ -71,4 +71,5 @@ skeleton
 
 Notes:
   - There can't be whitespace between a property and its value.
-  - The properties belong to the child-most bone defined in the line.
+  - The properties belong to the child-most bone defined in the line (in the example above
+  the properties apply to `bone`, `parent` is unaffected).
