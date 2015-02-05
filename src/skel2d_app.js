@@ -65,14 +65,15 @@ function Application(root)
 
 Application.prototype.create_dom = function(root)
 {
-	var x, elements = {
+	var e, elements = {
 		root: root,
-		left_panel: ((x = document.createElement("div")),    x.classList.add("sk2-left-panel"), x),
-		topbar:     ((x = document.createElement("div")),    x.classList.add("sk2-topbar"),     x),
-		ace:        ((x = document.createElement("div")),    x.classList.add("sk2-ace"),        x),
-		view_panel: ((x = document.createElement("div")),    x.classList.add("sk2-view-panel"), x),
-		overlay:    ((x = document.createElement("div")),    x.classList.add("sk2-overlay"),    x),
-		canvas:     ((x = document.createElement("canvas")), x.classList.add("sk2-canvas"),     x)
+		left_panel: ((e = document.createElement("div")),    e.classList.add("sk2-left-panel"), e),
+		topbar:     ((e = document.createElement("div")),    e.classList.add("sk2-topbar"),     e),
+		ace:        ((e = document.createElement("div")),    e.classList.add("sk2-ace"),        e),
+		help:       ((e = document.createElement("div")),    e.classList.add("sk2-help"),       e),
+		view_panel: ((e = document.createElement("div")),    e.classList.add("sk2-view-panel"), e),
+		overlay:    ((e = document.createElement("div")),    e.classList.add("sk2-overlay"),    e),
+		canvas:     ((e = document.createElement("canvas")), e.classList.add("sk2-canvas"),     e)
 	};
 
 	root.classList.add("sk2-app");
@@ -81,6 +82,7 @@ Application.prototype.create_dom = function(root)
 
 	elements.left_panel.appendChild(elements.topbar);
 	elements.left_panel.appendChild(elements.ace);
+	elements.left_panel.appendChild(elements.help);
 
 	elements.view_panel.appendChild(elements.canvas);
 	elements.view_panel.appendChild(elements.overlay);

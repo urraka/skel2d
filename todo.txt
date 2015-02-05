@@ -1,4 +1,3 @@
-- handle context lost?
 - preview features
   - animation controls (play, pause, seekbar)
   - show keyframes
@@ -16,6 +15,7 @@
 - renderer optimization: static shapes can be stroked only once, then just transform vertices
 - renderer: support for arbitrary closed paths when they are static (check libtess2)
 - ability to flatten easing functions (convert to a list of lerps)
+- handle context lost?
 
 x zoom to fit
 x some kind of scrollbar for the menus
