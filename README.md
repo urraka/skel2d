@@ -70,7 +70,8 @@ Notes:
 
 **Setting bone properties/flags**
 
-A red bone with length=100 position=10,-10 scale=1.5x flipped on x axis and doesn't inherit rotation:
+A red bone with `length=100`, `position=10,-10`, `scale=1.5x`, flipped on x axis and doesn't inherit
+rotation:
 
 ```
 skeleton
@@ -86,7 +87,7 @@ Notes:
 **Adding slots/attachments**
 
 The concept of slots and attachments is taken from Spine. Basically, each bone can have slots and
-each slot can have attachments (but only one active/visible one).
+each slot can have attachments (but only one active/visible attachment).
 
 Currently, an attachment can be a sprite, a path or a shape.
 
@@ -156,7 +157,7 @@ The following are properties specific to some attachment types:
 
   - `w`: width (used by rects and ellipses, default: `0`)
   - `h`: height (used by rects and ellipses, default: `0`)
-  - `d`: diameter for a circle or for rect corners (to make rounded rects, default: `0`)
+  - `d`: diameter for a circle or for rect corners (for making rounded rects, default: `0`)
 
 Example: a 100x80 rect with a line width of 5, filled with blue, rotated 90 degrees and round line
 joins:
@@ -176,18 +177,18 @@ skeleton
 		@ :sprite "image-name.png"
 ```
 
-Note: strings are limited to no whitespace.
+Note: currently, strings are limited to no whitespace.
 
 **Path attachments**
 
 Paths are defined by the following commands:
 
-  - `M <point>`: move-to (only supported as the first command, if ommited it will default to `0,0`)
-  - `L <point>`: line-to
-  - `Q <ctrl-point> <end-point>`: quadratic-curve-to
-  - `B <ctrl-point1> <ctrl-point2> <end-point>`: bezier-curve-to
-  - `: <bone>`: switch default bone binding
-  - `C`: close-path
+  - `M <point>`: move to (only supported as the first command, if ommited it will default to `0,0`)
+  - `L <point>`: line to
+  - `Q <ctrl-point> <end-point>`: quadratic curve to
+  - `B <ctrl-point1> <ctrl-point2> <end-point>`: bezier curve to
+  - `C`: close path
+  - `: <bone>`: switch default bone binding (doesn't count as a command and can be used before `M`)
 
 Each point given as a parameter to a command is bound to a bone to which it is relative to.
 By default, that bone is the one that owns the attachment, but it can be any bone in the skeleton.
@@ -201,7 +202,7 @@ Simple path example, a red triangle with black outline:
 skeleton
 	bone
 		@ :path f#F00
-			M 0,0       # M can be ommited here because it's the default 0,0
+			M 0,0       # M could be ommited here because it's the default 0,0
 			L 25,50
 			L 50,0
 			C
@@ -228,8 +229,8 @@ skeleton
 	end x150 y0
 ```
 
-Using the default bone binding switch (this is the red triangle again but the top vertex can be
-controled by `bone.child`):
+Using the default bone binding switch (this is the same red triangle as above but the top vertex can
+be controled by `bone.child`):
 
 ```
 skeleton
@@ -246,7 +247,6 @@ skeleton
 
 Notes:
 
-  - Path points can be bound to any bone in the skeleton hierarchy.
   - When referencing a bone it's enough to give the shortest unambiguous name for it. If the name
   of a bone that is a direct child of `skeleton` happened to be ambiguous, the `skeleton` keyword
   can be used as the parent bone to disambiguate. For example, if there are two bones `bone` and
