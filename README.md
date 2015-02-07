@@ -44,6 +44,7 @@ skeleton
 ```
 
 Notes:
+
   - Indentation must be with tabs.
   - Only alphanumeric characters plus `-` and `_` are allowed for bone names.
   - A bone name can't start with a number.
@@ -77,6 +78,7 @@ skeleton
 ```
 
 Notes:
+
   - There can't be whitespace between a property and its value.
   - The properties belong to the child-most bone defined in the line (in the example above
   the properties apply to `bone`, `parent` is unaffected).
@@ -130,7 +132,7 @@ This would define a slot with a rectangle attachment:
 ```
 skeleton
 	bone
-		@slot[attachment] :rect
+		@ :rect
 ```
 
 **Attachment properties**
@@ -162,7 +164,7 @@ joins:
 ```
 skeleton
 	bone
-		@slot[attachment] :rect w100 h80 t5 f#00F r90 round-join
+		@ :rect w100 h80 t5 f#00F r90 round-join
 ```
 
 Sprites only have one additional property (apart from transform properties) which is a string with
@@ -171,7 +173,7 @@ the name of the image:
 ```
 skeleton
 	bone
-		@slot[attachment] :sprite "image-name.png"
+		@ :sprite "image-name.png"
 ```
 
 Note: strings are limited to no whitespace.
@@ -191,4 +193,61 @@ Each point given as a parameter to a command is bound to a bone to which it is r
 By default, that bone is the one that owns the attachment, but it can be any bone in the skeleton.
 This allows paths to be changed by animating bones.
 
-The format to define a point is `x,y:bone` (the `:bone` part is optional).
+The format to define a point is `x,y` or `x,y:bone` to bind the point to a bone other than the default.
+
+Simple path example, a red triangle with black outline:
+
+```
+skeleton
+	bone
+		@ :path f#F00
+			M 0,0       # M can be ommited here because it's the default 0,0
+			L 25,50
+			L 50,0
+			C
+```
+
+A bezier curve:
+
+```
+skeleton
+	bone
+		@ :path
+			B 50,100 100,-100 150,0
+```
+
+Same bezier curve but with points bound to different bones:
+
+```
+skeleton
+	bone
+		@ :path
+			B 0,0:cp1 0,0:cp2 0,0:end
+	bone.cp1 x50 y100
+	bone.cp2 x100 y-100
+	end x150 y0
+```
+
+Using the default bone binding switch (this is the red triangle again but the top vertex can be
+controled by `bone.child`):
+
+```
+skeleton
+	bone x150
+		@ :path f#F00
+			M 0,0
+			: child
+			L 0,0
+			: bone
+			L 50,0
+			C
+	bone.child x25 y50
+```
+
+Notes:
+
+  - Path points can be bound to any bone in the skeleton hierarchy.
+  - When referencing a bone it's enough to give the shortest unambiguous name for it. If the name
+  of a bone that is a direct child of `skeleton` happened to be ambiguous, the `skeleton` keyword
+  can be used as the parent bone to disambiguate. For example, if there are two bones `bone` and
+  `bone.bone`, the former can be referenced as `skeleton.bone` and the latter as `bone.bone`.
