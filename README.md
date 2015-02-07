@@ -80,7 +80,7 @@ Notes:
 
 #### Setting bone properties/flags
 
-A red bone with `length=100`, `position=10,-10`, `scale=1.5x`, flipped on x axis and doesn't inherit
+A red bone with `length=100`, `position=10,-10`, `scale=1.5x`, flipped on x axis which doesn't inherit
 rotation:
 
 ```
@@ -277,3 +277,4 @@ Notes:
   of a bone that is a direct child of `skeleton` happened to be ambiguous, the `skeleton` keyword
   can be used as the parent bone to disambiguate. For example, if there are two bones `bone` and
   `bone.bone`, the former can be referenced as `skeleton.bone` and the latter as `bone.bone`.
+  - Currently, path rendering is quite limited and filling will only work with simple covex shapes.
