@@ -11,7 +11,7 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
 
 ### Help
 
-**Defining a skeleton**
+#### Defining a skeleton
 
 Skeleton with 2 child bones called `bone1` and `bone2`:
 
@@ -50,7 +50,7 @@ Notes:
   - A bone name can't start with a number.
   - A bone name can't be `skeleton`.
 
-**Bone properties**
+#### Bone properties
 
   - `l`: length
   - `r`: rotation
@@ -61,14 +61,14 @@ Notes:
   - color (format is `#RGB` or `#RRGGBB` optionally followed by an opacity value separated by a
   comma, i.e `#F00,0.5` or `#FF0000,0.5`)
 
-**Bone flags**
+#### Bone flags
 
   - `flip-x`: flip on x axis
   - `flip-y`: flip on y axis
   - `no-rot`: don't inherit rotation from parents
   - `no-scale`: don't inherit scale from parents
 
-**Setting bone properties/flags**
+#### Setting bone properties/flags
 
 A red bone with `length=100`, `position=10,-10`, `scale=1.5x`, flipped on x axis and doesn't inherit
 rotation:
@@ -84,7 +84,7 @@ Notes:
   - The properties belong to the child-most bone defined in the line (in the example above
   the properties apply to `bone`, `parent` is unaffected).
 
-**Adding slots/attachments**
+#### Adding slots/attachments
 
 The concept of slots and attachments is taken from Spine. Basically, each bone can have slots and
 each slot can have attachments (but only one active/visible attachment).
@@ -117,7 +117,7 @@ skeleton
 		@slot           # slot named "slot" with attachment named "slot"
 ```
 
-**Attachment types**
+#### Attachment types
 
 By default, an attachment will be of type `none` which isn't very useful. This is a list of
 available attachment type keywords:
@@ -136,9 +136,25 @@ skeleton
 		@ :rect
 ```
 
-**Attachment properties**
+#### Slot properties
 
-Attachment properties must be placed after the attachment type keyword.
+Slot properties must be placed **before** the attachment type keyword.
+
+Currently, slots have only one property which is its color. Example:
+
+```
+skeleton
+	bone
+		@ #F00 :rect
+```
+
+The slot color will be multiplied with attachment colors. By default it's `#FFF` so it won't affect
+the attachment. What makes the slot color different from whatever color the attachment has is that it
+can be animated.
+
+#### Attachment properties
+
+Attachment properties must be placed **after** the attachment type keyword.
 
 All attachment types share the same transform properties as bones for defining position, scale
 and rotation (`x`, `y`, `i`, `j`, `r`).
@@ -179,7 +195,7 @@ skeleton
 
 Note: currently, strings are limited to no whitespace.
 
-**Path attachments**
+#### Path attachments
 
 Paths are defined by the following commands:
 
@@ -247,7 +263,7 @@ skeleton
 
 Notes:
 
-  - When referencing a bone it's enough to give the shortest unambiguous name for it. If the name
+  - When referencing a bone, it's enough to give the shortest unambiguous name for it. If the name
   of a bone that is a direct child of `skeleton` happened to be ambiguous, the `skeleton` keyword
   can be used as the parent bone to disambiguate. For example, if there are two bones `bone` and
   `bone.bone`, the former can be referenced as `skeleton.bone` and the latter as `bone.bone`.
