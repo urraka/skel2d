@@ -11,6 +11,16 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
 
 ### Help
 
+  - [Defining a skeleton](#defining-a-skeleton)
+  - [Bone properties](#bone-properties)
+  - [Bone flags](#bone-flags)
+  - [Setting bone properties/flags](#setting-bone-propertiesflags)
+  - [Adding slots/attachments](#adding-slotsattachments)
+  - [Attachment types](#attachment-types)
+  - [Slot properties](#slot-properties)
+  - [Attachment properties](#attachment-properties)
+  - [Path attachments](#path-attachments)
+
 #### Defining a skeleton
 
 Skeleton with 2 child bones called `bone1` and `bone2`:
