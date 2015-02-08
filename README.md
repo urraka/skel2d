@@ -13,33 +13,26 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
 
 #### Index
 
-**Setting up the skeleton**
-
-  - [Defining a skeleton hierarchy](#defining-a-skeleton-hierarchy)
-  - [Bone properties](#bone-properties)
-  - [Bone flags](#bone-flags)
-  - [Setting bone properties/flags](#setting-bone-propertiesflags)
-  - [Adding slots/attachments](#adding-slotsattachments)
-  - [Attachment types](#attachment-types)
-  - [Slot properties](#slot-properties)
-  - [Attachment properties](#attachment-properties)
-  - [Path attachments](#path-attachments)
-
-**Animation**
-
-  - Defining a new animation
-  - Animation properties
-  - Defining timelines
-  - Bone timelines
-  - Slot timelines
-
-**Skins**
-
-  - TODO...
-
-**Drawing order**
-
-  - TODO...
+  - **Setting up the skeleton**
+    - [Defining a skeleton hierarchy](#defining-a-skeleton-hierarchy)
+    - [Bone properties](#bone-properties)
+    - [Bone flags](#bone-flags)
+    - [Setting bone properties/flags](#setting-bone-propertiesflags)
+    - [Adding slots/attachments](#adding-slotsattachments)
+    - [Attachment types](#attachment-types)
+    - [Slot properties](#slot-properties)
+    - [Attachment properties](#attachment-properties)
+    - [Path attachments](#path-attachments)
+  - **Animation**
+    - Defining a new animation
+    - Animation properties
+    - Defining timelines
+    - Bone timelines
+    - Slot timelines
+  - **Skins**
+    - TODO...
+  - **Drawing order**
+    - TODO...
 
 #### Defining a skeleton hierarchy
 
