@@ -9,7 +9,9 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
 
 ---
 
-### Help
+### Documentation
+
+#### Index
 
 **Setting up the skeleton**
 
@@ -33,7 +35,11 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
 
 **Skins**
 
+  - TODO...
+
 **Drawing order**
+
+  - TODO...
 
 #### Defining a skeleton hierarchy
 
