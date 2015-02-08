@@ -11,7 +11,9 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
 
 ### Help
 
-  - [Defining a skeleton](#defining-a-skeleton)
+**Setting up the skeleton**
+
+  - [Defining a skeleton hierarchy](#defining-a-skeleton-hierarchy)
   - [Bone properties](#bone-properties)
   - [Bone flags](#bone-flags)
   - [Setting bone properties/flags](#setting-bone-propertiesflags)
@@ -21,7 +23,19 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
   - [Attachment properties](#attachment-properties)
   - [Path attachments](#path-attachments)
 
-#### Defining a skeleton
+**Animation**
+
+  - Defining a new animation
+  - Animation properties
+  - Defining timelines
+  - Bone timelines
+  - Slot timelines
+
+**Skins**
+
+**Drawing order**
+
+#### Defining a skeleton hierarchy
 
 Skeleton with 2 child bones called `bone1` and `bone2`:
 
