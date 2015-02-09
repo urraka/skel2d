@@ -46,6 +46,7 @@ Viewport.prototype.create_dom = function()
 		view_menu: document.createElement("div"),
 		show_bones_option: document.createElement("div"),
 		show_label_option: document.createElement("div"),
+		zoom_to_fit_option: document.createElement("div"),
 		label: document.createElement("div"),
 		zoom_slider: ui.Slider()
 	};
@@ -78,6 +79,9 @@ Viewport.prototype.create_dom = function()
 
 	elements.view_menu.appendChild(elements.show_bones_option);
 	elements.view_menu.appendChild(elements.show_label_option);
+	elements.view_menu.appendChild(elements.zoom_to_fit_option);
+
+	elements.zoom_to_fit_option.textContent = "zoom to fit";
 
 	return elements;
 }
@@ -140,6 +144,56 @@ Viewport.prototype.on_skeleton_update = function()
 	}
 }
 
+Viewport.prototype.on_menu_option_click = function(menu, option, all_viewports)
+{
+	var dom = this.dom;
+
+	var func = null;
+	var args = [];
+
+	switch (menu)
+	{
+		case dom.anim_menu:
+			func = this.set_animation;
+			args.push(option === menu.firstChild ? null : option.textContent);
+			break;
+
+		case dom.skin_menu:
+			func = this.set_skin;
+			args.push(option.textContent);
+			break;
+
+		case dom.view_menu:
+		{
+			switch (option)
+			{
+				case dom.show_bones_option:
+					func = this.show_bones;
+					args.push(!this.bones_visible);
+					break;
+
+				case dom.show_label_option:
+					func = this.show_label;
+					args.push(!this.label_visible);
+					break;
+
+				case dom.zoom_to_fit_option:
+					func = this.zoom_to_fit;
+					break;
+			}
+		}
+		break;
+	}
+
+	if (func)
+	{
+		if (all_viewports)
+			this.app.viewports.forEach(function(viewport) { func.apply(viewport, args); });
+		else
+			func.apply(this, args);
+	}
+}
+
 Viewport.prototype.on_options_mousedown = function(event)
 {
 	var options = this.dom.options;
@@ -149,27 +203,9 @@ Viewport.prototype.on_options_mousedown = function(event)
 
 	if (option.parentNode.classList.contains("sk2-option-menu"))
 	{
-		var menu = option.parentNode;
-
-		switch (menu)
-		{
-			case this.dom.anim_menu:
-				this.set_animation(option === menu.firstChild ? null : option.textContent);
-				break;
-
-			case this.dom.skin_menu:
-				this.set_skin(option.textContent);
-				break;
-
-			case this.dom.view_menu:
-				option === this.dom.show_bones_option && this.show_bones(!this.bones_visible);
-				option === this.dom.show_label_option && this.show_label(!this.label_visible);
-				break;
-		}
-
 		event.preventDefault();
 		event.stopPropagation();
-
+		this.on_menu_option_click(option.parentNode, option, event.shiftKey);
 		return;
 	}
 
