@@ -279,6 +279,7 @@ Viewport.prototype.on_mousedown = function(event)
 
 		self.translation_x += dx;
 		self.translation_y += dy;
+		self.app.invalidate();
 	}
 
 	function on_mouseup()
