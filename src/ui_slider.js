@@ -18,12 +18,16 @@ function Slider()
 		return e.clientY - Math.floor(bounds.top + (bounds.bottom - bounds.top) * 0.5);
 	}
 
-	function on_change()
+	function on_change(shift_key)
 	{
-		slider.dispatchEvent(new Event("change"));
+		var detail = {
+			shiftKey: shift_key
+		};
+
+		slider.dispatchEvent(new CustomEvent("change", {"detail": detail}));
 	}
 
-	function update(mousey)
+	function update(mousey, shift_key)
 	{
 		var val = handle.style.top;
 		var bounds = slider.getBoundingClientRect();
@@ -32,12 +36,12 @@ function Slider()
 		handle.style.top = 100 * (y - bounds.top) / (bounds.bottom - bounds.top) + "%";
 
 		if (handle.style.top !== val)
-			on_change();
+			on_change(shift_key);
 	}
 
 	function on_mousemove(e)
 	{
-		update(e.clientY);
+		update(e.clientY, e.shiftKey);
 	}
 
 	function on_mouseup()
@@ -61,7 +65,7 @@ function Slider()
 		e.stopPropagation();
 
 		offset = calc_offset(e);
-		update(e.clientY);
+		update(e.clientY, e.shiftKey);
 	}
 
 	slider.classList.add("ui-slider");
@@ -77,7 +81,7 @@ function Slider()
 			handle.style.top = 100 * (1 - x) + "%";
 
 			if (handle.style.top !== val)
-				on_change();
+				on_change(false);
 		}
 	});
 

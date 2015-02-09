@@ -299,16 +299,26 @@ Viewport.prototype.on_double_click = function(event)
 	event.preventDefault();
 	event.stopPropagation();
 
-	this.zoom_to_fit();
+	if (event.shiftKey)
+		this.app.viewports.forEach(function(viewport) { viewport.zoom_to_fit(); });
+	else
+		this.zoom_to_fit();
 }
 
-Viewport.prototype.on_zoom_change = function()
+Viewport.prototype.on_zoom_change = function(event)
 {
-	var zoom = this.dom.zoom_slider.value;
+	var value = this.dom.zoom_slider.value;
 
-	zoom = zoom >= 0.5 ? 6 * (zoom - 0.5) + 1 : 1 / (6 * (0.5 - zoom) + 1);
+	if (event.detail.shiftKey)
+	{
+		var viewports = this.app.viewports;
 
-	this.scale = zoom;
+		for (var i = 0, n = viewports.length; i < n; i++)
+			if (viewports[i] !== this)
+				viewports[i].dom.zoom_slider.value = value;
+	}
+
+	this.scale = value >= 0.5 ? 6 * (value - 0.5) + 1 : 1 / (6 * (0.5 - value) + 1);
 	this.app.invalidate();
 }
 
