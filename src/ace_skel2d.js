@@ -30,6 +30,7 @@ for (var i in re)
 // --- rules ---
 
 var skel2d_rules = [
+	comment_state(),
 	line_state("invalid", null, []),
 
 	body_state("start", "start", 0, [
@@ -195,6 +196,16 @@ function timeline_state(name, token, regex)
 	]);
 }
 
+function comment_state()
+{
+	var state = line_state("comment", null, []);
+
+	state.rules = state.rules.filter(function(rule) { return rule.token !== "comment"; });
+	state.rules.forEach(function(rule) { rule.token = "comment"; });
+
+	return state;
+}
+
 function body_state(name, owner, level, rules)
 {
 	var tabs = level > 1 ? "\\t{0," + (level - 1) + "}" : "";
@@ -205,9 +216,14 @@ function body_state(name, owner, level, rules)
 		rules.push({token: "text", regex: "^(?=" + tabs + "[^\\t])", next: owner});
 	}
 
-	rules.push({token: "text", regex: "^\\\\$", next: ["invalid", name]});
-	rules.push({token: "text", regex: ".+(?=\\\\$)"});
-	rules.push({token: "text", regex: ".+"});
+	rules.push({token: "text", regex: "\\\\$", next: ["invalid", name]});
+	rules.push({token: "comment", regex: "#$"});
+	rules.push({token: "comment", regex: "#", next: ["comment", name]});
+	rules.push({token: "text", regex: "\\s+"});
+	rules.push({token: "text", regex: "\\S+(?=\\s|\\\\$)"});
+	rules.push({token: "text", regex: "\\S+$"});
+	// rules.push({token: "text", regex: ".+(?=\\\\$)"});
+	// rules.push({token: "text", regex: ".+"});
 	rules.push({token: "text", regex: "", next: name});
 
 	return {name: name, rules: rules};
@@ -215,9 +231,13 @@ function body_state(name, owner, level, rules)
 
 function line_state(name, next_body, rules)
 {
+	rules.push({token: "comment", regex: "#$", next: next_body || jump_to_next});
+	rules.push({token: "comment", regex: "#", next: next_body ? ["comment", next_body] : "comment"});
+
 	rules.push({token: "text", regex: "\\\\$", next: name});
 	rules.push({token: "text", regex: "\\s+"});
 	rules.push({token: "text", regex: "\\S+(?=\\s|\\\\$)"});
+	rules.push({token: "text", regex: "\\S+(?=$)", next: next_body || jump_to_next});
 	rules.push({token: "text", regex: "", next: next_body || jump_to_next});
 
 	return {name: name, rules: rules};
