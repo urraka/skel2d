@@ -40,7 +40,7 @@ var prop_map = {
 
 var re = {
 	split: /\S+/g,
-	empty_line: /^\s*$/,
+	empty_line: /^\s*(?:#(?=\s|$).*)?$/,
 
 	skel: /^skeleton(?:\s|$)/,
 	skin: /^skin(?:\s|$)/,
@@ -104,7 +104,9 @@ var re = {
 };
 
 function split_line(line) {
-	return line.match(re.split);
+	var tokens = line.match(re.split);
+	var comment = tokens.indexOf("#");
+	return comment === -1 ? tokens : tokens.slice(0, comment);
 }
 
 function last_split(str, sep) {
@@ -138,9 +140,6 @@ function parse(source)
 		var len = line.length;
 		var prev_line = i - 1;
 
-		if (re.empty_line.test(line))
-			continue;
-
 		if (line.charAt(len - 1) === "\r")
 			line = line.substr(0, --len);
 
@@ -152,6 +151,9 @@ function parse(source)
 			if (line.charAt(len - 1) === "\r")
 				line = line.substr(0, --len);
 		}
+
+		if (re.empty_line.test(line))
+			continue;
 
 		switch (state)
 		{

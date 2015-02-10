@@ -213,32 +213,33 @@ function body_state(name, owner, level, rules)
 	if (level > 0)
 	{
 		rules.push({token: "text", regex: "^\\s*$"});
+		rules.push.apply(rules, item(["text", "comment"], "(^\\s*)(#)", ["comment", name]));
 		rules.push({token: "text", regex: "^(?=" + tabs + "[^\\t])", next: owner});
 	}
 
 	rules.push({token: "text", regex: "\\\\$", next: ["invalid", name]});
 	rules.push({token: "comment", regex: "#$"});
-	rules.push({token: "comment", regex: "#", next: ["comment", name]});
+	rules.push({token: "comment", regex: "#(?=\\s|\\\\$)", next: ["comment", name]});
 	rules.push({token: "text", regex: "\\s+"});
 	rules.push({token: "text", regex: "\\S+(?=\\s|\\\\$)"});
 	rules.push({token: "text", regex: "\\S+$"});
-	// rules.push({token: "text", regex: ".+(?=\\\\$)"});
-	// rules.push({token: "text", regex: ".+"});
 	rules.push({token: "text", regex: "", next: name});
 
 	return {name: name, rules: rules};
 }
 
-function line_state(name, next_body, rules)
+function line_state(name, body, rules)
 {
-	rules.push({token: "comment", regex: "#$", next: next_body || jump_to_next});
-	rules.push({token: "comment", regex: "#", next: next_body ? ["comment", next_body] : "comment"});
+	var next = body || jump_to_next;
+
+	rules.push({token: "comment", regex: "#$", next: next});
+	rules.push({token: "comment", regex: "#(?=\\s|\\\\$)", next: body ? ["comment", body] : "comment"});
 
 	rules.push({token: "text", regex: "\\\\$", next: name});
 	rules.push({token: "text", regex: "\\s+"});
 	rules.push({token: "text", regex: "\\S+(?=\\s|\\\\$)"});
-	rules.push({token: "text", regex: "\\S+(?=$)", next: next_body || jump_to_next});
-	rules.push({token: "text", regex: "", next: next_body || jump_to_next});
+	rules.push({token: "text", regex: "\\S+(?=$)", next: next});
+	rules.push({token: "text", regex: "", next: next});
 
 	return {name: name, rules: rules};
 }
