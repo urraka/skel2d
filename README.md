@@ -24,11 +24,9 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
     - [Attachment properties](#attachment-properties)
     - [Path attachments](#path-attachments)
   - **Animation**
-    - Defining a new animation
-    - Animation properties
-    - Defining timelines
-    - Bone timelines
-    - Slot timelines
+    - [Defining a new animation](#defining-a-new-animation)
+    - [Animation properties](#animation-properties)
+    - [Animation timelines](#animation-timelines)
   - **Skins**
     - TODO...
   - **Drawing order**
@@ -291,3 +289,87 @@ Notes:
   can be used as the parent bone to disambiguate. For example, if there are two bones `bone` and
   `bone.bone`, the former can be referenced as `skeleton.bone` and the latter as `bone.bone`.
   - Currently, path rendering is quite limited and filling will only work with simple covex shapes.
+
+#### Defining a new animation
+
+Animations are defined with the `anim` keyword. The name can be given with a string:
+
+```
+anim "name"
+	# ...
+```
+
+An animation consists of timelines. There are bone and slot timelines. Each timeline is used to
+animate a single *animatable* property from either a bone or a slot.
+
+The following example lists all the animatable bone and slot properties:
+
+```
+skeleton
+	bone
+		@slot
+
+anim "example"
+	bone
+		r    # rotation
+		x    # position-x
+		y    # position-y
+		i    # scale-x
+		j    # scale-y
+		s    # flip-x
+		t    # flip-y
+	@slot
+		@    # current attachment
+		r    # color (red component)
+		g    # color (green component)
+		b    # color (blue component)
+		a    # color (alpha component)
+		c    # color
+```
+
+Notes:
+
+  - Slot names must have a leading `@`.
+  - Bone and slot names can be the shortest unambiguous name that uniquely identifies them (same
+  rule explained in [path attachments](#path-attachments) notes).
+  - If a slot is given a color timeline (`c`), the individual color component timelines won't take
+  effect.
+
+#### Animation properties
+
+An animation has the following properties:
+
+  - `fps`: frames per second (default: `20`)
+  - `frame`: defines the starting frame (default: `0`)
+  - `step`: number of frames to advance on each step (default: `5`)
+  - `easing`: function used for interpolation between frames (default: `li`)
+
+These properties have a specific syntax to define them. Here's an example that would define the
+default values:
+
+```
+anim "name" 20fps 0:5:li
+	# ...
+```
+
+As shown there, `frame`, `step` and `easing` are defined together separated by a colon. It's not
+necessary, however, to give a value to all of them. These are all valid ways of setting these
+properties:
+
+  - `0:` or `0::`     - sets `frame`
+  - `:5:`             - sets `step`
+  - `::li` or `:li`   - sets `easing`
+  - `0:5:` or `0:5`   - sets `frame` and `step`
+  - `0::li`           - sets `frame` and `easing`
+  - `:5:li` or `5:li` - sets `step` and `easing`
+  - `0:5:li`          - sets `frame`, `step` and `easing`
+
+These properties (`frame`, `step` and `easing`) can be overriden on each animation item:
+
+```
+anim "name" 0:4
+	bone :2:     # change step to 2
+		# ...
+```
+
+#### Animation timelines
