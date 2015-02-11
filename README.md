@@ -302,7 +302,7 @@ anim "name"
 An animation consists of timelines. There are bone and slot timelines. Each timeline is used to
 animate a single *animatable* property from either a bone or a slot.
 
-The following example lists all the animatable bone and slot properties:
+The following lists all the animatable bone and slot properties:
 
 ```
 skeleton
@@ -352,17 +352,19 @@ anim "name" 20fps 0:5:li
 	# ...
 ```
 
-As shown there, `frame`, `step` and `easing` are defined together separated by a colon. It's not
+As shown above, `frame`, `step` and `easing` are defined together separated by a colon. It's not
 necessary, however, to give a value to all of them. These are all valid ways of setting these
 properties:
 
-  - `0:` or `0::`     - sets `frame`
-  - `:5:`             - sets `step`
-  - `::li` or `:li`   - sets `easing`
-  - `0:5:` or `0:5`   - sets `frame` and `step`
-  - `0::li`           - sets `frame` and `easing`
-  - `:5:li` or `5:li` - sets `step` and `easing`
-  - `0:5:li`          - sets `frame`, `step` and `easing`
+Syntax            | Description
+:----------------:| ----------------------------------
+`0:` or `0::`     | sets `frame`
+`:5:`             | sets `step`
+`::li` or `:li`   | sets `easing`
+`0:5:` or `0:5`   | sets `frame` and `step`
+`0::li`           | sets `frame` and `easing`
+`:5:li` or `5:li` | sets `step` and `easing`
+`0:5:li`          | sets `frame`, `step` and `easing`
 
 These properties (`frame`, `step` and `easing`) can be overriden on each animation item:
 
