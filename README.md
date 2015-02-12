@@ -413,7 +413,7 @@ name      # add key frame with value "name" (attachment timelines)
 ->        # advance 1 step
 ---->     # advance 4 steps (number of hyphens defines the number of steps to advance)
 0:5:li>   # set frame to 0, set step to 5, set easing to li and advance 0 steps
-0:3:li->  # set frame to 0, set step to 3, set easing to li and advance 1 steps (3 frames)
+0:3:li->  # set frame to 0, set step to 3, set easing to li and advance 1 step (3 frames)
 +1:>      # advance 1 *frame* (and 0 steps)
 +1::li>   # advance 1 *frame*, set easing to li (and advance 0 steps)
 {         # begin loop
@@ -422,8 +422,8 @@ name      # add key frame with value "name" (attachment timelines)
 
 Notes:
 
-  - The syntax that sets `frame`, `step` and `easing` is almost the same as the one described in
-  [animation properties](#animation-properties). The difference is that it must be followed by
+  - The syntax that sets `frame`, `step` and `easing` is identical to the one described in
+  [animation properties](#animation-properties), except that it must be followed by
   "advance zero or more steps" (`>` preceded by zero or more `-`) and that it can set `frame`
   relatively by incrementing the current frame by `x` (`+x:>`).
   - Adding multiple key frames without advancing in time will result in only one key frame with the

@@ -1,3 +1,4 @@
+- animation properties: :5 is highlighted but doesnt work
 - preview features
   - animation controls (play, pause, seekbar)
   - show keyframes
