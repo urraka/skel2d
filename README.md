@@ -447,7 +447,7 @@ transition. The default is a linear interpolation (`li`). Currently there are on
 available:
 
 Identifier | Description | Function
------------------------------------
+-----------|-------------|---------
 `li`       | linear      | `y = x`
 `si`       | sin-in      | `y = 1 - sin(pi/2 + x * pi/2);`
 `so`       | sin-out     | `y = sin(x * pi/2)`
