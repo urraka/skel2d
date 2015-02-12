@@ -27,6 +27,7 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
     - [Defining a new animation](#defining-a-new-animation)
     - [Animation properties](#animation-properties)
     - [Animation timelines](#animation-timelines)
+    - [Easing functions](#easing-functions)
   - **Skins**
     - TODO...
   - **Drawing order**
@@ -292,14 +293,14 @@ Notes:
 
 #### Defining a new animation
 
-Animations are defined with the `anim` keyword. The name can be given with a string:
+Animations are defined with the `anim` keyword. A name to identify it can be given with a string:
 
 ```
 anim "name"
 	# ...
 ```
 
-An animation consists of timelines. There are bone and slot timelines. Each timeline is used to
+Animations consist of timelines. There are bone and slot timelines. Each timeline is used to
 animate a single *animatable* property from either a bone or a slot.
 
 The following lists all the animatable bone and slot properties:
@@ -309,7 +310,7 @@ skeleton
 	bone
 		@slot
 
-anim "example"
+anim "name"
 	bone
 		r    # rotation
 		x    # position-x
@@ -375,3 +376,84 @@ anim "name" 0:4
 ```
 
 #### Animation timelines
+
+The purpose of timelines is to define a list of key frames for a given property. The syntax to
+define them can be thought of as a list of commands. For example:
+
+```
+anim "name"
+	bone
+		x 0 -> 50 --> 0
+```
+
+The above can be read as:
+
+  1. Add key frame with value `0`
+  2. Advance one step (5 frames by default)
+  3. Add key frame with value `50`
+  4. Advance two steps (10 frames)
+  5. Add key frame with value `0`
+
+Most of the animatable properties take a numeric value, but there are some exceptions. Flip
+timelines (`s` and `t`) take a boolean value (`true` or `false`). Attachment timelines (`@`)
+take an attachment name from the list of attachments available for the slot that is
+being animated. Finally, color timelines (`c`) take a color value with the same format described
+in [bone properties](#bone-properties).
+
+The following illustrates the syntax for the commands available:
+
+```
+-1.5      # add key frame with value -1.5 (numeric timelines)
++-1.5     # add key frame incrementing the previous key frame by -1.5 (numeric timelines)
+*-1.5     # add key frame multiplying the previous key frame by -1.5 (numeric timelines)
+true      # add key frame with value "true" (flip timelines)
+false     # add key frame with value "false" (flip timelines)
+name      # add key frame with value "name" (attachment timelines)
+>         # advance 0 steps (noop)
+->        # advance 1 step
+---->     # advance 4 steps (number of hyphens defines the number of steps to advance)
+0:5:li>   # set frame to 0, set step to 5, set easing to li and advance 0 steps
+0:3:li->  # set frame to 0, set step to 3, set easing to li and advance 1 steps (3 frames)
++1:>      # advance 1 *frame* (and 0 steps)
++1::li>   # advance 1 *frame*, set easing to li (and advance 0 steps)
+{         # begin loop
+}[2]      # end loop (loop 2 times)
+```
+
+Notes:
+
+  - The syntax that sets `frame`, `step` and `easing` is almost the same as the one described in
+  [animation properties](#animation-properties). The difference is that it must be followed by
+  "advance zero or more steps" (`>` preceded by zero or more `-`) and that it can set `frame`
+  relatively by incrementing the current frame by `x` (`+x:>`).
+  - Adding multiple key frames without advancing in time will result in only one key frame with the
+  value of the last one.
+  - Setting `frame` to go back in time won't work.
+  - Setting the `step` value will take immediate effect, i.e. `:10:->` will advance `10` frames.
+  It also takes effect on all the following commands (until changed again).
+  - Setting `easing` will change the function used to interpolate the previous key frame with the
+  next one, and it will also change the default easing function for all the following frames (until
+  changed again).
+  - Whitespace is important. All the commands illustrated must be separated by whitespace and there
+  must not be any whitespace within a command (i.e. `{0 -> 1 -> 0}[2]` is invalid, must be
+  `{ 0 -> 1 -> 0 }[2]`).
+  - Color component timelines (`r`, `g`, `b` and `a`) take values between `0` and `1`. However,
+  they are not restricted to it.
+
+#### Easing functions
+
+Easing functions change the way a key frame is interpolated with the next one for a smooth
+transition. The default is a linear interpolation (`li`). Currently there are only a few functions
+available:
+
+Identifier | Description | Function
+-----------------------------------
+`li`       | linear      | `y = x`
+`si`       | sin-in      | `y = 1 - sin(pi/2 + x * pi/2);`
+`so`       | sin-out     | `y = sin(x * pi/2)`
+`sio`      | sin-in-out  | `y = 0.5 + sin(x * pi - pi/2) / 2`
+
+These functions are used to convert a value `t` between `0` and `1` into a value `t'`. The result
+is always used in a linear interpolation. So given two key frame values `a` and `b`, the function
+used to interpolate them will be `a + (b - a) * t'` (or `a + (b - c) * f(t)` where `f` is the
+easing function).
