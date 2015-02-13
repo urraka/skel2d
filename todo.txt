@@ -1,3 +1,5 @@
+- bug: zoom to fit doing weird stuff (not working deterministically as expected)
+- bug: undefined easing when doing :5:>
 - animation properties: :5 is highlighted but doesnt work
 - preview features
   - animation controls (play, pause, seekbar)

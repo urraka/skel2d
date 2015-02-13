@@ -440,6 +440,30 @@ Notes:
   - Color component timelines (`r`, `g`, `b` and `a`) take values between `0` and `1`. However,
   they are not restricted to it.
 
+A more elaborate example:
+
+```
+skeleton
+	bone l50
+		@[red] :circle d30 t0 f#F00
+		@[blue] :circle d30 t0 f#00F
+		@line :path
+			L 0,0:handle
+	bone.handle
+
+anim "test" 20fps
+	bone 40:sio
+		x 0 -> 200 -> 0
+		y :10:> 0 :so-> 20 :li--> 20 :si-> 0 :so-> -20 :li--> -20 :si-> 0
+		s false -> true -> false
+		i :10:> 0.1 -> 1 --> 1 -> 0.1 -> 1 --> 1 -> 0.1
+	handle :5:
+		x { -15 :si-> 0 :so-> 15 :si-> 0 :so-> -15 }[4]
+		y { 0 :so-> 15 :si-> 0 :so-> -15 :si-> 0 }[4]
+	@bone :40:
+		@ red -> blue -> red
+```
+
 #### Easing functions
 
 Easing functions change the way a key frame is interpolated with the next one for a smooth
