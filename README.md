@@ -464,6 +464,8 @@ anim "test" 20fps
 		@ red -> blue -> red
 ```
 
+See it in action: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample2
+
 #### Easing functions
 
 Easing functions change the way a key frame is interpolated with the next one for a smooth
