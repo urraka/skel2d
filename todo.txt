@@ -1,4 +1,3 @@
-- bug: zoom to fit doing weird stuff (not working deterministically as expected)
 - bug: undefined easing when doing :5:>
 - animation properties: :5 is highlighted but doesnt work
 - preview features
@@ -20,6 +19,7 @@
 - ability to flatten easing functions (convert to a list of lerps)
 - handle context lost?
 
+x bug: zoom to fit doing weird stuff (not working deterministically as expected)
 x zoom to fit
 x some kind of scrollbar for the menus
 x show/hide labels

@@ -193,6 +193,9 @@ Path.prototype.stroke = function(vbo, ibo)
 	var points = this.points;
 	var npoints = points.length;
 
+	if (npoints < 2)
+		return;
+
 	var line_join = this.line_join;
 	var line_cap = this.line_cap;
 	var mlimit = this.miter_limit;
