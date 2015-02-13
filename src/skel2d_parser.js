@@ -93,11 +93,13 @@ var re = {
 		[
 			/^(\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?$/,
 			/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)?()?$/,
+			/^(\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)()?$/,
 			/^()?(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)$/
 		],
 		[
 			/^(\+?\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?(-*)>$/,
 			/^(\+?\d+(?:\.\d+)?):(\d+(?:\.\d+)?)?()?(-*)>$/,
+			/^(\+?\d+(?:\.\d+)?)?:(\d+(?:\.\d+)?)()?(-*)>$/,
 			/^()?(\d+(?:\.\d+)?)?:([a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)(-*)>$/
 		]
 	]
@@ -1129,12 +1131,12 @@ function parse_timeline(item, tokens)
 	return commands.length > 0 ? timeline : null;
 }
 
-function match_animation_options(str, in_timeline)
+function match_animation_options(s, in_timeline)
 {
 	var x, res = null;
 	var r = re.token_anim_options[in_timeline ? 1 : 0];
 
-	if ((res = r[0].exec(str)) || (res = r[1].exec(str)) || (res = r[2].exec(str)))
+	if ((res = r[0].exec(s)) || (res = r[1].exec(s)) || (res = r[2].exec(s)) || (res = r[3].exec(s)))
 	{
 		res.shift();
 

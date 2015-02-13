@@ -19,6 +19,7 @@ re.anim_options_full  = /(?:\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\
 re.anim_options_short = /(?:\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?|[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/;
 re.tl_opt_full = /(?:\+?\d+(?:\.\d+)?)?:(?:\d+(?:\.\d+)?)?:(?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?)?/;
 re.tl_opt_left = /\+?\d+(?:\.\d+)?:(?:\d+(?:\.\d+)?)?/;
+re.tl_opt_mid = /(?:\+?\d+(?:\.\d+)?)?:\d+(?:\.\d+)?/;
 re.tl_opt_right = /(?:\d+(?:\.\d+)?)?:[a-zA-Z_](?:[\w\-]*[a-zA-Z_])?/;
 re.tl_bone = /(^\t)([a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)/;
 re.tl_slot = /(^\t)(@[a-zA-Z_\-][\w\-]*(?:\.[a-zA-Z_\-][\w\-]*)*)/;
@@ -190,8 +191,9 @@ function timeline_state(name, token, regex)
 	return line_state("anim-timeline-" + name, null, [
 		rule(token, regex),
 		rule("operator", "(?:\\{|\\}(?:\\[\\d+\\])?|-*>)"),
-		rule(["anim-timing", "operator"], "(" + re.tl_opt_full + ")" + "(-*>)"),
-		rule(["anim-timing", "operator"], "(" + re.tl_opt_left + ")" + "(-*>)"),
+		rule(["anim-timing", "operator"], "(" + re.tl_opt_full  + ")" + "(-*>)"),
+		rule(["anim-timing", "operator"], "(" + re.tl_opt_left  + ")" + "(-*>)"),
+		rule(["anim-timing", "operator"], "(" + re.tl_opt_mid   + ")" + "(-*>)"),
 		rule(["anim-timing", "operator"], "(" + re.tl_opt_right + ")" + "(-*>)")
 	]);
 }

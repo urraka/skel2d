@@ -360,7 +360,7 @@ properties:
 Syntax            | Description
 :----------------:| ----------------------------------
 `0:` or `0::`     | sets `frame`
-`:5:`             | sets `step`
+`:5:` or `:5`     | sets `step`
 `::li` or `:li`   | sets `easing`
 `0:5:` or `0:5`   | sets `frame` and `step`
 `0::li`           | sets `frame` and `easing`
