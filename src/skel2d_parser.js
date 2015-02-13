@@ -1143,7 +1143,7 @@ function match_animation_options(str, in_timeline)
 
 		res[0] !== undefined && !isNaN(x = parseFloat(res[0])) && ((res[0] = x)||1) || (res[0] = null);
 		res[1] !== undefined && !isNaN(x = parseFloat(res[1])) && ((res[1] = x)||1) || (res[1] = null);
-		res[2] !== undefined && (res[2] = find_easing_index(res[2]));
+		res[2] !== undefined && ((res[2] = find_easing_index(res[2]))||1)           || (res[2] = null);
 
 		if (in_timeline)
 			res[3] = res[3] !== undefined ? res[3].length : 0;
@@ -1168,6 +1168,8 @@ function process_animation(anim, bones, slots)
 	var result = {name: anim.name};
 	var fps = anim.fps || 20;
 	var stack = [];
+
+	result.raw = anim;
 
 	for (var i = 0, nitems = anim.items.length; i < nitems; i++)
 	{
