@@ -29,9 +29,9 @@ sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180,sample
     - [Animation timelines](#animation-timelines)
     - [Easing functions](#easing-functions)
   - **Skins**
-    - TODO...
-  - **Drawing order**
-    - TODO...
+    - [Defining skins](#defining-skins)
+  - **Draw order**
+    - [Defining the draw order](#defining-the-draw-order)
 
 #### Defining a skeleton hierarchy
 
@@ -483,3 +483,61 @@ These functions are used to convert a value `t` between `0` and `1` into a value
 is always used in a linear interpolation. So given two key frame values `a` and `b`, the function
 used to interpolate them will be `a + (b - a) * t'` (or `a + (b - c) * f(t)` where `f` is the
 easing function).
+
+#### Defining skins
+
+Skins are used to change the visuals of the skeleton by redefining its attachments.
+
+Example:
+
+```
+skeleton
+	bone
+		@ :circle d10 f#F00
+		@slot :rect w10 h10
+		@other[small] :ellipse w20 h10
+		@other[big] :ellipse w50 h20
+
+skin "skin-name"
+	@bone :circle d10 f#00F        # change to blue fill color
+	@slot                          # remove (attachment of type none)
+	@other[small] :ellipse w10 h5  # make it smaller
+```
+
+Notes:
+
+  - The last attachment is left untouched so it will appear as defined in the skeleton.
+  - All properties must be redefined when overriding an attachment, even if they don't change.
+
+The naming rules are the same as described in [path attachments](#path-attachments) notes. The
+following would have the same effect as the previous example:
+
+```
+skeleton
+	bone
+		@ :circle d10 f#F00
+		@slot :rect w10 h10
+		@other[small] :ellipse w20 h10
+		@other[big] :ellipse w50 h20
+
+skin "skin-name"
+	@skeleton.bone.bone[bone] :circle d10 f#00F
+	@skeleton.bone.slot[slot]
+	@skeleton.bone.other[small] :ellipse w10 h5
+```
+
+#### Defining the draw order
+
+By default, skeleton attachments are drawn in the order in which their owner slots are defined.
+This can be changed by defining a draw order:
+
+```
+order
+	@slot1
+	@slot2
+	# ...
+```
+
+It's simply a list of slots from the skeleton. The ones on top will be drawn first, so they will
+appear in the back of following slots. Unlisted slots will be pushed at the end of the list in the
+order they were defined in the skeleton.
