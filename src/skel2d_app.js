@@ -430,8 +430,6 @@ Application.prototype.draw = function()
 	for (var i = 0, n = viewports.length; i < n; i++)
 		viewports[i].draw(dt);
 
-	this.gfx.gl.finish();
-
 	if (this.playing_count > 0)
 		requestAnimationFrame(this.frame_callback);
 	else

@@ -1195,9 +1195,9 @@ function process_animation(anim, bones, slots)
 			var timeline = (timelines[prop] = []);
 			var commands = item.timelines[j].commands;
 
-			var frame  = item.frame  || anim.frame  || 0;
-			var step   = item.step   || anim.step   || 5;
-			var easing = item.easing || anim.easing || 0;
+			var frame  = "frame"  in item ? item.frame  : "frame"  in anim ? anim.frame  : 0;
+			var step   = "step"   in item ? item.step   : "step"   in anim ? anim.step   : 5;
+			var easing = "easing" in item ? item.easing : "easing" in anim ? anim.easing : 0;
 
 			var last_push = -1;
 			var last_value = 0;

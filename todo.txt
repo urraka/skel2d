@@ -17,6 +17,7 @@
 - ability to flatten easing functions (convert to a list of lerps)
 - handle context lost?
 
+x bug: default item easing doesnt seem to work
 x animation properties: :5 is highlighted but doesnt work
 x bug: undefined easing when doing :5:>
 x bug: zoom to fit doing weird stuff (not working deterministically as expected)
