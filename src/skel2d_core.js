@@ -961,7 +961,7 @@ Timeline.prototype.val_discrete = function(t0, t1, def)
 
 		var i = this.find(t1);
 
-		if (keyframes[i].time > t0)
+		if (keyframes[i].time >= t0) // TODO: think about that >=
 			return keyframes[i].value;
 	}
 

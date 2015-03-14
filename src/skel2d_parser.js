@@ -411,14 +411,14 @@ function parse(source)
 		{
 			var parent_name = name.substring(0, index);
 
-			if (find(bones, parent_name) === -1)
-				parent_bones.push({name: parent_name});
+			if (find(bones, parent_name) === -1 && parent_bones.indexOf(parent_name) === -1)
+				parent_bones.push(parent_name);
 		}
 	}
 
 	for (var i = 0, n = parent_bones.length; i < n; i++)
 	{
-		bones.push(parent_bones[i]);
+		bones.push({name: parent_bones[i]});
 		nbones++;
 	}
 
