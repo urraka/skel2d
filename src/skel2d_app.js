@@ -70,6 +70,7 @@ Application.prototype.create_dom = function(root)
 		left_panel: ((e = document.createElement("div")),    e.classList.add("sk2-left-panel"), e),
 		topbar:     ((e = document.createElement("div")),    e.classList.add("sk2-topbar"),     e),
 		ace:        ((e = document.createElement("div")),    e.classList.add("sk2-ace"),        e),
+		login:      ((e = document.createElement("div")),    e.classList.add("sk2-login"),      e),
 		help:       ((e = document.createElement("div")),    e.classList.add("sk2-help"),       e),
 		view_panel: ((e = document.createElement("div")),    e.classList.add("sk2-view-panel"), e),
 		overlay:    ((e = document.createElement("div")),    e.classList.add("sk2-overlay"),    e),
@@ -95,6 +96,7 @@ Application.prototype.create_dom = function(root)
 	elements.menu_right.appendChild(elements.menu_login);
 
 	elements.left_panel.appendChild(elements.topbar);
+	elements.left_panel.appendChild(elements.login);
 	elements.left_panel.appendChild(elements.ace);
 	elements.left_panel.appendChild(elements.help);
 
@@ -103,6 +105,15 @@ Application.prototype.create_dom = function(root)
 
 	elements.menu_help.setAttribute("href", "https://github.com/urraka/skel2d");
 	elements.menu_help.setAttribute("target", "_blank");
+
+	elements.login.innerHTML = "<ol>" +
+			"<li>Generate a GitHub personal access token " +
+				"<a href='https://github.com/settings/tokens/new' target='_blank'>" +
+					"https://github.com/settings/tokens/new</a><br/>" +
+				"(<b><i>gist</i></b> is the only scope required)</li>" +
+			"<li>Paste the generated access token here: <input id='sk2-gist-token' type='text' /> " +
+				"<span id='sk2-gist-login'>ok</span></li>"
+		"</ol>";
 
 	return elements;
 }
@@ -311,12 +322,17 @@ Application.prototype.set_viewports = function(cols, rows)
 Application.prototype.bind_events = function()
 {
 	var editor = this.editor;
+	var dom = this.dom;
 
 	window.addEventListener("resize", this.on_resize.bind(this));
 	window.addEventListener("beforeunload", this.on_beforeunload.bind(this));
 	window.addEventListener("hashchange", this.load_gist.bind(this));
 	editor.addEventListener("change", this.on_editor_change.bind(this));
 	editor.renderer.addEventListener("resize", this.on_editor_resize.bind(this));
+
+	dom.menu_login.addEventListener("click", function() {
+		dom.login.classList.toggle("visible");
+	});
 }
 
 Application.prototype.set_editor_size = function(n)

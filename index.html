@@ -41,6 +41,7 @@ html,body {margin:0;padding:0;width:100%;height:100%;}
 
 /* layout borders */
 .sk2-topbar {border-bottom:1px solid #000;}
+.sk2-login {border-bottom:1px solid #000;}
 .sk2-help {border-top:1px solid #000;}
 .sk2-viewport {border-left:1px solid #000;border-bottom:1px solid #000;}
 .sk2-view-row:last-child .sk2-viewport {border-bottom:0 none;}
@@ -52,6 +53,15 @@ html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-topbar span,.sk2-topbar a
 {display:inline-block;cursor:pointer;text-decoration:none;color:#000;margin-right:6px;}
 .sk2-topbar span:hover,.sk2-topbar a:hover {text-decoration:underline;}
+
+/* login */
+.sk2-login {display:none;}
+.sk2-login.visible {display:block;}
+.sk2-login ol {padding-right:15px;}
+.sk2-login a {color:blue;text-decoration:none;}
+.sk2-login a:hover {text-decoration:underline;}
+#sk2-gist-login {color:blue;cursor:pointer;}
+#sk2-gist-login:hover {text-decoration:underline;}
 
 /* viewport controls */
 .sk2-viewport > div {position:absolute;display:none;}
