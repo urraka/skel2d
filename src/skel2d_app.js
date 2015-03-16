@@ -73,12 +73,26 @@ Application.prototype.create_dom = function(root)
 		help:       ((e = document.createElement("div")),    e.classList.add("sk2-help"),       e),
 		view_panel: ((e = document.createElement("div")),    e.classList.add("sk2-view-panel"), e),
 		overlay:    ((e = document.createElement("div")),    e.classList.add("sk2-overlay"),    e),
-		canvas:     ((e = document.createElement("canvas")), e.classList.add("sk2-canvas"),     e)
+		canvas:     ((e = document.createElement("canvas")), e.classList.add("sk2-canvas"),     e),
+		menu_new:   ((e = document.createElement("span")),  (e.textContent = "new"),            e),
+		menu_save:  ((e = document.createElement("span")),  (e.textContent = "save"),           e),
+		menu_login: ((e = document.createElement("span")),  (e.textContent = "login"),          e),
+		menu_help:  ((e = document.createElement("a")),     (e.textContent = "help"),           e),
+		menu_user:  ((e = document.createElement("b")), e),
+		menu_right: ((e = document.createElement("div")), e)
 	};
 
 	root.classList.add("sk2-app");
 	root.appendChild(elements.left_panel);
 	root.appendChild(elements.view_panel);
+
+	elements.topbar.appendChild(elements.menu_right);
+	elements.topbar.appendChild(elements.menu_new);
+	elements.topbar.appendChild(elements.menu_save);
+	elements.topbar.appendChild(elements.menu_help);
+
+	elements.menu_right.appendChild(elements.menu_user);
+	elements.menu_right.appendChild(elements.menu_login);
 
 	elements.left_panel.appendChild(elements.topbar);
 	elements.left_panel.appendChild(elements.ace);
@@ -86,6 +100,9 @@ Application.prototype.create_dom = function(root)
 
 	elements.view_panel.appendChild(elements.canvas);
 	elements.view_panel.appendChild(elements.overlay);
+
+	elements.menu_help.setAttribute("href", "https://github.com/urraka/skel2d");
+	elements.menu_help.setAttribute("target", "_blank");
 
 	return elements;
 }

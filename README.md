@@ -2,6 +2,8 @@
 
 2D skeletal animation tool (WIP)
 
+http://urraka.github.io/skel2d/
+
 This is an experimental animation tool in which you define a skeleton and animations in a custom
 format while getting a live preview of the end result rendered with webgl.
 
