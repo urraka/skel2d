@@ -43,6 +43,9 @@ function Application(root)
 	this.skeleton_data = null;
 	this.skeleton = null;
 
+	this.gist_user = null;
+	this.gist_document = null;
+
 	this.time = 0;
 	this.invalidated = false;
 	this.frame_callback = this.draw.bind(this);
@@ -59,8 +62,66 @@ function Application(root)
 	this.gfx.scissor_enable(true);
 
 	this.set_editor_size(82);
+	this.login();
 	this.load();
 	this.editor.focus();
+}
+
+Application.prototype.login = function(token)
+{
+	if (token)
+	{
+		var req = new XMLHttpRequest();
+		req.open("GET", "https://api.github.com/user");
+		req.setRequestHeader("Accept", "application/vnd.github.v3+json");
+		req.setRequestHeader("Authorization", "token " + token);
+
+		req.onloadend = function()
+		{
+			var scopes = (req.getResponseHeader("X-OAuth-Scopes") || "").split(",");
+
+			if (req.status === 200 && scopes.some(function(s){return s.trim() === "gist";}))
+			{
+				var response = JSON.parse(req.responseText);
+
+				localStorage.setItem("sk2-gist-user", JSON.stringify({
+					"token": token,
+					"user_id": response.id,
+					"username": response.login
+				}));
+
+				this.dom.login.classList.remove("visible");
+				this.login();
+			}
+			else
+			{
+				console.log(req.responseText);
+			}
+		}.bind(this);
+
+		req.send();
+	}
+	else
+	{
+		var gist_user = localStorage.getItem("sk2-gist-user");
+
+		if (gist_user)
+		{
+			this.gist_user = JSON.parse(gist_user);
+			this.dom.menu_user.textContent = this.gist_user.username;
+			this.dom.menu_login.textContent = "(logout)";
+			this.dom.gist_token.value = this.gist_user.token;
+		}
+	}
+}
+
+Application.prototype.logout = function()
+{
+	localStorage.removeItem("sk2-gist-user");
+
+	this.gist_user = null;
+	this.dom.menu_user.textContent = "";
+	this.dom.menu_login.textContent = "login";
 }
 
 Application.prototype.create_dom = function(root)
@@ -114,6 +175,9 @@ Application.prototype.create_dom = function(root)
 			"<li>Paste the generated access token here: <input id='sk2-gist-token' type='text' /> " +
 				"<span id='sk2-gist-login'>ok</span></li>"
 		"</ol>";
+
+	elements.gist_token = document.getElementById("sk2-gist-token");
+	elements.gist_login = document.getElementById("sk2-gist-login");
 
 	return elements;
 }
@@ -322,7 +386,6 @@ Application.prototype.set_viewports = function(cols, rows)
 Application.prototype.bind_events = function()
 {
 	var editor = this.editor;
-	var dom = this.dom;
 
 	window.addEventListener("resize", this.on_resize.bind(this));
 	window.addEventListener("beforeunload", this.on_beforeunload.bind(this));
@@ -330,9 +393,20 @@ Application.prototype.bind_events = function()
 	editor.addEventListener("change", this.on_editor_change.bind(this));
 	editor.renderer.addEventListener("resize", this.on_editor_resize.bind(this));
 
-	dom.menu_login.addEventListener("click", function() {
-		dom.login.classList.toggle("visible");
-	});
+	this.dom.menu_login.addEventListener("click", function()
+	{
+		if (this.gist_user)
+			this.logout();
+		else
+			this.dom.login.classList.toggle("visible");
+	}.bind(this));
+
+	this.dom.gist_login.addEventListener("click", function() {
+		var token = this.dom.gist_token.value;
+
+		if (token)
+			this.login(token);
+	}.bind(this));
 }
 
 Application.prototype.set_editor_size = function(n)
