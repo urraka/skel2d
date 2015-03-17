@@ -466,7 +466,7 @@ anim "test" 20fps
 		@ red -> blue -> red
 ```
 
-See it in action: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180
+See it in action: http://urraka.github.io/skel2d/#3a69c6d2c25e67f9950a
 
 #### Easing functions
 
