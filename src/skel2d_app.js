@@ -14,23 +14,6 @@ function find(list, name)
 	return -1;
 }
 
-function load_gist(id, filename, on_load)
-{
-	var script = document.createElement("script");
-
-	window["gist_callback"] = function(data)
-	{
-		delete window["gist_callback"];
-		script.parentNode.removeChild(script);
-
-		if (filename in data.data.files)
-			on_load(data.data.files[filename].content);
-	};
-
-	script.setAttribute("src", "//api.github.com/gists/" + id + "?callback=gist_callback");
-	document.body.appendChild(script);
-}
-
 // --- Application ---
 
 function Application(root)
@@ -45,6 +28,10 @@ function Application(root)
 
 	this.gist_user = null;
 	this.gist_document = null;
+	this.is_modified = false;
+	this.modified_count = 0;
+	this.prevent_hashchange = false;
+	this.prevent_save = false;
 
 	this.time = 0;
 	this.invalidated = false;
@@ -124,6 +111,237 @@ Application.prototype.logout = function()
 	this.dom.menu_login.textContent = "login";
 }
 
+Application.prototype.save_session = function()
+{
+	var session = {
+		code: this.editor.getValue(),
+		gist_document: this.gist_document,
+		is_modified: this.is_modified,
+		viewports: {
+			cols: this.dom.overlay.firstChild.childNodes.length,
+			rows: this.dom.overlay.childNodes.length,
+			state: []
+		}
+	};
+
+	for (var i = 0; i < this.viewports.length; i++)
+	{
+		var viewport = this.viewports[i];
+
+		session.viewports.state.push({
+			animation: viewport.animation_name,
+			skin: viewport.skin_name,
+			bones: viewport.bones_visible,
+			label: viewport.label_visible,
+			scale: viewport.scale,
+			translation: {x: viewport.translation_x, y: viewport.translation_y}
+		});
+	}
+
+	localStorage.setItem("sk2-session", JSON.stringify(session));
+}
+
+Application.prototype.clear_session = function()
+{
+	localStorage.removeItem("sk2-session");
+}
+
+Application.prototype.load_session = function()
+{
+	var session = localStorage.getItem("sk2-session");
+
+	if (session)
+	{
+		var session = JSON.parse(session);
+
+		this.gist_document = session.gist_document;
+
+		if (this.gist_document)
+		{
+			this.prevent_hashchange = true;
+			location.hash = this.gist_document.id;
+		}
+
+		this.editor.setValue(session.code);
+		this.editor.clearSelection(-1);
+		this.is_modified = session.is_modified;
+		this.update();
+
+		var viewports = session.viewports;
+
+		this.set_viewports(viewports.cols, viewports.rows);
+
+		for (var i = 0; i < viewports.state.length; i++)
+		{
+			var state = viewports.state[i];
+			var viewport = this.viewports[i];
+
+			viewport.set_animation(state.animation);
+			viewport.set_skin(state.skin);
+			viewport.show_bones(state.bones);
+			viewport.show_label(state.label);
+			viewport.set_scale(state.scale);
+			viewport.set_translation(state.translation.x, state.translation.y);
+		}
+	}
+}
+
+Application.prototype.load_gist = function(id)
+{
+	var req = new XMLHttpRequest();
+	req.open("GET", "https://api.github.com/gists/" + id);
+	req.setRequestHeader("Accept", "application/vnd.github.v3+json");
+
+	req.onloadend = function()
+	{
+		if (req.status === 200)
+		{
+			var data = JSON.parse(req.responseText);
+
+			if (data.files && data.files[".skel2d"])
+			{
+				this.editor.setValue(data.files[".skel2d"].content);
+				this.editor.clearSelection(-1);
+				this.skeleton_data = null;
+				this.skeleton = null;
+				this.is_modified = false;
+				this.modified_count = 0;
+				this.reset_viewports();
+
+				this.gist_document = {
+					"id": id,
+					"owner_id": data.owner.id
+				};
+
+				this.update();
+
+				var animations = this.skeleton_data.animations;
+				var viewports = this.viewports;
+
+				for (var i = 0, n = viewports.length; i < n; i++)
+				{
+					viewports[i].set_skin("default");
+					viewports[i].set_animation(null);
+					viewports[i].zoom_to_fit();
+				}
+
+				var n = Math.min(animations.length, viewports.length - 1);
+
+				for (var i = 0; i < n; i++)
+					viewports[i + 1].set_animation(animations[i].name);
+			}
+			else
+			{
+				console.log("gist does not have a .skel2d file");
+			}
+		}
+		else
+		{
+			console.log(req.responseText);
+		}
+	}.bind(this);
+
+	req.send();
+}
+
+Application.prototype.on_new = function()
+{
+	this.editor.setValue("");
+	this.skeleton_data = null;
+	this.skeleton = null;
+	this.is_modified = false;
+	this.modified_count = 0;
+	this.gist_document = null;
+	this.clear_session();
+	this.reset_viewports();
+	this.prevent_hashchange = true;
+
+	location.hash = "";
+}
+
+Application.prototype.on_save = function()
+{
+	if (this.prevent_save || !this.is_modified)
+	{
+		// TODO: show message
+		return;
+	}
+
+	this.prevent_save = true;
+
+	var update_gist = false;
+
+	if (this.gist_user && this.gist_document && this.gist_document.owner_id === this.gist_user.user_id)
+		update_gist = true;
+
+	var req = new XMLHttpRequest();
+
+	if (update_gist)
+		req.open("PATCH", "https://api.github.com/gists/" + this.gist_document.id);
+	else
+		req.open("POST", "https://api.github.com/gists");
+
+	req.setRequestHeader("Accept", "application/vnd.github.v3+json");
+
+	if (this.gist_user)
+		req.setRequestHeader("Authorization", "token " + this.gist_user.token);
+
+	var data = update_gist ?
+		{"files": {".skel2d": {"content": this.editor.getValue()}}} :
+		{
+			"public": this.gist_user ? false : true,
+			"files": {".skel2d": {"content": this.editor.getValue()}}
+		};
+
+	var modified_count = this.modified_count;
+
+	req.onloadend = function()
+	{
+		this.prevent_save = false;
+
+		if (req.status === 200 || req.status === 201)
+		{
+			// TODO: show message
+
+			var data = JSON.parse(req.responseText);
+
+			if (this.modified_count === modified_count)
+				this.is_modified = false;
+
+			if (!update_gist)
+			{
+				this.gist_document = {id: data.id, owner_id: data.owner ? data.owner.id : 0};
+				this.prevent_hashchange = true;
+				location.hash = data.id;
+			}
+		}
+		else
+		{
+			// TODO: show message
+			console.log(req.responseText);
+		}
+	}.bind(this);
+
+	req.send(JSON.stringify(data));
+}
+
+Application.prototype.reset_viewports = function()
+{
+	this.set_viewports(2, 2);
+
+	for (var i = 0; i < this.viewports.length; i++)
+	{
+		var viewport = this.viewports[i];
+
+		viewport.set_translation(0, 0);
+		viewport.set_scale(1);
+		viewport.set_skin("default");
+		viewport.set_animation(null);
+		viewport.show_bones(true);
+		viewport.show_label(true);
+	}
+}
+
 Application.prototype.create_dom = function(root)
 {
 	var e, elements = {
@@ -186,70 +404,12 @@ Application.prototype.load = function()
 {
 	if (window.location.hash.length > 1)
 	{
-		this.load_gist();
+		this.load_gist(window.location.hash.substr(1));
 	}
 	else
 	{
-		var code = localStorage.getItem("testcode") || "";
-
-		if (code.length > 0)
-		{
-			this.editor.setValue(code);
-			this.editor.clearSelection();
-			this.on_load();
-		}
+		this.load_session();
 	}
-}
-
-Application.prototype.load_gist = function()
-{
-	var hash = window.location.hash;
-
-	if (hash.length > 1)
-	{
-		var info = hash.substr(1).split(",");
-
-		if (info.length === 2)
-		{
-			load_gist(info[0], info[1], function(code)
-			{
-				if (code.length > 0)
-				{
-					this.editor.setValue(code);
-					this.editor.clearSelection();
-					this.on_load();
-				}
-			}.bind(this));
-		}
-
-		location.hash = "";
-	}
-}
-
-Application.prototype.on_load = function()
-{
-	if (this.update_timer !== null)
-	{
-		clearTimeout(this.update_timer);
-		this.update_timer = null;
-	}
-
-	this.update();
-
-	var animations = this.skeleton_data.animations;
-	var viewports = this.viewports;
-
-	for (var i = 0, n = viewports.length; i < n; i++)
-	{
-		viewports[i].set_skin("default");
-		viewports[i].set_animation(null);
-		viewports[i].zoom_to_fit();
-	}
-
-	var n = Math.min(animations.length, viewports.length - 1);
-
-	for (var i = 0; i < n; i++)
-		viewports[i + 1].set_animation(animations[i].name);
 }
 
 Application.prototype.create_editor = function()
@@ -389,9 +549,12 @@ Application.prototype.bind_events = function()
 
 	window.addEventListener("resize", this.on_resize.bind(this));
 	window.addEventListener("beforeunload", this.on_beforeunload.bind(this));
-	window.addEventListener("hashchange", this.load_gist.bind(this));
+	window.addEventListener("hashchange", this.on_hashchange.bind(this));
 	editor.addEventListener("change", this.on_editor_change.bind(this));
 	editor.renderer.addEventListener("resize", this.on_editor_resize.bind(this));
+
+	this.dom.menu_new.addEventListener("click", this.on_new.bind(this));
+	this.dom.menu_save.addEventListener("click", this.on_save.bind(this));
 
 	this.dom.menu_login.addEventListener("click", function()
 	{
@@ -407,6 +570,18 @@ Application.prototype.bind_events = function()
 		if (token)
 			this.login(token);
 	}.bind(this));
+}
+
+Application.prototype.on_hashchange = function()
+{
+	if (this.prevent_hashchange)
+	{
+		this.prevent_hashchange = false;
+		return;
+	}
+
+	if (location.hash.length > 1)
+		this.load_gist(location.hash.substr(1));
 }
 
 Application.prototype.set_editor_size = function(n)
@@ -438,14 +613,16 @@ Application.prototype.on_editor_change = function()
 		clearTimeout(this.update_timer);
 
 	this.update_timer = setTimeout(this.update_trigger, 1000);
+	this.is_modified = true;
+	this.modified_count++;
 }
 
 Application.prototype.on_beforeunload = function()
 {
 	var code = this.editor.getValue();
 
-	if (/\S/.test(code))
-		localStorage.setItem("testcode", this.editor.getValue());
+	if (/\S/.test(code) && this.is_modified)
+		this.save_session();
 }
 
 Application.prototype.on_resize = function()
@@ -502,7 +679,9 @@ Application.prototype.get_animation = function(name)
 
 Application.prototype.update = function()
 {
+	clearTimeout(this.update_timer);
 	this.update_timer = null;
+
 	this.skeleton_data = skel2d_parse(this.editor.getValue());
 	this.skeleton = new sk2.Skeleton(this.skeleton_data.skeleton);
 

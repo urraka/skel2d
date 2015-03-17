@@ -929,7 +929,7 @@ function parse_path_command(tokens)
 			break;
 
 		case "B":
-			if (n >= 3 && (m1 = tk[1].match(r)) && (m2 = tk[2].match(r)) && (m3 = tk[3].match(r)))
+			if (n >= 4 && (m1 = tk[1].match(r)) && (m2 = tk[2].match(r)) && (m3 = tk[3].match(r)))
 				return [ch,
 					m1[1], m1[2], m1[3] || null,
 					m2[1], m2[2], m2[3] || null,

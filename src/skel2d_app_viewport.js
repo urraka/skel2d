@@ -426,11 +426,22 @@ Viewport.prototype.zoom_to_fit = function()
 	else
 		zoom = 0.8 * (H / h);
 
-	zoom = zoom >= 1 ? 0.5 + (zoom - 1) / 6 : 0.5 - ((1 / zoom) - 1) / 6;
+	this.set_scale(zoom);
+	this.set_translation(-(x0 + 0.5 * w) * this.scale, -(y0 + 0.5 * h) * this.scale);
+}
 
+Viewport.prototype.set_scale = function(scale)
+{
+	var zoom = scale = scale >= 1 ? 0.5 + (scale - 1) / 6 : 0.5 - ((1 / scale) - 1) / 6;
 	this.dom.zoom_slider.value = Math.max(0, Math.min(1, zoom));
-	this.translation_x = -(x0 + 0.5 * w) * this.scale;
-	this.translation_y = -(y0 + 0.5 * h) * this.scale;
+	this.app.invalidate();
+}
+
+Viewport.prototype.set_translation = function(x, y)
+{
+	this.translation_x = x;
+	this.translation_y = y;
+	this.app.invalidate();
 }
 
 Viewport.prototype.draw = function(dt)
