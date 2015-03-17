@@ -620,9 +620,7 @@ Application.prototype.on_editor_change = function()
 Application.prototype.on_beforeunload = function()
 {
 	var code = this.editor.getValue();
-
-	if (/\S/.test(code) && this.is_modified)
-		this.save_session();
+	this.save_session();
 }
 
 Application.prototype.on_resize = function()
