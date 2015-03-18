@@ -193,7 +193,9 @@ Application.prototype.load_session = function()
 		this.editor.clearSelection(-1);
 		this.is_modified = session.is_modified;
 
-		if (!this.is_modified)
+		if (this.is_modified)
+			this.dom.menu_save.classList.remove("disabled");
+		else
 			this.dom.menu_save.classList.add("disabled");
 
 		this.update();
@@ -478,6 +480,8 @@ Application.prototype.create_dom = function(root)
 
 Application.prototype.load = function()
 {
+	this.dom.menu_save.classList.add("disabled");
+
 	if (location.hash.length > 1)
 	{
 		var gist_id = location.hash.substr(1);
