@@ -46,6 +46,11 @@ html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-viewport {border-left:1px solid #000;border-bottom:1px solid #000;}
 .sk2-view-row:last-child .sk2-viewport {border-bottom:0 none;}
 
+/* msgbox */
+.sk2-msgbox {display:none;position:absolute;margin:0 auto;left:0;right:0;top:0px;padding:5px 10px;}
+.sk2-msgbox {width:500px;border:1px solid #F00;z-index:100;background:#FFA;font-weight:bold;}
+.sk2-msgbox {text-align:center;box-shadow: 0px 0px 5px 2px rgba(255,0,0,0.5);}
+
 /* topbar */
 .sk2-topbar {line-height:20px;padding-left:6px;}
 .sk2-topbar > div {float:right;height:100%;}
@@ -53,6 +58,7 @@ html,body {margin:0;padding:0;width:100%;height:100%;}
 .sk2-topbar span,.sk2-topbar a
 {display:inline-block;cursor:pointer;text-decoration:none;color:#000;margin-right:6px;}
 .sk2-topbar span:hover,.sk2-topbar a:hover {text-decoration:underline;}
+.sk2-topbar span.disabled {color:#999;text-decoration:none;cursor:default;}
 
 /* login */
 .sk2-login {display:none;}

@@ -31,7 +31,6 @@ function Application(root)
 	this.is_modified = false;
 	this.modified_count = 0;
 	this.prevent_hashchange = false;
-	this.prevent_save = false;
 
 	this.time = 0;
 	this.invalidated = false;
@@ -82,7 +81,7 @@ Application.prototype.login = function(token)
 			}
 			else
 			{
-				console.log(req.responseText);
+				console.log(req);
 			}
 		}.bind(this);
 
@@ -165,6 +164,10 @@ Application.prototype.load_session = function()
 		this.editor.setValue(session.code);
 		this.editor.clearSelection(-1);
 		this.is_modified = session.is_modified;
+
+		if (!this.is_modified)
+			this.dom.menu_save.classList.add("disabled");
+
 		this.update();
 
 		var viewports = session.viewports;
@@ -188,12 +191,23 @@ Application.prototype.load_session = function()
 
 Application.prototype.load_gist = function(id)
 {
+	this.dom.menu_new.classList.add("disabled");
+	this.dom.menu_save.classList.add("disabled");
+
 	var req = new XMLHttpRequest();
 	req.open("GET", "https://api.github.com/gists/" + id);
 	req.setRequestHeader("Accept", "application/vnd.github.v3+json");
 
+	if (this.gist_user)
+		req.setRequestHeader("Authorization", "token " + this.gist_user.token);
+
 	req.onloadend = function()
 	{
+		this.dom.menu_new.classList.remove("disabled");
+
+		if (this.is_modified)
+			this.dom.menu_save.classList.remove("disabled");
+
 		if (req.status === 200)
 		{
 			var data = JSON.parse(req.responseText);
@@ -207,6 +221,7 @@ Application.prototype.load_gist = function(id)
 				this.is_modified = false;
 				this.modified_count = 0;
 				this.reset_viewports();
+				this.dom.menu_save.classList.add("disabled");
 
 				this.gist_document = {
 					"id": id,
@@ -232,12 +247,13 @@ Application.prototype.load_gist = function(id)
 			}
 			else
 			{
-				console.log("gist does not have a .skel2d file");
+				console.log("Gist does not have a .skel2d file.");
+				console.log(req);
 			}
 		}
 		else
 		{
-			console.log(req.responseText);
+			console.log(req);
 		}
 	}.bind(this);
 
@@ -246,6 +262,9 @@ Application.prototype.load_gist = function(id)
 
 Application.prototype.on_new = function()
 {
+	if (this.dom.menu_new.classList.contains("disabled"))
+		return;
+
 	this.editor.setValue("");
 	this.skeleton_data = null;
 	this.skeleton = null;
@@ -255,26 +274,24 @@ Application.prototype.on_new = function()
 	this.clear_session();
 	this.reset_viewports();
 	this.prevent_hashchange = true;
+	this.dom.menu_save.classList.add("disabled");
 
 	location.hash = "";
 }
 
 Application.prototype.on_save = function()
 {
-	if (this.prevent_save || !this.is_modified)
-	{
-		// TODO: show message
+	if (this.dom.menu_save.classList.contains("disabled"))
 		return;
-	}
 
-	this.prevent_save = true;
+	this.dom.menu_new.classList.add("disabled");
+	this.dom.menu_save.classList.add("disabled");
 
+	var req = new XMLHttpRequest();
 	var update_gist = false;
 
 	if (this.gist_user && this.gist_document && this.gist_document.owner_id === this.gist_user.user_id)
 		update_gist = true;
-
-	var req = new XMLHttpRequest();
 
 	if (update_gist)
 		req.open("PATCH", "https://api.github.com/gists/" + this.gist_document.id);
@@ -297,28 +314,30 @@ Application.prototype.on_save = function()
 
 	req.onloadend = function()
 	{
-		this.prevent_save = false;
+		this.dom.menu_new.classList.remove("disabled");
+		this.dom.menu_save.classList.remove("disabled");
 
 		if (req.status === 200 || req.status === 201)
 		{
-			// TODO: show message
-
 			var data = JSON.parse(req.responseText);
 
 			if (this.modified_count === modified_count)
+			{
 				this.is_modified = false;
+				this.dom.menu_save.classList.add("disabled");
+			}
 
 			if (!update_gist)
 			{
 				this.gist_document = {id: data.id, owner_id: data.owner ? data.owner.id : 0};
 				this.prevent_hashchange = true;
 				location.hash = data.id;
+				history.pushState(null, "", "#" + data.id);
 			}
 		}
 		else
 		{
-			// TODO: show message
-			console.log(req.responseText);
+			console.log(req);
 		}
 	}.bind(this);
 
@@ -347,6 +366,7 @@ Application.prototype.create_dom = function(root)
 	var e, elements = {
 		root: root,
 		left_panel: ((e = document.createElement("div")),    e.classList.add("sk2-left-panel"), e),
+		msgbox:     ((e = document.createElement("div")),    e.classList.add("sk2-msgbox"),     e),
 		topbar:     ((e = document.createElement("div")),    e.classList.add("sk2-topbar"),     e),
 		ace:        ((e = document.createElement("div")),    e.classList.add("sk2-ace"),        e),
 		login:      ((e = document.createElement("div")),    e.classList.add("sk2-login"),      e),
@@ -365,6 +385,7 @@ Application.prototype.create_dom = function(root)
 	root.classList.add("sk2-app");
 	root.appendChild(elements.left_panel);
 	root.appendChild(elements.view_panel);
+	root.appendChild(elements.msgbox);
 
 	elements.topbar.appendChild(elements.menu_right);
 	elements.topbar.appendChild(elements.menu_new);
@@ -403,13 +424,9 @@ Application.prototype.create_dom = function(root)
 Application.prototype.load = function()
 {
 	if (window.location.hash.length > 1)
-	{
 		this.load_gist(window.location.hash.substr(1));
-	}
 	else
-	{
 		this.load_session();
-	}
 }
 
 Application.prototype.create_editor = function()
@@ -580,8 +597,7 @@ Application.prototype.on_hashchange = function()
 		return;
 	}
 
-	if (location.hash.length > 1)
-		this.load_gist(location.hash.substr(1));
+	location.reload();
 }
 
 Application.prototype.set_editor_size = function(n)
@@ -611,6 +627,9 @@ Application.prototype.on_editor_change = function()
 {
 	if (this.update_timer !== null)
 		clearTimeout(this.update_timer);
+
+	if (!this.is_modified && !this.dom.menu_new.classList.contains("disabled"))
+		this.dom.menu_save.classList.remove("disabled");
 
 	this.update_timer = setTimeout(this.update_trigger, 1000);
 	this.is_modified = true;
