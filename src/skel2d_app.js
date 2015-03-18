@@ -81,7 +81,11 @@ Application.prototype.login = function(token)
 			}
 			else
 			{
-				console.log(req);
+				console.log({
+					status: req.status,
+					headers: req.getAllResponseHeaders(),
+					response: req.responseText
+				});
 			}
 		}.bind(this);
 
@@ -248,12 +252,21 @@ Application.prototype.load_gist = function(id)
 			else
 			{
 				console.log("Gist does not have a .skel2d file.");
-				console.log(req);
+
+				console.log({
+					status: req.status,
+					headers: req.getAllResponseHeaders(),
+					response: req.responseText
+				});
 			}
 		}
 		else
 		{
-			console.log(req);
+			console.log({
+				status: req.status,
+				headers: req.getAllResponseHeaders(),
+				response: req.responseText
+			});
 		}
 	}.bind(this);
 
@@ -337,7 +350,11 @@ Application.prototype.on_save = function()
 		}
 		else
 		{
-			console.log(req);
+			console.log({
+				status: req.status,
+				headers: req.getAllResponseHeaders(),
+				response: req.responseText
+			});
 		}
 	}.bind(this);
 
@@ -423,10 +440,33 @@ Application.prototype.create_dom = function(root)
 
 Application.prototype.load = function()
 {
-	if (window.location.hash.length > 1)
-		this.load_gist(window.location.hash.substr(1));
+	if (location.hash.length > 1)
+	{
+		var gist_id = location.hash.substr(1);
+
+		if (this.gist_user)
+		{
+			var session = localStorage.getItem("sk2-session");
+
+			if (session)
+			{
+				var session = JSON.parse(session);
+				var gistdoc = session.gist_document;
+
+				if (gistdoc && gistdoc.id === gist_id && gistdoc.owner_id === this.gist_user.user_id)
+				{
+					this.load_session();
+					return;
+				}
+			}
+		}
+
+		this.load_gist(gist_id);
+	}
 	else
+	{
 		this.load_session();
+	}
 }
 
 Application.prototype.create_editor = function()
@@ -638,7 +678,6 @@ Application.prototype.on_editor_change = function()
 
 Application.prototype.on_beforeunload = function()
 {
-	var code = this.editor.getValue();
 	this.save_session();
 }
 
