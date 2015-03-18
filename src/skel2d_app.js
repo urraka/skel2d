@@ -259,7 +259,7 @@ Application.prototype.load_gist = function(id)
 
 				this.gist_document = {
 					"id": id,
-					"owner_id": data.owner.id
+					"owner_id": data.owner ? data.owner.id : 0
 				};
 
 				this.update();
