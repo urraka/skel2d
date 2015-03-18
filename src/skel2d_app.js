@@ -165,7 +165,7 @@ Application.prototype.load_session = function()
 			location.hash = this.gist_document.id;
 		}
 
-		this.editor.setValue(session.code);
+		this.editor.session.setValue(session.code);
 		this.editor.clearSelection(-1);
 		this.is_modified = session.is_modified;
 
@@ -218,7 +218,7 @@ Application.prototype.load_gist = function(id)
 
 			if (data.files && data.files[".skel2d"])
 			{
-				this.editor.setValue(data.files[".skel2d"].content);
+				this.editor.session.setValue(data.files[".skel2d"].content);
 				this.editor.clearSelection(-1);
 				this.skeleton_data = null;
 				this.skeleton = null;
@@ -278,7 +278,7 @@ Application.prototype.on_new = function()
 	if (this.dom.menu_new.classList.contains("disabled"))
 		return;
 
-	this.editor.setValue("");
+	this.editor.session.setValue("");
 	this.skeleton_data = null;
 	this.skeleton = null;
 	this.is_modified = false;
