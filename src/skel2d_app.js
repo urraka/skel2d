@@ -31,6 +31,7 @@ function Application(root)
 	this.is_modified = false;
 	this.modified_count = 0;
 	this.prevent_hashchange = false;
+	this.msgbox_timer = null;
 
 	this.time = 0;
 	this.invalidated = false;
@@ -53,6 +54,24 @@ function Application(root)
 	this.editor.focus();
 }
 
+Application.prototype.show_message = function(text, timeout)
+{
+	clearTimeout(this.msgbox_timer);
+
+	if (!text)
+	{
+		this.dom.msgbox.style.display = "none";
+	}
+	else
+	{
+		this.dom.msgbox.textContent = text;
+		this.dom.msgbox.style.display = "block";
+
+		if (timeout)
+			this.msgbox_timer = setTimeout(this.show_message.bind(this, null), timeout);
+	}
+}
+
 Application.prototype.login = function(token)
 {
 	if (token)
@@ -61,6 +80,8 @@ Application.prototype.login = function(token)
 		req.open("GET", "https://api.github.com/user");
 		req.setRequestHeader("Accept", "application/vnd.github.v3+json");
 		req.setRequestHeader("Authorization", "token " + token);
+
+		this.show_message("Performing login...");
 
 		req.onloadend = function()
 		{
@@ -78,9 +99,12 @@ Application.prototype.login = function(token)
 
 				this.dom.login.classList.remove("visible");
 				this.login();
+				this.show_message("Logged in as " + response.login, 1000);
 			}
 			else
 			{
+				this.show_message("Login failed! (see console for more info)");
+
 				console.log({
 					status: req.status,
 					headers: req.getAllResponseHeaders(),
@@ -205,6 +229,8 @@ Application.prototype.load_gist = function(id)
 	if (this.gist_user)
 		req.setRequestHeader("Authorization", "token " + this.gist_user.token);
 
+	this.show_message("Loading...");
+
 	req.onloadend = function()
 	{
 		this.dom.menu_new.classList.remove("disabled");
@@ -218,6 +244,8 @@ Application.prototype.load_gist = function(id)
 
 			if (data.files && data.files[".skel2d"])
 			{
+				this.show_message(null);
+
 				this.editor.session.setValue(data.files[".skel2d"].content);
 				this.editor.clearSelection(-1);
 				this.skeleton_data = null;
@@ -251,7 +279,7 @@ Application.prototype.load_gist = function(id)
 			}
 			else
 			{
-				console.log("Gist does not have a .skel2d file.");
+				this.show_message("Gist does not have a .skel2d file");
 
 				console.log({
 					status: req.status,
@@ -262,6 +290,8 @@ Application.prototype.load_gist = function(id)
 		}
 		else
 		{
+			this.show_message("Failed to load gist " + id + " (see console for more info)");
+
 			console.log({
 				status: req.status,
 				headers: req.getAllResponseHeaders(),
@@ -325,6 +355,8 @@ Application.prototype.on_save = function()
 
 	var modified_count = this.modified_count;
 
+	this.show_message("Saving...");
+
 	req.onloadend = function()
 	{
 		this.dom.menu_new.classList.remove("disabled");
@@ -347,9 +379,13 @@ Application.prototype.on_save = function()
 				location.hash = data.id;
 				history.pushState(null, "", "#" + data.id);
 			}
+
+			this.show_message("Saving... done!", 1000);
 		}
 		else
 		{
+			this.show_message("Failed to save gist! (see console for more info)");
+
 			console.log({
 				status: req.status,
 				headers: req.getAllResponseHeaders(),
@@ -434,6 +470,8 @@ Application.prototype.create_dom = function(root)
 
 	elements.gist_token = document.getElementById("sk2-gist-token");
 	elements.gist_login = document.getElementById("sk2-gist-login");
+
+	elements.msgbox.setAttribute("title", "Dismiss");
 
 	return elements;
 }
@@ -626,6 +664,10 @@ Application.prototype.bind_events = function()
 
 		if (token)
 			this.login(token);
+	}.bind(this));
+
+	this.dom.msgbox.addEventListener("click", function() {
+		this.show_message(null);
 	}.bind(this));
 }
 
