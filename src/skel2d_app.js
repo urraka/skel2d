@@ -351,6 +351,7 @@ Application.prototype.on_save = function()
 	var data = update_gist ?
 		{"files": {".skel2d": {"content": this.editor.getValue()}}} :
 		{
+			"description": "Created through Skel2D https://github.com/urraka/skel2d",
 			"public": this.gist_user ? false : true,
 			"files": {".skel2d": {"content": this.editor.getValue()}}
 		};
@@ -380,6 +381,17 @@ Application.prototype.on_save = function()
 				this.prevent_hashchange = true;
 				location.hash = data.id;
 				history.pushState(null, "", "#" + data.id);
+
+				if (this.gist_user)
+				{
+					var data = {"description": "http://urraka.github.io/skel2d/#" + this.gist_document.id};
+					var req2 = new XMLHttpRequest();
+
+					req2.open("PATCH", "https://api.github.com/gists/" + this.gist_document.id);
+					req2.setRequestHeader("Accept", "application/vnd.github.v3+json");
+					req2.setRequestHeader("Authorization", "token " + this.gist_user.token);
+					req2.send(JSON.stringify(data));
+				}
 			}
 
 			this.show_message("Saving... done!", 1000);
