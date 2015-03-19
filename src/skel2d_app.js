@@ -486,6 +486,7 @@ Application.prototype.create_dom = function(root)
 	elements.gist_login = document.getElementById("sk2-gist-login");
 
 	elements.msgbox.setAttribute("title", "Dismiss");
+	elements.menu_save.setAttribute("title", "Ctrl+S");
 
 	return elements;
 }
@@ -656,6 +657,8 @@ Application.prototype.set_viewports = function(cols, rows)
 
 Application.prototype.bind_events = function()
 {
+	var app = this;
+	var dom = this.dom;
 	var editor = this.editor;
 
 	window.addEventListener("resize", this.on_resize.bind(this));
@@ -664,27 +667,35 @@ Application.prototype.bind_events = function()
 	editor.addEventListener("change", this.on_editor_change.bind(this));
 	editor.renderer.addEventListener("resize", this.on_editor_resize.bind(this));
 
-	this.dom.menu_new.addEventListener("click", this.on_new.bind(this));
-	this.dom.menu_save.addEventListener("click", this.on_save.bind(this));
+	dom.menu_new.addEventListener("click", this.on_new.bind(this));
+	dom.menu_save.addEventListener("click", this.on_save.bind(this));
 
-	this.dom.menu_login.addEventListener("click", function()
+	// menu login/logout
+	dom.menu_login.addEventListener("click", function()
 	{
-		if (this.gist_user)
-			this.logout();
+		if (app.gist_user)
+			app.logout();
 		else
-			this.dom.login.classList.toggle("visible");
-	}.bind(this));
+			dom.login.classList.toggle("visible");
+	});
 
-	this.dom.gist_login.addEventListener("click", function() {
-		var token = this.dom.gist_token.value;
+	// login with github token 'ok' button
+	dom.gist_login.addEventListener("click", function() {
+		dom.gist_token.value && app.login(dom.gist_token.value);
+	});
 
-		if (token)
-			this.login(token);
-	}.bind(this));
+	// dismiss message box
+	dom.msgbox.addEventListener("click", function() { app.show_message(null); });
 
-	this.dom.msgbox.addEventListener("click", function() {
-		this.show_message(null);
-	}.bind(this));
+	// keyboard
+	window.addEventListener("keydown", function(event)
+	{
+		if (event.ctrlKey && event.keyCode === 83)
+		{
+			event.preventDefault();
+			app.on_save();
+		}
+	});
 }
 
 Application.prototype.on_hashchange = function()
