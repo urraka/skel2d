@@ -36,13 +36,21 @@ var vs_src = [
 ].join("\n");
 
 var fs_src = [
+	"#extension GL_OES_standard_derivatives : enable",
 	"precision mediump float;",
 	"varying mediump vec2 t;",
 	"varying mediump vec4 c;",
 	"uniform sampler2D s;",
 	"",
 	"void main(void) {",
-	"	gl_FragColor = texture2D(s, t) * c;",
+	// "	float x = abs(2.0 * t.x - 1.0);",
+	// "	float alpha = 1.0 - smoothstep(1.0 - 2.0 * x / (20.0 / 2.0), 1.0, x);",
+	// "	gl_FragColor = vec4(c.rgb, c.a * alpha);",
+
+	"	float alpha = 1.0 - smoothstep(0.0, 1.0, t.y);",
+	"	gl_FragColor = vec4(c.rgb, c.a * alpha);",
+
+	// "	gl_FragColor = texture2D(s, t) * c;",
 	"}",
 	""
 ].join("\n");

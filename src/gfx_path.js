@@ -54,6 +54,7 @@ function Path()
 
 	this.tess_tol = 0.25;
 	this.dist_tol = 0.01;
+	this.pixel_ratio = 1;
 }
 
 Path.Butt   = Butt;
@@ -66,6 +67,7 @@ Path.prototype.set_pixel_ratio = function(ratio)
 {
 	this.tess_tol = 0.25 / ratio;
 	this.dist_tol = 0.01 / ratio;
+	this.pixel_ratio = ratio;
 }
 
 Path.prototype.begin = function(x, y)
@@ -205,10 +207,11 @@ Path.prototype.stroke = function(vbo, ibo)
 	for (var i = 0; i < 4; i++)
 		this.last_color[i] = rgba[i];
 
-	var w = this.stroke_width / 2;
+	var aa = 1 / this.pixel_ratio;
+	var w = this.stroke_width;
 	var iw = w > 0 ? 1.0 / w : 0;
 
-	var ncap = Math.max(2, Math.ceil(Pi / (Math.acos(w / (w + this.tess_tol)) * 2.0)));
+	var ncap = Math.max(2, Math.ceil(Pi / (Math.acos(w / (w + this.tess_tol)) * 1.0)));
 	var nbevel = 0;
 
 	// calculate joins
@@ -279,8 +282,8 @@ Path.prototype.stroke = function(vbo, ibo)
 		nindices += 2 * (3 * (2 + ncap - 2));
 	}
 
-	vbo.reserve(vbo.size + nvertices);
-	ibo.reserve(ibo.size + nindices);
+	vbo.reserve(vbo.size + 2 * nvertices);
+	ibo.reserve(ibo.size + 3 * nindices);
 
 	// start doing real stuff
 
@@ -290,21 +293,23 @@ Path.prototype.stroke = function(vbo, ibo)
 		var fill_list = this.fill_list;
 
 		for (var i = npoints - 1, j = 0; j < npoints; i = j++)
-			add_join(vbo, ibo, points[i], points[j], w, ncap, line_join, rgba, fill_list);
+			add_join(vbo, ibo, points[i], points[j], w, aa, ncap, line_join, rgba, fill_list);
 
 		vbo.pushv(vbo.get(start + 0));
 		vbo.pushv(vbo.get(start + 1));
+		vbo.pushv(vbo.get(start + 2));
+		vbo.pushv(vbo.get(start + 3));
 	}
 	else
 	{
 		var p = points[0];
-		add_cap_start(vbo, ibo, p, p.dx, p.dy, w, ncap, line_cap, rgba);
+		add_cap_start(vbo, ibo, p, p.dx, p.dy, w, aa, ncap, line_cap, rgba);
 
 		for (var i = 0, j = 1; j < npoints - 1; i = j++)
-			add_join(vbo, ibo, points[i], points[j], w, ncap, line_join, rgba);
+			add_join(vbo, ibo, points[i], points[j], w, aa, ncap, line_join, rgba);
 
 		var p = points[npoints - 2];
-		add_cap_end(vbo, ibo, points[npoints - 1], p.dx, p.dy, w, ncap, line_cap, rgba);
+		add_cap_end(vbo, ibo, points[npoints - 1], p.dx, p.dy, w, aa, ncap, line_cap, rgba);
 	}
 }
 
@@ -483,10 +488,11 @@ function flatten(path)
 	}
 }
 
-function add_join(vbo, ibo, p0, p1, w, ncap, line_join, rgba, fill)
+function add_join(vbo, ibo, p0, p1, w, aa, ncap, line_join, rgba, fill)
 {
 	var index = vbo.size;
 	var is_left = ((p1.flags & PointLeft) !== 0);
+	var waa = w + aa;
 
 	if ((p1.flags & (PointBevel | PointInnerBevel)) !== 0)
 	{
@@ -496,8 +502,10 @@ function add_join(vbo, ibo, p0, p1, w, ncap, line_join, rgba, fill)
 		var dly1 = -p1.dx;
 
 		var bw = is_left ? w : -w;
+		var bwaa = is_left ? waa : -waa;
 
 		var x0, y0, x1, y1;
+		var x0aa, y0aa, x1aa, y1aa;
 
 		if ((p1.flags & PointInnerBevel) !== 0)
 		{
@@ -505,11 +513,19 @@ function add_join(vbo, ibo, p0, p1, w, ncap, line_join, rgba, fill)
 			y0 = p1.y + dly0 * bw;
 			x1 = p1.x + dlx1 * bw;
 			y1 = p1.y + dly1 * bw;
+
+			x0aa = p1.x + dlx0 * bwaa;
+			y0aa = p1.y + dly0 * bwaa;
+			x1aa = p1.x + dlx1 * bwaa;
+			y1aa = p1.y + dly1 * bwaa;
 		}
 		else
 		{
 			x0 = x1 = p1.x + p1.dmx * bw;
 			y0 = y1 = p1.y + p1.dmy * bw;
+
+			x0aa = x1aa = p1.x + p1.dmx * bwaa;
+			y0aa = y1aa = p1.y + p1.dmy * bwaa;
 		}
 
 		if (line_join === Path.Round)
@@ -523,30 +539,43 @@ function add_join(vbo, ibo, p0, p1, w, ncap, line_join, rgba, fill)
 					a1 -= 2 * Pi;
 
 				var n = 1 + clamp(Math.ceil(((a0 - a1) / Pi) * ncap), 2, ncap);
-				var center = index + 2 + (n - 2);
+				var center = index + 4 + 2 * (n - 2);
 
 				vbo.push(x0, y0, 0, 0, rgba);
-				vbo.push(p1.x - dlx0 * w, p1.y - dly0 * w, 0, 0, rgba);
+				vbo.push(x0aa, y0aa, 0, 1, rgba);
+				vbo.push(p1.x - dlx0 * w, p1.y - dly0 * w, 1, 0, rgba);
+				vbo.push(p1.x - dlx0 * waa, p1.y - dly0 * waa, 1, 1, rgba);
 
-				ibo.push(index + 0, index + 1, center);
+				ibo.push(index + 0, index + 2, center);
 
 				for (var i = 0; i < n - 2; i++)
 				{
 					var u = (i + 1) / (n - 1);
 					var a = a0 + u * (a1 - a0);
-					var x = p1.x + Math.cos(a) * w;
-					var y = p1.y + Math.sin(a) * w;
+					var cs = Math.cos(a);
+					var sn = Math.sin(a);
 
-					var idx = vbo.push(x, y, 0, 0, rgba);
-					ibo.push(center, idx - 1, idx);
+					var idx = vbo.push(p1.x + cs * w, p1.y + sn * w, 1, 0, rgba);
+					vbo.push(p1.x + cs * waa, p1.y + sn * waa, 1, 1, rgba);
+
+					ibo.push(center, idx - 2, idx);
+
+					ibo.push(idx - 2, idx - 1, idx + 0);
+					ibo.push(idx - 1, idx + 0, idx + 1);
 				}
 
-				vbo.push(p1.x, p1.y, 0, 0, rgba); // center
-				vbo.push(x1, y1, 0, 0, rgba);
-				vbo.push(p1.x - dlx1 * w, p1.y - dly1 * w, 0, 0, rgba);
+				vbo.push(p1.x, p1.y, 0.5, 0, rgba); // center
 
-				ibo.push(center, center - 1, center + 2);
-				ibo.push(center, center + 1, center + 2);
+				vbo.push(x1, y1, 0, 0, rgba);
+				vbo.push(x1aa, y1aa, 0, 1, rgba);
+				vbo.push(p1.x - dlx1 * w, p1.y - dly1 * w, 1, 0, rgba);
+				vbo.push(p1.x - dlx1 * waa, p1.y - dly1 * waa, 1, 1, rgba);
+
+				ibo.push(center, center - 2, center + 3);
+				ibo.push(center, center + 1, center + 3);
+
+				ibo.push(center - 2, center - 1, center + 3);
+				ibo.push(center - 1, center + 3, center + 4);
 
 				if (fill) fill.push(index);
 			}
@@ -559,32 +588,45 @@ function add_join(vbo, ibo, p0, p1, w, ncap, line_join, rgba, fill)
 					a1 += 2 * Pi;
 
 				var n = 1 + clamp(Math.ceil(((a1 - a0) / Pi) * ncap), 2, ncap);
-				var center = index + 2;
+				var center = index + 4;
 
 				vbo.push(p1.x + dlx0 * w, p1.y + dly0 * w, 0, 0, rgba);
-				vbo.push(x0, y0, 0, 0, rgba);
-				vbo.push(p1.x, p1.y, 0, 0, rgba); // center
+				vbo.push(p1.x + dlx0 * waa, p1.y + dly0 * waa, 0, 1, rgba);
+				vbo.push(x0, y0, 1, 0, rgba);
+				vbo.push(x0aa, y0aa, 1, 1, rgba);
 
-				ibo.push(index + 0, index + 1, center);
+				vbo.push(p1.x, p1.y, 0.5, 0, rgba); // center
+
+				ibo.push(index + 0, index + 2, center);
 				ibo.push(center, index + 0, center + 1);
 
-				for (i = 0; i < n - 2; i++)
+				ibo.push(index + 0, index + 1, center + 1);
+				ibo.push(index + 1, center + 1, center + 2);
+
+				for (var i = 0; i < n - 2; i++)
 				{
 					var u = (i + 1) / (n - 1);
 					var a = a0 + u * (a1 - a0);
-					var x = p1.x + Math.cos(a) * w;
-					var y = p1.y + Math.sin(a) * w;
+					var cs = Math.cos(a);
+					var sn = Math.sin(a);
 
-					var idx = vbo.push(x, y, 0, 0, rgba);
-					ibo.push(center, idx, idx + 1);
+					var idx = vbo.push(p1.x + cs * w, p1.y + sn * w, 1, 0, rgba);
+					vbo.push(p1.x + cs * waa, p1.y + sn * waa, 1, 1, rgba);
+
+					ibo.push(center, idx, idx + 2);
+
+					ibo.push(idx + 0, idx + 1, idx + 2);
+					ibo.push(idx + 1, idx + 2, idx + 3);
 				}
 
-				vbo.push(p1.x + dlx1 * w, p1.y + dly1 * w, 0, 0, rgba);
-				vbo.push(x1, y1, 0, 0, rgba);
+				var i = vbo.push(p1.x + dlx1 * w, p1.y + dly1 * w, 0, 0, rgba);
+				vbo.push(p1.x + dlx1 * waa, p1.y + dly1 * waa, 0, 1, rgba);
+				vbo.push(x1, y1, 1, 0, rgba);
+				vbo.push(x1aa, y1aa, 1, 1, rgba);
 
-				ibo.push(center, center + (n - 1), center + n);
+				ibo.push(center, i, i + 2);
 
-				if (fill) fill.push(index + 1);
+				if (fill) fill.push(index + 2);
 			}
 		}
 		else
@@ -592,44 +634,72 @@ function add_join(vbo, ibo, p0, p1, w, ncap, line_join, rgba, fill)
 			if (is_left)
 			{
 				vbo.push(x0, y0, 0, 0, rgba);
-				vbo.push(p1.x - dlx0 * w, p1.y - dly0 * w, 0, 0, rgba);
+				vbo.push(x0aa, y0aa, 0, 1, rgba);
+				vbo.push(p1.x - dlx0 * w, p1.y - dly0 * w, 1, 0, rgba);
+				vbo.push(p1.x - dlx0 * waa + p0.dx * aa, p1.y - dly0 * waa + p0.dy * aa, 1, 1, rgba);
 
 				if (p1.flags & PointBevel)
 				{
-					ibo.push(index + 0, index + 1, index + 3);
+					ibo.push(index + 0, index + 2, index + 6);
+
+					ibo.push(index + 2, index + 3, index + 6);
+					ibo.push(index + 3, index + 6, index + 7);
 				}
 				else
 				{
-					vbo.push(p1.x, p1.y, 0, 0, rgba);
-					vbo.push(p1.x - p1.dmx * w, p1.y - p1.dmy * w, 0, 0, rgba);
-					ibo.push(index + 2, index + 1, index + 3);
+					vbo.push(p1.x, p1.y, 0.5, 0, rgba);
+					vbo.push(p1.x - p1.dmx * w, p1.y - p1.dmy * w, 1, 0, rgba);
+					vbo.push(p1.x - p1.dmx * waa, p1.y - p1.dmy * waa, 1, 1, rgba);
+
+					ibo.push(index + 4, index + 2, index + 5);
+					ibo.push(index + 4, index + 5, index + 9);
+
 					ibo.push(index + 2, index + 3, index + 5);
+					ibo.push(index + 3, index + 5, index + 6);
+					ibo.push(index + 5, index + 6, index + 9);
+					ibo.push(index + 6, index + 9, index + 10);
 				}
 
 				vbo.push(x1, y1, 0, 0, rgba);
-				vbo.push(p1.x - dlx1 * w, p1.y - dly1 * w, 0, 0, rgba);
+				vbo.push(x1aa, y1aa, 0, 1, rgba);
+				vbo.push(p1.x - dlx1 * w, p1.y - dly1 * w, 1, 0, rgba);
+				vbo.push(p1.x - dlx1 * waa - p1.dx * aa, p1.y - dly1 * waa - p1.dy * aa, 1, 1, rgba);
 
 				if (fill) fill.push(index);
 			}
 			else
 			{
 				vbo.push(p1.x + dlx0 * w, p1.y + dly0 * w, 0, 0, rgba);
-				vbo.push(x0, y0, 0, 0, rgba);
+				vbo.push(p1.x + dlx0 * waa + p0.dx * aa, p1.y + dly0 * waa + p0.dy * aa, 0, 1, rgba);
+				vbo.push(x0, y0, 1, 0, rgba);
+				vbo.push(x0aa, y0aa, 1, 1, rgba);
 
 				if (p1.flags & PointBevel)
 				{
-					ibo.push(index + 0, index + 1, index + 2);
+					ibo.push(index + 0, index + 2, index + 4);
+
+					ibo.push(index + 0, index + 1, index + 4);
+					ibo.push(index + 1, index + 4, index + 5);
 				}
 				else
 				{
-					vbo.push(p1.x, p1.y, 0, 0, rgba);
+					vbo.push(p1.x, p1.y, 0.5, 0, rgba);
 					vbo.push(p1.x + p1.dmx * w, p1.y + p1.dmy * w, 0, 0, rgba);
-					ibo.push(index + 2, index + 0, index + 3);
-					ibo.push(index + 2, index + 3, index + 4);
+					vbo.push(p1.x + p1.dmx * waa, p1.y + p1.dmy * waa, 0, 1, rgba);
+
+					ibo.push(index + 4, index + 0, index + 5);
+					ibo.push(index + 4, index + 5, index + 7);
+
+					ibo.push(index + 0, index + 1, index + 5);
+					ibo.push(index + 1, index + 5, index + 6);
+					ibo.push(index + 5, index + 6, index + 7);
+					ibo.push(index + 6, index + 7, index + 8);
 				}
 
 				vbo.push(p1.x + dlx1 * w, p1.y + dly1 * w, 0, 0, rgba);
-				vbo.push(x1, y1, 0, 0, rgba);
+				vbo.push(p1.x + dlx1 * waa - p1.dx * aa, p1.y + dly1 * waa - p1.dy * aa, 0, 1, rgba);
+				vbo.push(x1, y1, 1, 0, rgba);
+				vbo.push(x1aa, y1aa, 1, 1, rgba);
 
 				if (fill) fill.push(index + 1);
 			}
@@ -638,45 +708,79 @@ function add_join(vbo, ibo, p0, p1, w, ncap, line_join, rgba, fill)
 	else
 	{
 		vbo.push(p1.x + (p1.dmx * w), p1.y + (p1.dmy * w), 0, 0, rgba);
-		vbo.push(p1.x - (p1.dmx * w), p1.y - (p1.dmy * w), 0, 0, rgba);
+		vbo.push(p1.x + (p1.dmx * waa), p1.y + (p1.dmy * waa), 0, 1, rgba);
+		vbo.push(p1.x - (p1.dmx * w), p1.y - (p1.dmy * w), 1, 0, rgba);
+		vbo.push(p1.x - (p1.dmx * waa), p1.y - (p1.dmy * waa), 1, 1, rgba);
 
-		if (fill) fill.push(is_left ? index : index + 1);
+		if (fill) fill.push(is_left ? index : index + 2);
 	}
 
 	index = vbo.size;
 
-	ibo.push(index - 2, index - 1, index + 0);
-	ibo.push(index - 1, index + 0, index + 1);
+	ibo.push(index - 4, index - 2, index + 0);
+	ibo.push(index - 2, index + 0, index + 2);
+
+	ibo.push(index - 4, index - 3, index + 0);
+	ibo.push(index - 3, index + 0, index + 1);
+	ibo.push(index - 2, index - 1, index + 2);
+	ibo.push(index - 1, index + 2, index + 3);
 }
 
-function add_cap_start(vbo, ibo, p, dx, dy, w, ncap, line_cap, rgba)
+function add_cap_start(vbo, ibo, p, dx, dy, w, aa, ncap, line_cap, rgba)
 {
 	var index = vbo.size;
 	var dlx = dy;
 	var dly = -dx;
+	var waa = w + aa;
 
 	if (line_cap === Round)
 	{
 		var x = p.x;
 		var y = p.y;
 
-		vbo.push(x, y, 0, 0, rgba); // center
-		ibo.push(index, index + ncap + 1, index + 1);
+		vbo.push(x, y, 0.5, 0, rgba); // center
+
+		var base = index + 1;
+		var end = base + 2 * (ncap - 1) + 2;
+
+		ibo.push(index, end, base);
+
+		ibo.push(base + 0, base + 1, end);
+		ibo.push(base + 1, end, end + 1);
 
 		for (var i = 0; i < ncap - 1; i++)
 		{
 			var a = (i + 1) / ncap * Pi;
-			var ax = Math.cos(a) * w;
-			var ay = Math.sin(a) * w;
+			var cs = Math.cos(a);
+			var sn = Math.sin(a);
+			var ax = cs * w;
+			var ay = sn * w;
+			var axaa = cs * waa;
+			var ayaa = sn * waa;
 
 			vbo.push(x - dlx * ax - dx * ay, y - dly * ax - dy * ay, 0, 0, rgba);
-			ibo.push(index, index + 1 + i, index + 1 + (i + 1));
+			vbo.push(x - dlx * axaa - dx * ayaa, y - dly * axaa - dy * ayaa, 0, 1, rgba);
+
+			var j = 2 * i;
+
+			ibo.push(index, base + j, base + j + 2);
+
+			ibo.push(base + j + 0, base + j + 1, base + j + 2);
+			ibo.push(base + j + 1, base + j + 2, base + j + 3);
 		}
 
-		vbo.push(x + dlx * w, y + dly * w, 0, 0, rgba);
-		vbo.push(x - dlx * w, y - dly * w, 0, 0, rgba);
-		ibo.push(index + ncap + 0, index + ncap + 1, index + ncap + 2);
-		ibo.push(index + ncap + 1, index + ncap + 2, index + ncap + 3);
+		var i = vbo.push(x + dlx * w, y + dly * w, 0, 0, rgba);
+		vbo.push(x + dlx * waa, y + dly * waa, 0, 1, rgba);
+		vbo.push(x - dlx * w, y - dly * w, 1, 0, rgba);
+		vbo.push(x - dlx * waa, y - dly * waa, 1, 1, rgba);
+
+		ibo.push(i + 0, i + 2, i + 4);
+		ibo.push(i + 2, i + 4, i + 6);
+
+		ibo.push(i + 0, i + 1, i + 4);
+		ibo.push(i + 1, i + 4, i + 5);
+		ibo.push(i + 2, i + 3, i + 6);
+		ibo.push(i + 3, i + 6, i + 7);
 	}
 	else
 	{
@@ -685,17 +789,28 @@ function add_cap_start(vbo, ibo, p, dx, dy, w, ncap, line_cap, rgba)
 		var y = p.y - dy * d;
 
 		vbo.push(x + dlx * w, y + dly * w, 0, 0, rgba);
-		vbo.push(x - dlx * w, y - dly * w, 0, 0, rgba);
+		vbo.push(x + dlx * waa - dx * aa, y + dly * waa - dy * aa, 0, 1, rgba);
+		vbo.push(x - dlx * w, y - dly * w, 1, 0, rgba);
+		vbo.push(x - dlx * waa - dx * aa, y - dly * waa - dy * aa, 1, 1, rgba);
+
+		ibo.push(index + 0, index + 2, index + 4);
+		ibo.push(index + 2, index + 4, index + 6);
+
 		ibo.push(index + 0, index + 1, index + 2);
 		ibo.push(index + 1, index + 2, index + 3);
+		ibo.push(index + 0, index + 1, index + 4);
+		ibo.push(index + 1, index + 4, index + 5);
+		ibo.push(index + 2, index + 3, index + 6);
+		ibo.push(index + 3, index + 6, index + 7);
 	}
 }
 
-function add_cap_end(vbo, ibo, p, dx, dy, w, ncap, line_cap, rgba)
+function add_cap_end(vbo, ibo, p, dx, dy, w, aa, ncap, line_cap, rgba)
 {
 	var index = vbo.size;
 	var dlx = dy;
 	var dly = -dx;
+	var waa = w + aa;
 
 	if (line_cap === Round)
 	{
@@ -703,20 +818,30 @@ function add_cap_end(vbo, ibo, p, dx, dy, w, ncap, line_cap, rgba)
 		var y = p.y;
 
 		vbo.push(x + dlx * w, y + dly * w, 0, 0, rgba);
-		vbo.push(x - dlx * w, y - dly * w, 0, 0, rgba);
+		vbo.push(x + dlx * waa, y + dly * waa, 0, 1, rgba);
+		vbo.push(x - dlx * w, y - dly * w, 1, 0, rgba);
+		vbo.push(x - dlx * waa, y - dly * waa, 1, 1, rgba);
+
+		var center = (index + 4) + 2 * (ncap - 1);
 
 		for (var i = 0; i < ncap - 1; i++)
 		{
 			var a = (i + 1) / ncap * Pi;
-			var ax = Math.cos(a) * w;
-			var ay = Math.sin(a) * w;
+			var cs = Math.cos(a);
+			var sn = Math.sin(a);
+			var ax = cs * w;
+			var ay = sn * w;
+			var axaa = cs * waa;
+			var ayaa = sn * waa;
 
 			vbo.push(x - dlx * ax + dx * ay, y - dly * ax + dy * ay, 0, 0, rgba);
-			ibo.push(index + ncap + 1, index + 2 + (i - 1), index + 2 + i);
+			vbo.push(x - dlx * axaa + dx * ayaa, y - dly * axaa + dy * ayaa, 0, 1, rgba);
+
+			ibo.push(center, (index + 4) + 2 * (i - 1), (index + 4) + 2 * i);
 		}
 
-		vbo.push(x, y, 0, 0, rgba); // center
-		ibo.push(index + ncap + 1, index + ncap, index + 0);
+		vbo.push(x, y, 0.5, 0, rgba); // center
+		ibo.push(center, center - 2, index);
 	}
 	else
 	{
@@ -725,7 +850,9 @@ function add_cap_end(vbo, ibo, p, dx, dy, w, ncap, line_cap, rgba)
 		var y = p.y + dy * d;
 
 		vbo.push(x + dlx * w, y + dly * w, 0, 0, rgba);
-		vbo.push(x - dlx * w, y - dly * w, 0, 0, rgba);
+		vbo.push(x + dlx * waa, y + dly * waa, 0, 1, rgba);
+		vbo.push(x - dlx * w, y - dly * w, 1, 0, rgba);
+		vbo.push(x - dlx * waa, y - dly * waa, 1, 1, rgba);
 	}
 }
 

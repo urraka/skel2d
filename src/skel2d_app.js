@@ -21,7 +21,7 @@ function Application(root)
 	this.dom = this.create_dom(root);
 	this.editor = this.create_editor();
 	this.viewports = [];
-	this.gfx = gfx_create_context(this.dom.canvas);
+	this.gfx = gfx_create_context(this.dom.canvas, {antialias: false});
 	this.renderer = new SkeletonRenderer(this.gfx);
 	this.skeleton_data = null;
 	this.skeleton = null;
