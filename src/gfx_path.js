@@ -65,7 +65,7 @@ Path.Miter  = Miter;
 
 Path.prototype.set_pixel_ratio = function(ratio)
 {
-	this.tess_tol = 0.25 / ratio;
+	this.tess_tol = 0.10 / ratio;
 	this.dist_tol = 0.01 / ratio;
 	this.pixel_ratio = ratio;
 }
@@ -136,7 +136,7 @@ Path.prototype.fill = function(vbo, ibo)
 	var fill = this.fill_list;
 	var n = fill.length;
 
-	if (n > 0)
+	if (false && n > 0)
 	{
 		var same_color = true;
 		var last_color = this.last_color;
@@ -207,8 +207,8 @@ Path.prototype.stroke = function(vbo, ibo)
 	for (var i = 0; i < 4; i++)
 		this.last_color[i] = rgba[i];
 
-	var aa = 1 / this.pixel_ratio;
-	var w = this.stroke_width;
+	var aa = 2 / this.pixel_ratio;
+	var w = Math.max(0.0001, this.stroke_width / 2 - aa);
 	var iw = w > 0 ? 1.0 / w : 0;
 
 	var ncap = Math.max(2, Math.ceil(Pi / (Math.acos(w / (w + this.tess_tol)) * 1.0)));
@@ -837,11 +837,19 @@ function add_cap_end(vbo, ibo, p, dx, dy, w, aa, ncap, line_cap, rgba)
 			vbo.push(x - dlx * ax + dx * ay, y - dly * ax + dy * ay, 0, 0, rgba);
 			vbo.push(x - dlx * axaa + dx * ayaa, y - dly * axaa + dy * ayaa, 0, 1, rgba);
 
-			ibo.push(center, (index + 4) + 2 * (i - 1), (index + 4) + 2 * i);
+			var j = 2 * i;
+
+			ibo.push(center, (index + 4) + j - 2, (index + 4) + j);
+
+			ibo.push((index + 4) + j - 2, (index + 4) + j - 1, (index + 4) + j + 0);
+			ibo.push((index + 4) + j - 1, (index + 4) + j + 0, (index + 4) + j + 1);
 		}
 
 		vbo.push(x, y, 0.5, 0, rgba); // center
 		ibo.push(center, center - 2, index);
+
+		ibo.push(center - 2, center - 1, index + 0);
+		ibo.push(center - 1, index + 0, index + 1);
 	}
 	else
 	{
@@ -850,9 +858,12 @@ function add_cap_end(vbo, ibo, p, dx, dy, w, aa, ncap, line_cap, rgba)
 		var y = p.y + dy * d;
 
 		vbo.push(x + dlx * w, y + dly * w, 0, 0, rgba);
-		vbo.push(x + dlx * waa, y + dly * waa, 0, 1, rgba);
+		vbo.push(x + dlx * waa + dx * aa, y + dly * waa + dy * aa, 0, 1, rgba);
 		vbo.push(x - dlx * w, y - dly * w, 1, 0, rgba);
-		vbo.push(x - dlx * waa, y - dly * waa, 1, 1, rgba);
+		vbo.push(x - dlx * waa + dx * aa, y - dly * waa + dy * aa, 1, 1, rgba);
+
+		ibo.push(index + 0, index + 1, index + 2);
+		ibo.push(index + 1, index + 2, index + 3);
 	}
 }
 

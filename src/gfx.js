@@ -48,7 +48,8 @@ var fs_src = [
 	// "	gl_FragColor = vec4(c.rgb, c.a * alpha);",
 
 	"	float alpha = 1.0 - smoothstep(0.0, 1.0, t.y);",
-	"	gl_FragColor = vec4(c.rgb, c.a * alpha);",
+	// "	float alpha = t.y > 0.0 ? 0.0 : 1.0;",
+	"	gl_FragColor = vec4(c.rgb * alpha, c.a * alpha);",
 
 	// "	gl_FragColor = texture2D(s, t) * c;",
 	"}",

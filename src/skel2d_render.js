@@ -344,20 +344,6 @@ function stroke_and_fill(slot, attachment, closed, vbo, ibo)
 	path.line_join = attachment.line_join;
 	path.miter_limit = attachment.miter_limit;
 
-	if (w > 0)
-	{
-		var src = attachment.line_color;
-		var dst = path.stroke_color;
-		var alpha = slot_color.a * src.a;
-
-		dst[0] = (alpha * slot_color.r * src.r * 255)|0;
-		dst[1] = (alpha * slot_color.g * src.g * 255)|0;
-		dst[2] = (alpha * slot_color.b * src.b * 255)|0;
-		dst[3] = (alpha * 255)|0;
-
-		path.stroke(vbo, ibo);
-	}
-
 	if (closed)
 	{
 		var src = attachment.fill_color;
@@ -373,6 +359,38 @@ function stroke_and_fill(slot, attachment, closed, vbo, ibo)
 			dst[3] = (alpha * 255)|0;
 
 			path.fill(vbo, ibo);
+		}
+	}
+
+	if (w > 0)
+	{
+		var src = attachment.line_color;
+		var dst = path.stroke_color;
+		var alpha = slot_color.a * src.a;
+
+		dst[0] = (alpha * slot_color.r * src.r * 255)|0;
+		dst[1] = (alpha * slot_color.g * src.g * 255)|0;
+		dst[2] = (alpha * slot_color.b * src.b * 255)|0;
+		dst[3] = (alpha * 255)|0;
+
+		path.stroke(vbo, ibo);
+	}
+	else if (closed)
+	{
+		var src = attachment.fill_color;
+		var alpha = slot_color.a * src.a;
+
+		if (alpha > 0)
+		{
+			var dst = path.stroke_color;
+
+			dst[0] = (alpha * slot_color.r * src.r * 255)|0;
+			dst[1] = (alpha * slot_color.g * src.g * 255)|0;
+			dst[2] = (alpha * slot_color.b * src.b * 255)|0;
+			dst[3] = (alpha * 255)|0;
+
+			path.stroke_width = 1;
+			path.stroke(vbo, ibo);
 		}
 	}
 }
