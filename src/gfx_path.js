@@ -1,4 +1,6 @@
-(function(scope) {
+(function(exports) {
+
+exports.Path = Path;
 
 var Pi = Math.PI;
 
@@ -65,7 +67,7 @@ Path.Miter  = Miter;
 
 Path.prototype.set_pixel_ratio = function(ratio)
 {
-	this.tess_tol = 0.10 / ratio;
+	this.tess_tol = 0.05 / ratio;
 	this.dist_tol = 0.01 / ratio;
 	this.pixel_ratio = ratio;
 }
@@ -203,12 +205,27 @@ Path.prototype.stroke = function(vbo, ibo)
 	var mlimit = this.miter_limit;
 	var rgba = this.stroke_color;
 	var loop = this.closed;
+	var ratio = this.pixel_ratio;
+	var stroke_width = this.stroke_width;
+
+	if (stroke_width < 1 / ratio)
+	{
+		var alpha = clamp(stroke_width / (1 / ratio), 0, 1);
+		alpha = alpha * alpha;
+
+		// TODO: solve premultiplied alpha issue
+
+		rgba[0] = clamp(rgba[0] * alpha, 0, 255)|0;
+		rgba[1] = clamp(rgba[1] * alpha, 0, 255)|0;
+		rgba[2] = clamp(rgba[2] * alpha, 0, 255)|0;
+		rgba[3] = clamp(rgba[3] * alpha, 0, 255)|0;
+	}
 
 	for (var i = 0; i < 4; i++)
 		this.last_color[i] = rgba[i];
 
-	var aa = 2 / this.pixel_ratio;
-	var w = Math.max(0.0001, this.stroke_width / 2 - aa);
+	var aa = (1 + clamp((stroke_width * ratio - 2) / 4, 0, 1)) / ratio;
+	var w = Math.max(0.0001, stroke_width / 2 - aa);
 	var iw = w > 0 ? 1.0 / w : 0;
 
 	var ncap = Math.max(2, Math.ceil(Pi / (Math.acos(w / (w + this.tess_tol)) * 1.0)));
@@ -866,7 +883,5 @@ function add_cap_end(vbo, ibo, p, dx, dy, w, aa, ncap, line_cap, rgba)
 		ibo.push(index + 1, index + 2, index + 3);
 	}
 }
-
-scope.Path = Path;
 
 }(this));
