@@ -225,7 +225,7 @@ Path.prototype.stroke = function(vbo, ibo)
 		this.last_color[i] = rgba[i];
 
 	var aa = (1 + clamp((stroke_width * ratio - 2) / 4, 0, 1)) / ratio;
-	var w = Math.max(0.0001, stroke_width / 2 - aa);
+	var w = Math.max(0.0001, stroke_width / 2 - (1 + 0.5 * (aa - 1)));
 	var iw = w > 0 ? 1.0 / w : 0;
 
 	var ncap = Math.max(2, Math.ceil(Pi / (Math.acos(w / (w + this.tess_tol)) * 1.0)));
