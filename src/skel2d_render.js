@@ -75,7 +75,7 @@ SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale, skin_index)
 
 	if (this.show_bones)
 	{
-		add_bones(skeleton, vbo, ibo);
+		add_bones(skeleton, vbo, ibo, scale);
 
 		count = ibo.size;
 		lines_offset = vbo.size;
@@ -102,9 +102,11 @@ SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale, skin_index)
 	}
 }
 
-function add_bones(skeleton, vbo, ibo)
+function add_bones(skeleton, vbo, ibo, scale)
 {
+	var aa = 2 / scale;
 	var s = 5;
+	var sa = s + aa;
 	var nbones = skeleton.bones.length;
 
 	vbo.reserve(vbo.size + nbones * 4 * 2);
@@ -118,6 +120,7 @@ function add_bones(skeleton, vbo, ibo)
 		{
 			var base = vbo.size;
 			var l = bone.length;
+			var la = sa * (l / s);
 			var alpha = 0.7 * bone.color.a;
 
 			bone_color[0] = (alpha * bone.color.r * 255)|0;
@@ -130,8 +133,23 @@ function add_bones(skeleton, vbo, ibo)
 			vbo.push(bone.to_worldx( l,  0), bone.to_worldy( l,  0), 0, 0, bone_color);
 			vbo.push(bone.to_worldx( 0, -s), bone.to_worldy( 0, -s), 0, 0, bone_color);
 
+			vbo.push(bone.to_worldx(-sa,   0), bone.to_worldy(-sa,   0), 0, 1, bone_color);
+			vbo.push(bone.to_worldx(  0,  sa), bone.to_worldy(  0,  sa), 0, 1, bone_color);
+			vbo.push(bone.to_worldx( la,   0), bone.to_worldy( la,   0), 0, 1, bone_color);
+			vbo.push(bone.to_worldx(  0, -sa), bone.to_worldy(  0, -sa), 0, 1, bone_color);
+
 			ibo.push(base + 0, base + 1, base + 2);
 			ibo.push(base + 0, base + 2, base + 3);
+
+			ibo.push(base + 0, base + 4, base + 1);
+			ibo.push(base + 4, base + 1, base + 5);
+			ibo.push(base + 0, base + 4, base + 3);
+			ibo.push(base + 4, base + 3, base + 7);
+
+			ibo.push(base + 1, base + 5, base + 2);
+			ibo.push(base + 5, base + 2, base + 6);
+			ibo.push(base + 3, base + 7, base + 2);
+			ibo.push(base + 7, base + 2, base + 6);
 		}
 	}
 }
@@ -153,13 +171,13 @@ function add_bone_marks(skeleton, vbo, ibo)
 		var base = vbo.size;
 		var px = bone.to_worldx(0, 0);
 		var py = bone.to_worldy(0, 0);
-		var x = 0.5 + Math.floor(mat3mulx(m, px, py));
-		var y = 0.5 + Math.floor(mat3muly(m, px, py));
+		var x = Math.floor(mat3mulx(m, px, py));
+		var y = Math.floor(mat3muly(m, px, py));
 
-		vbo.push(x - s, y, 0, 0, bone_color);
-		vbo.push(x + s, y, 0, 0, bone_color);
-		vbo.push(x, y - s, 0, 0, bone_color);
-		vbo.push(x, y + s, 0, 0, bone_color);
+		vbo.push(x - s - 0.5, y, 0, 0, bone_color);
+		vbo.push(x + s + 0.5, y, 0, 0, bone_color);
+		vbo.push(x, y - s - 0.5, 0, 0, bone_color);
+		vbo.push(x, y + s + 0.5, 0, 0, bone_color);
 	}
 }
 
