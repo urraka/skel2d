@@ -733,6 +733,7 @@ function add_cap_start(vbo, ibo, p, dx, dy, w, aa, ncap, line_cap, rgba)
 		vbo.push(x - dlx * w, y - dly * w, 1, 0, rgba);
 		vbo.push(x - dlx * waa, y - dly * waa, 1, 1, rgba);
 
+		ibo.push(i + 0, i + 2, index); // center pixel fix
 		ibo.push(i + 0, i + 2, i + 4);
 		ibo.push(i + 2, i + 4, i + 6);
 
@@ -782,6 +783,8 @@ function add_cap_end(vbo, ibo, p, dx, dy, w, aa, ncap, line_cap, rgba)
 		vbo.push(x - dlx * waa, y - dly * waa, 1, 1, rgba);
 
 		var center = (index + 4) + 2 * (ncap - 1);
+
+		ibo.push(index, index + 2, center); // center pixel fix
 
 		for (var i = 0; i < ncap - 1; i++)
 		{
