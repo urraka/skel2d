@@ -50,8 +50,6 @@ function Path()
 	this.commands = [];
 	this.points = [];
 	this.points_pool = [];
-	this.fill_list = [];
-	this.last_color = [0, 0, 0, 255];
 	this.closed = false;
 
 	this.tess_tol = 0.25;
@@ -77,16 +75,12 @@ Path.prototype.begin = function(x, y)
 	var points = this.points;
 	var points_pool = this.points_pool;
 	var commands = this.commands;
-	var fill_list = this.fill_list;
 
 	while (points.length > 0)
 		points_pool.push(points.pop());
 
 	while (commands.length > 0)
 		commands.pop();
-
-	while (fill_list.length > 0)
-		fill_list.pop();
 
 	this.closed = false;
 
@@ -135,59 +129,21 @@ Path.prototype.close = function()
 
 Path.prototype.fill = function(vbo, ibo)
 {
-	var fill = this.fill_list;
-	var n = fill.length;
+	flatten(this);
 
-	if (false && n > 0)
-	{
-		var same_color = true;
-		var last_color = this.last_color;
-		var fill_color = this.fill_color;
+	var base = vbo.size;
+	var points = this.points;
+	var n = points.length;
+	var fill_color = this.fill_color;
 
-		for (var i = 0; i < 4; i++)
-			same_color = (same_color && last_color[i] === fill_color[i]);
+	vbo.reserve(base + n);
+	ibo.reserve(ibo.size + 3 * (n - 2));
 
-		ibo.reserve(ibo.size + 3 * (n - 2));
+	for (var i = 0; i < n; i++)
+		vbo.push(points[i].x, points[i].y, 0, 0, fill_color);
 
-		if (same_color)
-		{
-			for (var i = 1; i < n - 1; i++)
-				ibo.push(fill[0], fill[i], fill[i + 1]);
-		}
-		else
-		{
-			vbo.reserve(vbo.size + n);
-
-			var base = vbo.size;
-
-			for (var i = 0; i < n; i++)
-			{
-				var vertex = vbo.get(fill[i]);
-				vbo.push(vertex.x, vertex.y, 0, 0, fill_color);
-			}
-
-			for (var i = 1; i < n - 1; i++)
-				ibo.push(base, base + i, base + i + 1);
-		}
-	}
-	else
-	{
-		flatten(this);
-
-		var base = vbo.size;
-		var points = this.points;
-		var n = points.length;
-		var fill_color = this.fill_color;
-
-		vbo.reserve(base + n);
-		ibo.reserve(ibo.size + 3 * (n - 2));
-
-		for (var i = 0; i < n; i++)
-			vbo.push(points[i].x, points[i].y, 0, 0, fill_color);
-
-		for (var i = 1; i < n - 1; i++)
-			ibo.push(base, base + i, base + i + 1);
-	}
+	for (var i = 1; i < n - 1; i++)
+		ibo.push(base, base + i, base + i + 1);
 }
 
 Path.prototype.stroke = function(vbo, ibo)
@@ -220,9 +176,6 @@ Path.prototype.stroke = function(vbo, ibo)
 		rgba[2] = clamp(rgba[2] * alpha, 0, 255)|0;
 		rgba[3] = clamp(rgba[3] * alpha, 0, 255)|0;
 	}
-
-	for (var i = 0; i < 4; i++)
-		this.last_color[i] = rgba[i];
 
 	var aa = (1 + clamp((stroke_width * ratio - 2) / 4, 0, 1)) / ratio;
 	var w = Math.max(0.0001, stroke_width / 2 - (1 + 0.5 * (aa - 1)));
@@ -307,10 +260,9 @@ Path.prototype.stroke = function(vbo, ibo)
 	if (loop)
 	{
 		var start = vbo.size;
-		var fill_list = this.fill_list;
 
 		for (var i = npoints - 1, j = 0; j < npoints; i = j++)
-			add_join(vbo, ibo, points[i], points[j], w, aa, ncap, line_join, rgba, fill_list);
+			add_join(vbo, ibo, points[i], points[j], w, aa, ncap, line_join, rgba);
 
 		vbo.pushv(vbo.get(start + 0));
 		vbo.pushv(vbo.get(start + 1));
@@ -505,7 +457,7 @@ function flatten(path)
 	}
 }
 
-function add_join(vbo, ibo, p0, p1, w, aa, ncap, line_join, rgba, fill)
+function add_join(vbo, ibo, p0, p1, w, aa, ncap, line_join, rgba)
 {
 	var index = vbo.size;
 	var is_left = ((p1.flags & PointLeft) !== 0);
@@ -593,8 +545,6 @@ function add_join(vbo, ibo, p0, p1, w, aa, ncap, line_join, rgba, fill)
 
 				ibo.push(center - 2, center - 1, center + 3);
 				ibo.push(center - 1, center + 3, center + 4);
-
-				if (fill) fill.push(index);
 			}
 			else
 			{
@@ -642,8 +592,6 @@ function add_join(vbo, ibo, p0, p1, w, aa, ncap, line_join, rgba, fill)
 				vbo.push(x1aa, y1aa, 1, 1, rgba);
 
 				ibo.push(center, i, i + 2);
-
-				if (fill) fill.push(index + 2);
 			}
 		}
 		else
@@ -681,8 +629,6 @@ function add_join(vbo, ibo, p0, p1, w, aa, ncap, line_join, rgba, fill)
 				vbo.push(x1aa, y1aa, 0, 1, rgba);
 				vbo.push(p1.x - dlx1 * w, p1.y - dly1 * w, 1, 0, rgba);
 				vbo.push(p1.x - dlx1 * waa - p1.dx * aa, p1.y - dly1 * waa - p1.dy * aa, 1, 1, rgba);
-
-				if (fill) fill.push(index);
 			}
 			else
 			{
@@ -717,8 +663,6 @@ function add_join(vbo, ibo, p0, p1, w, aa, ncap, line_join, rgba, fill)
 				vbo.push(p1.x + dlx1 * waa - p1.dx * aa, p1.y + dly1 * waa - p1.dy * aa, 0, 1, rgba);
 				vbo.push(x1, y1, 1, 0, rgba);
 				vbo.push(x1aa, y1aa, 1, 1, rgba);
-
-				if (fill) fill.push(index + 1);
 			}
 		}
 	}
@@ -728,8 +672,6 @@ function add_join(vbo, ibo, p0, p1, w, aa, ncap, line_join, rgba, fill)
 		vbo.push(p1.x + (p1.dmx * waa), p1.y + (p1.dmy * waa), 0, 1, rgba);
 		vbo.push(p1.x - (p1.dmx * w), p1.y - (p1.dmy * w), 1, 0, rgba);
 		vbo.push(p1.x - (p1.dmx * waa), p1.y - (p1.dmy * waa), 1, 1, rgba);
-
-		if (fill) fill.push(is_left ? index : index + 2);
 	}
 
 	index = vbo.size;
