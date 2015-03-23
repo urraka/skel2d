@@ -277,8 +277,8 @@ Viewport.prototype.on_mousedown = function(event)
 		x = event.clientX;
 		y = event.clientY;
 
-		self.translation_x += dx;
-		self.translation_y += dy;
+		self.translation_x += dx / self.scale;
+		self.translation_y += dy / self.scale;
 		self.app.invalidate();
 	}
 
@@ -486,8 +486,10 @@ Viewport.prototype.draw = function(dt)
 
 		skeleton.update_transform();
 
+		var s = this.scale;
+
 		renderer.show_bones = this.bones_visible;
-		renderer.draw(skeleton, w / 2 + dx, h / 2 + dy, this.scale, this.skin);
+		renderer.draw(skeleton, 0.5 * w / s + dx, 0.5 * h / s + dy, s, this.skin);
 	}
 }
 
