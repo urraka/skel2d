@@ -163,10 +163,11 @@ Path.prototype.stroke = function(vbo, ibo)
 	var loop = this.closed;
 	var ratio = this.pixel_ratio;
 	var stroke_width = this.stroke_width;
+	var pixel = 1 / ratio;
 
-	if (stroke_width < 1 / ratio)
+	if (stroke_width < pixel)
 	{
-		var alpha = clamp(stroke_width / (1 / ratio), 0, 1);
+		var alpha = clamp(stroke_width / pixel, 0, 1);
 		alpha = alpha * alpha;
 
 		// TODO: solve premultiplied alpha issue
@@ -177,8 +178,8 @@ Path.prototype.stroke = function(vbo, ibo)
 		rgba[3] = clamp(rgba[3] * alpha, 0, 255)|0;
 	}
 
-	var aa = (1 + clamp((stroke_width * ratio - 2) / 4, 0, 1)) / ratio;
-	var w = Math.max(0.0001, stroke_width / 2 - (1 + 0.5 * (aa - 1)));
+	var aa = (1 + clamp((stroke_width * ratio - 2) / 4, 0, 1)) * pixel;
+	var w = Math.max(0.0001, stroke_width / 2 - (pixel + 0.5 * (aa - pixel)));
 	var iw = w > 0 ? 1.0 / w : 0;
 
 	var ncap = Math.max(2, Math.ceil(Pi / (Math.acos(w / (w + this.tess_tol)) * 1.0)));
