@@ -427,7 +427,7 @@ Viewport.prototype.zoom_to_fit = function()
 		zoom = 0.8 * (H / h);
 
 	this.set_scale(zoom);
-	this.set_translation(-(x0 + 0.5 * w) * this.scale, -(y0 + 0.5 * h) * this.scale);
+	this.set_translation(-(x0 + 0.5 * w), -(y0 + 0.5 * h));
 }
 
 Viewport.prototype.set_scale = function(scale)
