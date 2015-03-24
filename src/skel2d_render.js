@@ -248,6 +248,8 @@ function add_ellipse(slot, attachment, vbo, ibo)
 	var m = sk2.mat2d_mul(slot.bone.world_transform, attachment.transform, mat2d_alloc());
 	var rx = 0;
 	var ry = 0;
+	var w = attachment.line_width;
+	var line_color = attachment.line_color;
 
 	if (attachment.type === sk2.AttachmentEllipse)
 	{
@@ -258,6 +260,36 @@ function add_ellipse(slot, attachment, vbo, ibo)
 	{
 		rx = attachment.radius;
 		ry = attachment.radius;
+	}
+
+	if (w === 0)
+	{
+		var dx = m[4];
+		var dy = m[5];
+
+		m[4] = 0;
+		m[5] = 0;
+
+		var sxx = sk2.mat2d_mulx(m, 1, 0);
+		var sxy = sk2.mat2d_muly(m, 1, 0);
+		var syx = sk2.mat2d_mulx(m, 0, 1);
+		var syy = sk2.mat2d_muly(m, 0, 1);
+
+		m[4] = dx;
+		m[5] = dy;
+
+		rx = Math.abs(rx);
+		ry = Math.abs(ry);
+
+		var sx = Math.abs(Math.sqrt(sxx * sxx + sxy * sxy)) * path.pixel_ratio;
+		var sy = Math.abs(Math.sqrt(syx * syx + syy * syy)) * path.pixel_ratio;
+		var aa = Math.min(5, Math.min(rx * sx, ry * sy));
+
+		rx = rx - 0.5 * aa / sx;
+		ry = ry - 0.5 * aa / sy;
+
+		attachment.line_width = aa / path.pixel_ratio;
+		attachment.line_color = attachment.fill_color;
 	}
 
 	var k = kappa90;
@@ -286,6 +318,9 @@ function add_ellipse(slot, attachment, vbo, ibo)
 	clear_coords();
 	stroke_and_fill(slot, attachment, true, vbo, ibo);
 	mat2d_free(m);
+
+	attachment.line_width = w;
+	attachment.line_color = line_color;
 }
 
 function add_path(skeleton, slot, attachment, vbo, ibo)
