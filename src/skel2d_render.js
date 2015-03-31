@@ -75,6 +75,11 @@ SkeletonRenderer.prototype.draw = function(skeleton, x, y, scale, skin_index)
 
 	if (this.show_bones)
 	{
+		var nbones = skeleton.bones.length;
+
+		vbo.reserve(vbo.size + nbones * 12);
+		ibo.reserve(ibo.size + 3 * nbones * 10);
+
 		add_bones(skeleton, vbo, ibo, scale);
 
 		count = ibo.size;
@@ -108,9 +113,6 @@ function add_bones(skeleton, vbo, ibo, scale)
 	var s = 5;
 	var sa = s + aa;
 	var nbones = skeleton.bones.length;
-
-	vbo.reserve(vbo.size + nbones * 4 * 2);
-	ibo.reserve(ibo.size + 3 * nbones * 2);
 
 	for (var i = 0, n = nbones; i < n; i++)
 	{
