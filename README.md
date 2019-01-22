@@ -2,12 +2,12 @@
 
 2D skeletal animation tool
 
-http://urraka.github.io/skel2d/
+https://urraka.github.io/skel2d/
 
 This is an experimental animation tool in which you define a skeleton and animations in a custom
 format while getting a live preview of the end result rendered with webgl.
 
-sample: http://urraka.github.io/skel2d/#1a8921e56c5b392e4180
+sample: https://urraka.github.io/skel2d/#2327f320712b6f6e13be34c8a4e32747
 
 ---
 
